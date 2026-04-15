@@ -1,4 +1,5 @@
 import * as React from "react"
+import { motion } from "framer-motion"
 import { Card } from "./Card"
 import { ProgressBar } from "./ProgressBar"
 import { Skeleton } from "./Skeleton"
@@ -46,115 +47,127 @@ export function NeedCard({ need, className, onBack }: NeedCardProps) {
   return (
     <Card 
       hoverLift 
-      className={cn("overflow-hidden flex flex-col h-full", className)}
+      className={cn("overflow-hidden flex flex-col h-full bg-white rounded-[2rem] border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)]", className)}
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden" style={{ background: 'var(--color-surface-variant)' }}>
+      {/* Visual Header */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden">
         {need.photo_url ? (
           <img
             src={need.photo_url}
             alt={need.item_name}
-            className="h-full w-full object-cover transition-transform duration-700 hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <TradeIcon className="h-16 w-16" style={{ color: 'var(--color-primary)', opacity: 0.3 }} />
+          <div className="flex h-full w-full items-center justify-center bg-surface-variant/30">
+            <TradeIcon className="h-16 w-16" style={{ color: 'var(--color-primary)', opacity: 0.15 }} />
           </div>
         )}
         
-        <div 
-          className="absolute top-4 left-4 flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold capitalize"
-          style={{ background: 'var(--color-surface)', color: 'var(--color-on-surface)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-        >
-          <TradeIcon className="h-4 w-4" style={{ color: 'var(--color-primary)' }} />
+        {/* Category Badge */}
+        <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-widest bg-white/90 backdrop-blur-sm border border-white/20 text-on-surface shadow-sm">
+          <TradeIcon className="h-3.5 w-3.5 text-primary" />
           {need.profile?.trade_category?.replace("_", " ")}
         </div>
 
-        <div 
-          className="absolute bottom-4 right-4 rounded-xl px-4 py-2 text-sm font-bold shadow-lg"
-          style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
-        >
+        {/* Amount Tooltip-like Badge */}
+        <div className="absolute bottom-4 right-4 rounded-2xl px-4 py-2 text-sm font-black bg-yellow-400 text-black shadow-xl">
           {formattedCost}
         </div>
       </div>
 
-      <div className="flex flex-col flex-grow p-6 gap-5">
+      <div className="flex flex-col flex-grow p-6 gap-6">
+        {/* Artisan Info */}
         <div className="flex items-center gap-4">
-          <div className="relative">
+          <div className="relative shrink-0">
             <img 
-              src={need.profile?.photo_url || "/api/placeholder/48/48"} 
+              src={need.profile?.photo_url || `https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=150`} 
               alt={need.profile?.name || "Tradesperson"} 
-              className="h-12 w-12 rounded-2xl object-cover border-2 shadow-md"
-              style={{ borderColor: 'var(--color-surface)' }}
+              className="h-12 w-12 rounded-2xl object-cover border-2 border-white shadow-md"
             />
-            <div 
-              className="absolute -bottom-1 -right-1 rounded-full p-1 shadow-lg"
-              style={{ background: 'var(--color-primary)', border: '2px solid var(--color-surface)' }}
-            >
-              <ShieldCheck className="h-3 w-3" style={{ color: 'var(--color-on-primary)' }} />
+            <div className="absolute -bottom-1 -right-1 rounded-full p-1 bg-green-500 border-2 border-white shadow-lg">
+              <ShieldCheck className="h-3 w-3 text-white" />
             </div>
           </div>
           <div className="flex flex-col min-w-0">
-            <h3 className="text-base font-bold truncate" style={{ color: 'var(--color-on-surface)' }}>
-              {need.profile?.name || "Anonymous Tradesperson"}
+            <h3 className="text-base font-black truncate text-on-surface leading-none mb-1">
+              {need.profile?.name || "Verified Artisan"}
             </h3>
             <div className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" style={{ color: 'var(--color-primary)' }} />
-              <span className="text-xs font-semibold uppercase tracking-wider truncate" style={{ color: 'var(--color-on-surface-variant)' }}>
+              <MapPin className="h-3 w-3 text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant truncate">
                 {need.profile?.location_lga}, {need.profile?.location_state}
               </span>
             </div>
           </div>
         </div>
 
+        {/* Need Story */}
         <div className="flex flex-col gap-2">
-           <h4 className="text-lg font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>
+           <h4 className="text-xl font-black leading-[1.1] text-on-surface">
              {need.item_name}
            </h4>
-           <p className="text-sm line-clamp-2 leading-relaxed italic" style={{ color: 'var(--color-on-surface-variant)' }}>
-             "{need.story}"
+           <p className="text-sm line-clamp-2 leading-relaxed font-medium text-on-surface-variant">
+             {need.story}
            </p>
         </div>
 
-        <div className="flex flex-col gap-3 mt-auto pt-2">
+        {/* Progress Section */}
+        <div className="flex flex-col gap-4 mt-auto">
           <div className="flex justify-between items-end">
-             <div className="flex flex-col gap-1">
-               <span className="text-[10px] uppercase font-bold tracking-[0.2em]" style={{ color: 'var(--color-primary)' }}>
-                  Funding Progress
+             <div className="flex flex-col">
+               <span className="text-[10px] uppercase font-black tracking-widest text-primary mb-1">
+                  Funded Progress
                </span>
-               <span className="text-2xl font-bold leading-none" style={{ color: 'var(--color-on-surface)' }}>
-                  {Math.min(100, Math.floor(percentage))}<span className="text-sm opacity-50 ml-0.5">%</span>
-               </span>
-             </div>
-             <div className="flex flex-col items-end gap-1">
-               <span className="text-[10px] uppercase font-bold tracking-[0.2em]" style={{ color: 'var(--color-on-surface-variant)' }}>
-                  Time Left
-               </span>
-               <div 
-                className="px-2 py-1 rounded-lg flex items-center gap-1.5"
-                style={{ background: 'var(--color-secondary-container)', color: 'var(--color-on-secondary-container)' }}
-               >
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span className="text-sm font-bold">{daysRemaining} Days</span>
+               <div className="flex items-baseline gap-1">
+                 <span className="text-2xl font-black text-on-surface">
+                    {Math.min(100, Math.floor(percentage))}%
+                 </span>
+                 <span className="text-xs font-bold text-on-surface-variant">
+                   raised
+                 </span>
                </div>
              </div>
-           </div>
-           <ProgressBar percentage={percentage} className="h-3 rounded-full" />
+             
+             <div className="text-right">
+                <span className="text-[10px] uppercase font-black tracking-widest text-on-surface-variant mb-1 block">
+                   Days Left
+                </span>
+                <span className="text-sm font-black text-on-surface bg-surface-variant/30 px-3 py-1 rounded-full">
+                   {daysRemaining}
+                </span>
+             </div>
+          </div>
+          
+          <div className="relative h-3 w-full bg-surface-variant/20 rounded-full overflow-hidden">
+            <motion.div 
+               initial={{ width: 0 }}
+               whileInView={{ width: `${percentage}%` }}
+               viewport={{ once: true }}
+               transition={{ duration: 1, ease: "easeOut" }}
+               className="h-full bg-primary rounded-full"
+            />
+          </div>
+
+          <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-on-surface-variant/60">
+             <span>₦{new Intl.NumberFormat().format(need.funded_amount / 100)} raised</span>
+             <span>Goal: {formattedCost}</span>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between pt-5 border-t" style={{ borderColor: 'var(--color-outline-variant)' }}>
-          <div className="flex items-center gap-4">
+        {/* Divider & Actions */}
+        <div className="pt-6 border-t border-outline-variant/30 flex items-center justify-between">
+          <div className="flex items-center gap-3">
              <Badge level={badgeLevel as 0|1|2|3|4} />
-             <div className="flex items-center gap-1.5 px-2 py-1 rounded-full cursor-pointer transition-colors hover:opacity-80">
-                <Heart className="h-4 w-4" style={{ color: 'var(--color-error)' }} />
-                <span className="text-sm font-bold" style={{ color: 'var(--color-on-surface)' }}>{need.profile?.vouch_count || 0}</span>
+             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-error/5 group cursor-pointer transition-colors hover:bg-error/10">
+                <Heart className="h-4 w-4 text-error fill-current" />
+                <span className="text-xs font-black text-on-surface">{need.profile?.vouch_count || 0}</span>
              </div>
           </div>
           <Button 
             onClick={(e) => { e.stopPropagation(); onBack?.(); }} 
-            variant="secondary" 
-            className="rounded-2xl px-6 font-semibold transition-all duration-300"
+            className="rounded-full px-8 font-black text-xs shadow-xl shadow-primary/20 transition-all hover:-translate-y-1 bg-primary text-white"
           >
-            Pledge
+            Back Now
           </Button>
         </div>
       </div>

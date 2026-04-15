@@ -29,7 +29,7 @@ export function ImpactCard({ submission }: ImpactCardProps) {
       {/* Background Media */}
       <div className="absolute inset-0">
         <img 
-          src={photo_url || "/placeholder-impact.jpg"} 
+          src={photo_url || "https://images.unsplash.com/photo-1541888946425-d81bb19480c5?auto=format&fit=crop&q=80&w=800"} 
           alt={caption} 
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
         />

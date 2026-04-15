@@ -12,16 +12,61 @@ export const metadata = {
 export default async function ImpactPage() {
   const supabase = await createClient()
 
+  // Sample mock data for when the DB is empty
+  const MOCK_SUBMISSIONS = [
+    {
+      id: "mock-1",
+      photo_url: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=800",
+      caption: "The industrial welding machine transformed my output. I can now take on three times as many projects.",
+      profile: {
+        name: "Ibrahim S.",
+        trade_category: "welding",
+        location_lga: "Kano",
+        location_state: "Kano",
+        badge_level: "level_4_platform_verified"
+      },
+      published_at: new Date().toISOString()
+    },
+    {
+      id: "mock-2",
+      photo_url: "https://images.unsplash.com/photo-1558223932-901848bc4e92?auto=format&fit=crop&q=80&w=800",
+      caption: "I moved from one machine to a full sewing workshop. BuildBridge backers made my shop ownership possible.",
+      profile: {
+        name: "Amina J.",
+        trade_category: "fashion",
+        location_lga: "Lekki",
+        location_state: "Lagos",
+        badge_level: "level_3_established"
+      },
+      published_at: new Date().toISOString()
+    },
+    {
+      id: "mock-3",
+      photo_url: "https://images.unsplash.com/photo-1536412597336-ade7b523ec3f?auto=format&fit=crop&q=80&w=800",
+      caption: "With my new precision planer, I am finishing furniture sets in half the time with zero waste.",
+      profile: {
+        name: "Chidi O.",
+        trade_category: "woodwork",
+        location_lga: "Enugu",
+        location_state: "Enugu",
+        badge_level: "level_4_platform_verified"
+      },
+      published_at: new Date().toISOString()
+    }
+  ];
+
   // Fetch only approved impact stories with tradesperson profile data
-  const { data: submissions, error } = await supabase
+  const { data: dbSubmissions, error } = await supabase
     .from('impact_wall_submissions')
-    .select('*, profile:profiles(*)')
+    .select('id, photo_url, caption, published_at, profile:profiles(name, trade_category, location_lga, location_state, badge_level)')
     .eq('moderation_status', 'approved')
-    .order('published_at', { ascending: false })
+    .order('published_at', { ascending: false });
 
   if (error) {
-    console.error("Impact Fetch Error:", error)
+    console.warn("Supabase Fetch Error (handled):", error.message);
   }
+
+  const submissions = (dbSubmissions && dbSubmissions.length > 0) ? dbSubmissions : MOCK_SUBMISSIONS;
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4 sm:px-6 lg:px-8">

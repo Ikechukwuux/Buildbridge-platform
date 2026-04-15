@@ -14,84 +14,93 @@ const stories = [
     name: "Ibrahim K.",
     trade: "Welder",
     location: "Kano",
-    caption: "The industrial welding machine I received through BuildBridge allowed me to take on high-rise construction contracts. I have since hired two apprentices.",
-    image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=400",
+    caption: "The industrial welding machine I received through BuildBridge allowed me to take on high-rise construction contracts.",
+    image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=800",
   },
   {
     id: "2",
     name: "Amina S.",
     trade: "Tailor",
     location: "Lagos",
-    caption: "Before BuildBridge, I was renting my equipment. Now I own my shop and three professional machines. My income has tripled.",
-    image: "https://images.unsplash.com/photo-1558223932-901848bc4e92?auto=format&fit=crop&q=80&w=400",
+    caption: "Before BuildBridge, I was renting my equipment. Now I own my shop and three professional machines.",
+    image: "https://images.unsplash.com/photo-1558223932-901848bc4e92?auto=format&fit=crop&q=80&w=800",
   },
   {
     id: "3",
     name: "Chidi O.",
     trade: "Carpenter",
     location: "Enugu",
-    caption: "The electric planer changed everything for my workshop. Faster delivery times meant more clients. The community trust system truly works.",
-    image: "https://images.unsplash.com/photo-1536412597336-ade7b523ec3f?auto=format&fit=crop&q=80&w=400",
+    caption: "The electric planer changed everything for my workshop. Faster delivery times meant more clients.",
+    image: "https://images.unsplash.com/photo-1536412597336-ade7b523ec3f?auto=format&fit=crop&q=80&w=800",
   }
 ]
 
 export function ImpactTeaser() {
   return (
-    <section className="py-24 overflow-hidden" style={{ background: 'var(--color-surface-container-low)' }}>
+    <section className="py-24 bg-white overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-4" style={{ color: 'var(--color-on-surface)' }}>
-              Real Work, Real Impact
-            </h2>
-            <p className="text-lg" style={{ color: 'var(--color-on-surface-variant)' }}>
-              See the direct results of your investment. Proof-of-use updates close every funding loop.
-            </p>
-          </div>
-          <Link href="/impact" className="text-base font-semibold flex items-center group cursor-pointer" style={{ color: 'var(--color-primary)' }}>
-            Explore Impact Wall
-            <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </Link>
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-widest mb-6">
+            Success Stories
+          </span>
+          <h2 className="text-3xl md:text-5xl font-black tracking-tight text-on-surface mb-6 leading-tight">
+            Our <span className="text-primary italic">Impact</span> Stories
+          </h2>
+          <p className="text-lg text-on-surface-variant font-medium">
+            Real proofs of growth from the artisans you've supported. Every pledge closes a loop of hope.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {stories.map((story, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {stories.slice(0, 2).map((story, index) => (
             <motion.div
               key={story.id}
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.6, delay: index * 0.2 }}
+              className="group relative h-[500px] rounded-[3rem] overflow-hidden shadow-2xl cursor-pointer"
             >
-              <Card className="h-full flex flex-col p-6 relative overflow-hidden group cursor-pointer">
-                <Quote 
-                  className="absolute -top-4 -right-4 h-24 w-24 -rotate-12 transition-transform group-hover:rotate-0" 
-                  style={{ color: 'var(--color-primary)', opacity: 0.1 }} 
-                />
+              <img 
+                src={story.image} 
+                alt={story.name} 
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+              />
+              {/* Overlay Content */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-10">
+                <div className="mb-6">
+                  <Badge level={4} className="mb-4">Verified Impact</Badge>
+                  <h3 className="text-3xl font-black text-white mb-4 leading-tight">
+                    Helping {story.name}'s workshop in {story.location}
+                  </h3>
+                  <p className="text-white/80 text-lg font-medium line-clamp-2 italic mb-8">
+                    &ldquo;{story.caption}&rdquo;
+                  </p>
+                </div>
                 
-                <div className="flex items-center gap-4 mb-6 relative z-10">
-                  <Avatar name={story.name} size="md" className="border-2" style={{ borderColor: 'var(--color-primary)' }} />
-                  <div className="flex flex-col">
-                    <h4 className="text-base font-bold" style={{ color: 'var(--color-on-surface)' }}>{story.name}</h4>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>{story.trade}</span>
-                      <span className="h-1 w-1 rounded-full" style={{ background: 'var(--color-outline)' }} />
-                      <span className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>{story.location}</span>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between pt-6 border-t border-white/20">
+                   <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full border-2 border-white overflow-hidden">
+                        <img src={`https://i.pravatar.cc/100?u=${story.id}`} alt="" />
+                      </div>
+                      <span className="text-white font-bold text-sm tracking-wide uppercase">Read Full Story</span>
+                   </div>
+                   <div className="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center text-black shadow-xl shadow-yellow-400/20">
+                      <ArrowRight className="h-6 w-6" />
+                   </div>
                 </div>
-
-                <p className="text-base flex-grow italic relative z-10" style={{ color: 'var(--color-on-surface)' }}>
-                  &ldquo;{story.caption}&rdquo;
-                </p>
-
-                <div className="mt-8 pt-6 border-t relative z-10 flex justify-between items-center" style={{ borderColor: 'var(--color-outline-variant)' }}>
-                   <Badge level={4}>Funded</Badge>
-                   <span className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>March 2026</span>
-                </div>
-              </Card>
+              </div>
             </motion.div>
           ))}
+        </div>
+
+        <div className="mt-16 text-center">
+          <Link href="/impact">
+            <button className="h-14 px-10 rounded-full border-2 border-outline-variant text-on-surface font-black text-sm hover:bg-surface-variant/30 transition-all flex items-center gap-2 mx-auto">
+               View All Stories on Impact Wall
+               <ArrowRight className="h-5 w-5" />
+            </button>
+          </Link>
         </div>
       </div>
     </section>

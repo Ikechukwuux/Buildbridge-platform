@@ -21,25 +21,39 @@ export function Navbar() {
 
   return (
     <>
+    <div className="fixed top-0 left-0 right-0 z-50">
+      {/* Top Announcement Bar */}
+      <div className="w-full bg-primary text-on-primary py-2 px-4 text-center">
+        <p className="text-xs sm:text-sm font-bold tracking-wide flex items-center justify-center gap-2">
+          <span className="opacity-80">📣</span>
+          BuildBridge: The #1 Direct Impact Platform for Nigeria's Artisans
+          <Link href="/browse" className="underline hover:opacity-80 transition-opacity ml-1">
+            Back a Trade Today →
+          </Link>
+        </p>
+      </div>
+
       <header
-        className={`fixed z-50 left-0 right-0 transition-all duration-500 px-4 sm:px-6 flex justify-center ${
-          isScrolled ? "top-4" : "top-6"
+        className={`w-full transition-all duration-300 border-b border-transparent ${
+          isScrolled 
+            ? "bg-white/90 backdrop-blur-md shadow-sm border-white/20 py-3" 
+            : "bg-transparent py-5"
         }`}
       >
-        <div className="w-full max-w-5xl p-2 flex items-center justify-between rounded-full bg-black/40 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] saturate-[1.8]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 pl-4 group cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black">
-              <Hammer className="h-4 w-4" />
+          <Link href="/" className="flex items-center gap-2.5 group cursor-pointer group">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 ${isScrolled ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white text-primary shadow-xl'}`}>
+              <Hammer className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-white leading-none">
+            <span className={`text-xl font-black tracking-tight transition-colors duration-300 ${isScrolled ? 'text-on-surface' : 'text-primary'}`}>
               BuildBridge
             </span>
           </Link>
 
           {/* Centered Desktop Nav */}
-          <nav className="hidden md:flex flex-1 items-center justify-center gap-8 pl-8">
+          <nav className="hidden md:flex items-center gap-10">
             {[
               { name: "Browse Needs", href: "/browse" },
               { name: "How It Works", href: "/how-it-works" },
@@ -48,7 +62,9 @@ export function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className="text-sm font-semibold text-white/70 hover:text-white transition-colors cursor-pointer"
+                className={`text-sm font-bold tracking-wide transition-all duration-300 hover:scale-105 cursor-pointer ${
+                  isScrolled ? 'text-on-surface-variant hover:text-primary' : 'text-on-surface/80 hover:text-white'
+                }`}
               >
                 {link.name}
               </Link>
@@ -56,36 +72,34 @@ export function Navbar() {
           </nav>
 
           {/* Right Action Area */}
-          <div className="flex items-center gap-2">
-            <Link href="/login" className="hidden md:flex items-center justify-center h-10 px-5 cursor-pointer">
-              <span className="text-sm font-bold text-white/70 hover:text-white transition-colors">
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="hidden sm:flex group cursor-pointer">
+              <span className={`text-sm font-bold transition-colors duration-300 ${isScrolled ? 'text-on-surface-variant hover:text-primary' : 'text-on-surface/80 hover:text-white'}`}>
                 Log In
               </span>
             </Link>
             
             <Link href="/onboarding" className="cursor-pointer">
               <button 
-                className="h-10 px-6 rounded-[1.25rem] font-bold transition-all flex items-center justify-center hover:scale-[1.02] active:scale-[0.98]"
-                style={{ 
-                  background: 'var(--color-primary)', 
-                  color: 'var(--color-on-primary)',
-                  boxShadow: '0 4px 14px 0 rgba(var(--color-primary-rgb), 0.3)' 
-                }}
+                className={`h-11 px-7 rounded-full font-extrabold text-sm transition-all flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/10 ${
+                  isScrolled ? 'bg-primary text-white' : 'bg-white text-primary'
+                }`}
               >
                 Get Started
               </button>
             </Link>
 
             <button 
-              className="md:hidden p-2 text-white/70 hover:text-white transition-colors cursor-pointer ml-1 mr-2"
+              className={`md:hidden p-2 transition-colors cursor-pointer ${isScrolled ? 'text-on-surface-variant' : 'text-white'}`}
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open menu"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-6 w-6" />
             </button>
           </div>
         </div>
       </header>
+    </div>
 
       <MobileNav isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
     </>

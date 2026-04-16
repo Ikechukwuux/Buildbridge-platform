@@ -23,50 +23,22 @@ export function Hero({ stats }: HeroProps) {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-        {/* Floating Community Avatars (Decorative) */}
+        {/* Decorative Floating Blobs */}
         <div className="absolute inset-0 pointer-events-none hidden lg:block">
           {[
-             { top: '15%', left: '10%', delay: 0, url: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=100' },
-             { top: '25%', left: '22%', delay: 0.2, url: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=crop&q=80&w=100' },
-             { top: '10%', right: '15%', delay: 0.4, url: 'https://images.unsplash.com/photo-1507152832244-10d45c7eda57?auto=format&fit=crop&q=80&w=100' },
-             { top: '35%', right: '8%', delay: 0.6, url: 'https://images.unsplash.com/photo-1491333078588-55b457f210c1?auto=format&fit=crop&q=80&w=100' },
-             { bottom: '20%', left: '12%', delay: 0.8, url: 'https://images.unsplash.com/photo-1567532939604-b6c5b0ad2e01?auto=format&fit=crop&q=80&w=100' },
-             { bottom: '30%', right: '18%', delay: 1.0, url: 'https://images.unsplash.com/photo-1506272517162-4aa6a491d95d?auto=format&fit=crop&q=80&w=100' },
+             { top: '15%', left: '8%', delay: 0, bg: 'bg-primary/20' },
+             { top: '25%', left: '20%', delay: 0.2, bg: 'bg-tertiary/15' },
+             { top: '10%', right: '12%', delay: 0.4, bg: 'bg-primary/15' },
+             { top: '35%', right: '6%', delay: 0.6, bg: 'bg-tertiary/20' },
           ].map((pos, i) => (
             <motion.div
               key={i}
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1, y: [0, -10, 0] }}
-              transition={{ 
-                scale: { duration: 0.5, delay: pos.delay },
-                opacity: { duration: 0.5, delay: pos.delay },
-                y: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: pos.delay }
-              }}
-              className="absolute w-12 h-12 rounded-full border-2 border-white shadow-xl overflow-hidden bg-surface-variant flex items-center justify-center"
-              style={{ top: pos.top, left: pos.left, right: pos.right, bottom: pos.bottom }}
-            >
-              <Link href="/browse" className="cursor-pointer">
-                <button 
-                  className="w-full sm:w-auto h-14 px-8 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                  style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
-                >
-                  Browse Needs
-                </button>
-              </Link>
-              <Link href="/register" className="cursor-pointer">
-                <button 
-                  className="w-full sm:w-auto h-14 px-8 rounded-full font-bold text-lg transition-all border-2 flex items-center justify-center gap-2 hover:bg-surface-variant/50"
-                  style={{ borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-                >
-                  Join as Artisan
-                </button>
-              </Link>
-              <img 
-                src={pos.url} 
-                alt="Community member" 
-                className="w-full h-full object-cover filter brightness-[1.05]" 
-              />
-            </motion.div>
+              animate={{ scale: 1, opacity: 0.6 }}
+              transition={{ duration: 0.8, delay: pos.delay }}
+              className={`absolute w-10 h-10 rounded-full ${pos.bg} blur-sm`}
+              style={{ top: pos.top, left: pos.left, right: pos.right }}
+            />
           ))}
         </div>
 
@@ -106,30 +78,29 @@ export function Hero({ stats }: HeroProps) {
             className="text-lg md:text-xl font-medium text-on-surface-variant leading-relaxed max-w-2xl mx-auto mb-12"
           >
             Join a community of thousands backing the dreams of verified tradespeople. 
-            From tailors to mechanics—your capital build lives and legacies.
+            From tailors to mechanics—your capital builds lives and legacies.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            className="flex flex-col sm:flex-row gap-5 justify-center items-center"
           >
-            <Link href="/browse" className="w-full sm:w-auto">
-              <button 
-                className="w-full h-14 px-10 rounded-full font-black text-lg bg-primary text-on-primary shadow-2xl shadow-primary/30 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
-              >
-                Start Supporting
-              </button>
+            <Link 
+              href="/browse" 
+              className="w-full sm:w-auto h-16 px-10 rounded-full font-black text-lg bg-primary text-on-primary shadow-2xl shadow-primary/30 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+            >
+              Start Supporting
             </Link>
-            <Link href="/impact" className="w-full sm:w-auto">
-              <button 
-                className="w-full h-14 px-10 rounded-full font-black text-lg border-2 border-outline-variant text-on-surface hover:bg-surface-variant/30 transition-all flex items-center justify-center gap-2"
-              >
-                See the Impact
-              </button>
+            <Link 
+              href="/onboarding"
+              className="h-16 px-10 rounded-full bg-primary text-white font-black text-lg transition-all flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-primary/20"
+            >
+              Join as Artisan
             </Link>
           </motion.div>
+
         </div>
 
         {/* Gallery Grid */}
@@ -144,7 +115,7 @@ export function Hero({ stats }: HeroProps) {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + (i * 0.1), duration: 0.6 }}
-              className="group relative h-80 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white cursor-pointer"
+              className="group relative h-56 sm:h-72 md:h-80 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white cursor-pointer"
             >
               <img 
                 src={`/images/hero/${item.img}.png`} 

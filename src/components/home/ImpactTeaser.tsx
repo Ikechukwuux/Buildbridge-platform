@@ -80,8 +80,8 @@ export function ImpactTeaser() {
                 
                 <div className="flex items-center justify-between pt-6 border-t border-white/20">
                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full border-2 border-white overflow-hidden">
-                        <img src={`https://i.pravatar.cc/100?u=${story.id}`} alt="" />
+                      <div className="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-white/20 flex items-center justify-center">
+                        <span className="text-white font-black text-sm">{story.name.charAt(0)}</span>
                       </div>
                       <span className="text-white font-bold text-sm tracking-wide uppercase">Read Full Story</span>
                    </div>
@@ -95,11 +95,9 @@ export function ImpactTeaser() {
         </div>
 
         <div className="mt-16 text-center">
-          <Link href="/impact">
-            <button className="h-14 px-10 rounded-full border-2 border-outline-variant text-on-surface font-black text-sm hover:bg-surface-variant/30 transition-all flex items-center gap-2 mx-auto">
-               View All Stories on Impact Wall
-               <ArrowRight className="h-5 w-5" />
-            </button>
+          <Link href="/impact" className="h-14 px-10 rounded-full border-2 border-outline-variant text-on-surface font-black text-sm hover:bg-surface-variant/30 transition-all flex items-center gap-2 mx-auto">
+              View All Stories on Impact Wall
+              <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
       </div>

@@ -1,9 +1,29 @@
 "use server"
 
+/**
+ * DEMO MODE: Returns success immediately without any Supabase calls.
+ *
+ * To re-enable Supabase:
+ *   1. Set DEMO_MODE to false
+ *   2. Import createClient from "@/lib/supabase/server"
+ *   3. Restore the full auth check, upload, and database insert logic
+ */
+
+const DEMO_MODE = true;
+
+// Keep real imports for when demo is disabled
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
 export async function createNeedAction(formData: FormData) {
+  if (DEMO_MODE) {
+    // Simulate network delay for visual fidelity
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    revalidatePath("/dashboard");
+    return { success: true };
+  }
+
+  // ── Real Supabase Logic (re-enable later) ────────────────────────────────
   const supabase = await createClient()
 
   // 1. Auth check

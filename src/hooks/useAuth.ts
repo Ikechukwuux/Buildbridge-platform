@@ -1,13 +1,47 @@
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { type User } from "@supabase/supabase-js"
+import { useDemoAuth } from "@/contexts/DemoAuthContext"
+
+/**
+ * DEMO MODE: Auth hook that relies entirely on DemoAuthContext.
+ * No Supabase calls are made.
+ *
+ * To re-enable Supabase:
+ *   1. Set DEMO_MODE to false
+ *   2. Uncomment the Supabase imports and logic
+ */
+
+const DEMO_MODE = true;
+
+// import { createClient } from "@/lib/supabase/client"
+// import { type User } from "@supabase/supabase-js"
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+  const { 
+    isAuthenticated: demoAuthenticated, 
+    signOut: demoSignOut,
+    demoUser 
+  } = useDemoAuth()
 
   useEffect(() => {
+    if (DEMO_MODE) {
+      // In demo mode, just check the demo context
+      setUser(demoAuthenticated ? { id: 'demo-user', email: demoUser?.email } : null)
+      setIsLoading(false)
+      return
+    }
+
+    // ── Real Supabase Auth (re-enable later) ──────────────────────────────
+    /*
+    const supabase = createClient()
+
+    if (demoAuthenticated) {
+      setUser(null)
+      setIsLoading(false)
+      return
+    }
+
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
@@ -23,84 +57,44 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase])
+    */
+  }, [demoAuthenticated, demoUser])
 
   const signInWithPhone = async (phone: string) => {
-    setIsLoading(true)
-    try {
-      let formattedPhone = phone.trim()
-      if (formattedPhone.startsWith("0") && formattedPhone.length === 11) {
-        formattedPhone = "+234" + formattedPhone.slice(1)
-      } else if (!formattedPhone.startsWith("+")) {
-        formattedPhone = "+234" + formattedPhone
-      }
-
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
-      })
-
-      if (error) {
-        console.error("Auth Sign In Error:", error)
-        if (error.message?.includes("sms provider") || error.status === 400 || error.message?.includes("Signups not allowed")) {
-          throw new Error("We couldn't text that number. Please check for typos and try again.")
-        }
-        throw new Error(error.message)
-      }
-      return { success: true, formattedPhone }
-    } catch (err: any) {
-      return { error: err.message || "We encountered a network issue. Please try again." }
-    } finally {
-      setIsLoading(false)
-    }
+    // Demo: This won't be called directly, but return compatible shape
+    return { success: true, formattedPhone: phone }
   }
 
   const verifyOTP = async (phone: string, token: string) => {
-    setIsLoading(true)
-    try {
-      let formattedPhone = phone.trim()
-      if (formattedPhone.startsWith("0")) {
-        formattedPhone = "+234" + formattedPhone.slice(1)
-      } else if (!formattedPhone.startsWith("+")) {
-        formattedPhone = "+234" + formattedPhone
-      }
+    // Demo: Not used directly
+    return { success: true, requiresOnboarding: false }
+  }
 
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token: token,
-        type: "sms",
-      })
+  const signInWithEmail = async (email: string, password: string) => {
+    // Demo: Not used directly
+    return { success: true, requiresOnboarding: false }
+  }
 
-      if (error) {
-         console.error("Auth Verify Error:", error)
-         throw new Error("The code entered is incorrect or expired. Please request a new one.")
-      }
-
-      let requiresOnboarding = true;
-      if (data?.user) {
-        // Check if user has an existing complete profile
-        const { data: profile, error: dbError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("user_id", data.user.id)
-          .single()
-
-        if (profile) requiresOnboarding = false
-      }
-
-      return { success: true, requiresOnboarding }
-    } catch (err: any) {
-      return { error: err.message || "We encountered a network issue. Please try again." }
-    } finally {
-      setIsLoading(false)
-    }
+  const signUpWithEmail = async (email: string, password: string) => {
+    // Demo: Not used directly
+    return { success: true, requiresOnboarding: true }
   }
 
   const signOut = async () => {
     setIsLoading(true)
-    await supabase.auth.signOut()
+    demoSignOut()
     setUser(null)
     setIsLoading(false)
   }
 
-  return { signInWithPhone, verifyOTP, signOut, user, isLoading }
+  return { 
+    signInWithPhone, 
+    verifyOTP, 
+    signInWithEmail, 
+    signUpWithEmail, 
+    signOut, 
+    user, 
+    isLoading,
+    isAuthenticated: demoAuthenticated || user !== null 
+  }
 }

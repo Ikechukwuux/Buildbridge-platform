@@ -9,10 +9,14 @@ import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { Phone, ArrowRight, ShieldCheck, CheckCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useDemoAuth } from "@/contexts/DemoAuthContext"
+
+const DEMO_MODE = true
 
 export default function RegisterForm() {
   const router = useRouter()
   const supabase = createClient()
+  const { sendDemoOtp, verifyDemoOtp } = useDemoAuth()
   
   const [step, setStep] = useState<"phone" | "otp" | "success">("phone")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -70,6 +74,19 @@ export default function RegisterForm() {
       cleanPhone = "+234" + cleanPhone.slice(1)
     } else if (!cleanPhone.startsWith("+")) {
       cleanPhone = "+234" + cleanPhone
+    }
+
+    if (DEMO_MODE) {
+      const result = await sendDemoOtp(cleanPhone)
+      if (result.success) {
+        setFormattedPhone(formatPhoneNumber(rawVal))
+        setStep("otp")
+        setTimeLeft(300)
+      } else {
+        setErrorMsg(result.error || "Failed to send OTP.")
+      }
+      setIsLoading(false)
+      return
     }
 
     try {
@@ -146,6 +163,20 @@ export default function RegisterForm() {
       cleanPhone = "+234" + cleanPhone
     }
 
+    if (DEMO_MODE) {
+      const result = await verifyDemoOtp(cleanPhone, token)
+      if (result.success) {
+        setStep("success")
+        setTimeout(() => {
+          router.push("/onboarding")
+        }, 2000)
+      } else {
+        setErrorMsg(result.error || "Invalid OTP. Please try again.")
+      }
+      setIsLoading(false)
+      return
+    }
+
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         phone: cleanPhone,
@@ -174,6 +205,14 @@ export default function RegisterForm() {
     setIsLoading(true)
     setErrorMsg(null)
     
+    if (DEMO_MODE) {
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      setTimeLeft(300)
+      setOtp(["", "", "", "", "", ""])
+      setIsLoading(false)
+      return
+    }
+
     let cleanPhone = formattedPhone.replace(/[^0-9]/g, "")
     if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
       cleanPhone = "+234" + cleanPhone.slice(1)

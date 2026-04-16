@@ -43,7 +43,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || isLoading}
-        className={cn(baseStyles, sizeStyles[size], className)}
+        className={cn(baseStyles, sizeStyles[size], variantStyles[variant], className)}
         style={getVariantStyles()}
         {...props}
       >

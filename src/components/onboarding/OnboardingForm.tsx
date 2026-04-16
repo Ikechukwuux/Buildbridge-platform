@@ -18,12 +18,18 @@ import {
   Rocket, Lock, UserPlus, Fingerprint
 } from "lucide-react"
 import { useVoiceInput } from "@/hooks/useVoiceInput"
+import { useDemoAuth } from "@/contexts/DemoAuthContext"
 import { cn } from "@/lib/utils"
 
+/**
+ * DEMO MODE: Auth/OTP step removed from onboarding.
+ * Authentication happens on the /signup page instead.
+ * Steps: Trade → Location → Photo → Story → Terms → /signup
+ */
 const STEPS = [
   { id: "trade", title: "Your Craft", desc: "Showcase your specialization" },
   { id: "location", title: "Your Roots", desc: "Where you build legacies" },
-  { id: "auth", title: "Secure Account", desc: "Protect your progress" },
+  // { id: "auth", title: "Secure Account", desc: "Protect your progress" }, // Skipped in demo
   { id: "photo", title: "Your Face", desc: "Build human trust" },
   { id: "story", title: "Your Story", desc: "Share your journey" },
   { id: "terms", title: "Commitment", desc: "Join the covenant" }
@@ -44,13 +50,16 @@ const TRADE_CATEGORIES = [
 
 export function OnboardingForm() {
   const router = useRouter()
-  const supabase = createClient()
+  // const supabase = createClient() // Disabled in demo mode
   const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   
   const voiceInput = useVoiceInput()
+  const { isAuthenticated } = useDemoAuth()
+
+  // OTP State removed in demo mode — auth handled by /signup page
 
   const [formData, setFormData] = useState({
     trade_category: "",
@@ -62,16 +71,7 @@ export function OnboardingForm() {
     agreed_to_terms: false
   })
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      if (user && currentStep === 2) {
-        setCurrentStep(3) // Skip auth step if already logged in
-      }
-    }
-    checkUser()
-  }, [supabase, currentStep])
+  // Auth step skip logic removed — step no longer exists in STEPS array
 
   const nextStep = () => {
     if (currentStep < STEPS.length - 1) {
@@ -102,46 +102,12 @@ export function OnboardingForm() {
     setLoading(true)
     setError(null)
     try {
-      if (!user) {
-        setCurrentStep(2) // Fallback to auth step
-        return
-      }
-
-      let photoUrl = formData.photo_url
-
-      if (formData.photo_file) {
-        const fileExt = formData.photo_file.name.split('.').pop()
-        const fileName = `${user.id}-${Math.random()}.${fileExt}`
-        const filePath = `profiles/${fileName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from("profiles")
-          .upload(filePath, formData.photo_file)
-
-        if (uploadError) throw uploadError
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from("profiles")
-          .getPublicUrl(filePath)
-        
-        photoUrl = publicUrl
-      }
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .upsert({
-          user_id: user.id,
-          trade_category: formData.trade_category,
-          location_state: formData.location_state,
-          location_lga: formData.location_lga,
-          story: formData.story,
-          photo_url: photoUrl,
-          badge_level: "level_1_community_member",
-          updated_at: new Date().toISOString()
-        })
-
-      if (profileError) throw profileError
-      router.push("/dashboard")
+      // Demo Mode: Bypassing real database and storage operations
+      // We simulate a network delay for visual fidelity
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Redirect to signup for authentication (OTP handled there)
+      router.push("/signup")
     } catch (err: any) {
       console.error("Onboarding error:", err)
       setError(err.message || "Failed to save your profile.")
@@ -151,6 +117,7 @@ export function OnboardingForm() {
   }
 
   const renderStepContent = () => {
+    // DEMO MODE: Steps are now 0=Trade, 1=Location, 2=Photo, 3=Story, 4=Terms
     switch (currentStep) {
       case 0: // Trade
         return (
@@ -191,7 +158,7 @@ export function OnboardingForm() {
           </motion.div>
         )
 
-      case 1: // Location
+      case 1: // Location (Step 2)
         return (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -251,48 +218,9 @@ export function OnboardingForm() {
           </motion.div>
         )
 
-      case 2: // Auth Checkpoint
-        return (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.1 }}
-            className="w-full max-w-md mx-auto"
-          >
-            <div className="mb-12 text-center text-white">
-               <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center mx-auto mb-8 shadow-2xl">
-                  <Lock className="h-8 w-8 text-white" />
-               </div>
-               <h1 className="text-4xl font-black mb-4 tracking-tight">Lock it in.</h1>
-               <p className="text-xl text-white/80 font-medium leading-relaxed">
-                  We've captured your trade and location. Create an account to protect your journey and continue.
-               </p>
-            </div>
+      // case 2 (Auth/OTP) removed — handled by /signup page
 
-            <div className="flex flex-col gap-4">
-              <Button 
-                onClick={() => router.push(`/signup?redirect=onboarding`)}
-                className="h-16 rounded-[2rem] bg-white text-primary hover:bg-white/90 text-lg font-black shadow-2xl flex items-center justify-center gap-3"
-              >
-                <UserPlus className="h-5 w-5" />
-                Join the Network
-              </Button>
-              <button 
-                onClick={() => router.push(`/login?redirect=onboarding`)}
-                className="h-16 rounded-[2rem] bg-white/10 backdrop-blur-md border border-white/30 text-white hover:bg-white/20 text-lg font-black transition-all flex items-center justify-center gap-3"
-              >
-                <Fingerprint className="h-5 w-5" />
-                Welcome Back
-              </button>
-            </div>
-            
-            <p className="mt-8 text-center text-white/60 text-sm font-bold uppercase tracking-widest">
-               Pockets of Trust Building Communities
-            </p>
-          </motion.div>
-        )
-
-      case 3: // Photo
+      case 2: // Photo (was case 3)
         return (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -336,7 +264,7 @@ export function OnboardingForm() {
           </motion.div>
         )
 
-      case 4: // Story
+      case 3: // Story (was case 4)
         return (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -411,7 +339,7 @@ export function OnboardingForm() {
           </motion.div>
         )
 
-      case 5: // Terms & Submit
+      case 4: // Terms & Submit (was case 5)
         return (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -481,7 +409,7 @@ export function OnboardingForm() {
       <div className="fixed inset-0 pointer-events-none">
         <div className={cn(
           "absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[150px] transition-all duration-1000",
-          currentStep === 2 ? "bg-primary/40" : "bg-primary/10"
+          "bg-primary/10"
         )} />
         <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-yellow-400/10 blur-[150px]" />
       </div>

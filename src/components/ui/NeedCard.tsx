@@ -80,7 +80,7 @@ export function NeedCard({ need, className, onBack }: NeedCardProps) {
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
             <img 
-              src={need.profile?.photo_url || `https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=150`} 
+              src={need.profile?.photo_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e9ddff' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-size='40' font-weight='bold' fill='%236750A4'%3E${(need.profile?.name || 'A').charAt(0)}%3C/text%3E%3C/svg%3E`} 
               alt={need.profile?.name || "Tradesperson"} 
               className="h-12 w-12 rounded-2xl object-cover border-2 border-white shadow-md"
             />

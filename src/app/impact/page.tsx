@@ -1,5 +1,4 @@
 import * as React from "react"
-import { createClient } from "@/lib/supabase/server"
 import { ImpactGrid } from "@/components/impact/ImpactGrid"
 import { BadgeDisplay } from "@/components/ui/BadgeDisplay"
 import { Sparkles } from "lucide-react"
@@ -9,65 +8,58 @@ export const metadata = {
   description: "Witness the power of community-backed growth. See real stories of Nigerian tradespeople reaching their potential.",
 }
 
-export default async function ImpactPage() {
-  const supabase = await createClient()
+/**
+ * DEMO MODE: Uses mock data directly instead of Supabase query.
+ *
+ * To re-enable Supabase:
+ *   1. Import createClient from "@/lib/supabase/server"
+ *   2. Restore the supabase.from('impact_wall_submissions').select(...) query
+ */
 
-  // Sample mock data for when the DB is empty
-  const MOCK_SUBMISSIONS = [
-    {
-      id: "mock-1",
-      photo_url: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=800",
-      caption: "The industrial welding machine transformed my output. I can now take on three times as many projects.",
-      profile: {
-        name: "Ibrahim S.",
-        trade_category: "welding",
-        location_lga: "Kano",
-        location_state: "Kano",
-        badge_level: "level_4_platform_verified"
-      },
-      published_at: new Date().toISOString()
+// Rich mock data for the Impact Wall
+const MOCK_SUBMISSIONS = [
+  {
+    id: "mock-1",
+    photo_url: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=800",
+    caption: "The industrial welding machine transformed my output. I can now take on three times as many projects.",
+    profile: {
+      name: "Ibrahim S.",
+      trade_category: "welding",
+      location_lga: "Kano",
+      location_state: "Kano",
+      badge_level: "level_4_platform_verified"
     },
-    {
-      id: "mock-2",
-      photo_url: "https://images.unsplash.com/photo-1558223932-901848bc4e92?auto=format&fit=crop&q=80&w=800",
-      caption: "I moved from one machine to a full sewing workshop. BuildBridge backers made my shop ownership possible.",
-      profile: {
-        name: "Amina J.",
-        trade_category: "fashion",
-        location_lga: "Lekki",
-        location_state: "Lagos",
-        badge_level: "level_3_established"
-      },
-      published_at: new Date().toISOString()
+    published_at: new Date().toISOString()
+  },
+  {
+    id: "mock-2",
+    photo_url: "https://images.unsplash.com/photo-1558223932-901848bc4e92?auto=format&fit=crop&q=80&w=800",
+    caption: "I moved from one machine to a full sewing workshop. BuildBridge backers made my shop ownership possible.",
+    profile: {
+      name: "Amina J.",
+      trade_category: "fashion",
+      location_lga: "Lekki",
+      location_state: "Lagos",
+      badge_level: "level_3_established"
     },
-    {
-      id: "mock-3",
-      photo_url: "https://images.unsplash.com/photo-1536412597336-ade7b523ec3f?auto=format&fit=crop&q=80&w=800",
-      caption: "With my new precision planer, I am finishing furniture sets in half the time with zero waste.",
-      profile: {
-        name: "Chidi O.",
-        trade_category: "woodwork",
-        location_lga: "Enugu",
-        location_state: "Enugu",
-        badge_level: "level_4_platform_verified"
-      },
-      published_at: new Date().toISOString()
-    }
-  ];
-
-  // Fetch only approved impact stories with tradesperson profile data
-  const { data: dbSubmissions, error } = await supabase
-    .from('impact_wall_submissions')
-    .select('id, photo_url, caption, published_at, profile:profiles(name, trade_category, location_lga, location_state, badge_level)')
-    .eq('moderation_status', 'approved')
-    .order('published_at', { ascending: false });
-
-  if (error) {
-    console.warn("Supabase Fetch Error (handled):", error.message);
+    published_at: new Date().toISOString()
+  },
+  {
+    id: "mock-3",
+    photo_url: "https://images.unsplash.com/photo-1536412597336-ade7b523ec3f?auto=format&fit=crop&q=80&w=800",
+    caption: "With my new precision planer, I am finishing furniture sets in half the time with zero waste.",
+    profile: {
+      name: "Chidi O.",
+      trade_category: "woodwork",
+      location_lga: "Enugu",
+      location_state: "Enugu",
+      badge_level: "level_4_platform_verified"
+    },
+    published_at: new Date().toISOString()
   }
+];
 
-  const submissions = (dbSubmissions && dbSubmissions.length > 0) ? dbSubmissions : MOCK_SUBMISSIONS;
-
+export default async function ImpactPage() {
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto flex flex-col gap-16">
@@ -86,8 +78,8 @@ export default async function ImpactPage() {
            </p>
         </div>
 
-        {/* The Grid Component */}
-        <ImpactGrid submissions={(submissions as any) || []} />
+        {/* The Grid Component — using mock data directly */}
+        <ImpactGrid submissions={(MOCK_SUBMISSIONS as any) || []} />
 
         {/* Global Reference Area */}
         <div className="mt-20 pt-20 border-t border-outline-variant flex flex-col gap-12">

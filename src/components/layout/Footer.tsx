@@ -1,12 +1,12 @@
 import * as React from "react"
 import Link from "next/link"
-import { Facebook, Twitter, Instagram } from "lucide-react"
+import { Facebook, Twitter, Instagram, Hammer } from "lucide-react"
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-[#7C3AED] text-white pt-24 pb-12 px-4 sm:px-6 lg:px-8 mt-12 relative overflow-hidden">
+    <footer className="w-full bg-primary text-white pt-24 pb-12 px-4 sm:px-6 lg:px-8 mt-12 relative overflow-hidden">
       {/* Decorative Ornaments */}
       <div className="absolute top-0 left-0 w-full h-1 bg-yellow-400" />
       <div className="absolute top-12 right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
@@ -45,17 +45,17 @@ export function Footer() {
             </div>
             <div className="flex flex-col gap-5">
               <h3 className="font-black text-sm uppercase tracking-widest text-yellow-400">Explore</h3>
-              <Link href="/artisans" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Artisan Network</Link>
+              <Link href="/browse" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Discover Needs</Link>
               <Link href="/partners" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Collaborate</Link>
-              <Link href="/blog" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Success Blog</Link>
+              <Link href="/about" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">About Us</Link>
               <Link href="/careers" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Careers</Link>
             </div>
             <div className="flex flex-col gap-5">
               <h3 className="font-black text-sm uppercase tracking-widest text-yellow-400">Support</h3>
-              <Link href="/faq" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Help Center</Link>
+              <Link href="/contact" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Contact Us</Link>
               <Link href="/privacy" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Privacy</Link>
               <Link href="/terms" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Terms</Link>
-              <Link href="/contact" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Contact Us</Link>
+              <Link href="/trust" className="text-sm font-bold opacity-80 hover:opacity-100 transition-opacity">Trust & Safety</Link>
             </div>
           </div>
         </div>
@@ -64,7 +64,7 @@ export function Footer() {
           <div className="flex flex-col gap-3">
              <Link href="/" className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary">
-                  <span className="text-lg">B</span>
+                  <Hammer className="h-4 w-4" />
                 </div>
                 BuildBridge
              </Link>
@@ -74,13 +74,13 @@ export function Footer() {
           </div>
 
           <div className="flex items-center gap-6">
-            <Link href="https://twitter.com" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-primary transition-all">
+            <Link href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Twitter" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-primary transition-all">
               <Twitter className="h-5 w-5" />
             </Link>
-            <Link href="https://facebook.com" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-primary transition-all">
+            <Link href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Facebook" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-primary transition-all">
               <Facebook className="h-5 w-5" />
             </Link>
-            <Link href="https://instagram.com" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-primary transition-all">
+            <Link href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white hover:text-primary transition-all">
               <Instagram className="h-5 w-5" />
             </Link>
           </div>

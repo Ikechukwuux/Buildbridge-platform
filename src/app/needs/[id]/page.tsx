@@ -1,14 +1,10 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { NeedCard } from "@/components/ui/NeedCard"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { ProgressBar } from "@/components/ui/ProgressBar"
 import { 
   MapPin, 
   Calendar, 
-  Heart, 
   ShieldCheck, 
   Info,
   ChevronLeft,
@@ -21,36 +17,49 @@ interface NeedPageProps {
   params: { id: string }
 }
 
-export async function generateMetadata({ params }: NeedPageProps): Promise<Metadata> {
-  const supabase = await createClient()
-  const { data: need } = await supabase
-    .from("needs")
-    .select("item_name, story")
-    .eq("id", params.id)
-    .single()
+/**
+ * DEMO MODE: Returns rich mock data for any need ID.
+ * No Supabase queries are made.
+ *
+ * To re-enable Supabase:
+ *   1. Import createClient from "@/lib/supabase/server"
+ *   2. Restore the supabase.from("needs").select(...) query
+ *   3. Replace mock data with real data
+ */
 
+// Mock need data for demo
+const MOCK_NEED = {
+  id: "demo-need-001",
+  item_name: "Industrial Overlock Machine",
+  item_cost: 35000000,
+  funded_amount: 21500000,
+  pledge_count: 14,
+  status: "active",
+  photo_url: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&q=80&w=800",
+  story: "I've been a tailor in Surulere for 8 years, specializing in school uniforms and traditional attire. My current machine breaks down every other week, costing me clients and income.\n\nWith an industrial overlock machine, I can take on bulk uniform contracts for 3 local schools and hire two apprentices from my community. This is not just a machine — it's the foundation of a workshop.",
+  impact_statement: "This machine will allow me to hire 2 apprentices and fulfill bulk contracts for 3 local schools, growing my output by 300%.",
+  deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  created_at: new Date().toISOString(),
+  profile: {
+    name: "Amina S.",
+    location_lga: "Surulere",
+    location_state: "Lagos",
+    trade_category: "tailor",
+    badge_level: "level_3_established",
+    vouch_count: 8,
+    photo_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=200",
+  },
+}
+
+export async function generateMetadata({ params }: NeedPageProps): Promise<Metadata> {
   return {
-    title: need ? `${need.item_name} | BuildBridge` : "Need Detail",
-    description: need?.story || "Support a local tradesperson.",
+    title: `${MOCK_NEED.item_name} | BuildBridge`,
+    description: MOCK_NEED.story.slice(0, 160),
   }
 }
 
 export default async function NeedDetailPage({ params }: NeedPageProps) {
-  const supabase = await createClient()
-
-  // 1. Fetch Need with Profile
-  const { data: need, error } = await supabase
-    .from("needs")
-    .select(`
-      *,
-      profile:profiles(*)
-    `)
-    .eq("id", params.id)
-    .single()
-
-  if (error || !need) {
-    notFound()
-  }
+  const need = MOCK_NEED
 
   const formattedGoal = new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -111,7 +120,7 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
                     <div>
                        <p className="text-label-medium uppercase font-bold text-badge-2 tracking-widest mb-1">Impact Goal</p>
                        <p className="text-body-large font-black text-on-surface">
-                          "{need.impact_statement || "Using this tool to grow my business and hire more hands."}"
+                          &quot;{need.impact_statement || "Using this tool to grow my business and hire more hands."}&quot;
                        </p>
                     </div>
                  </div>

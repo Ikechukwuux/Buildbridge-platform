@@ -54,11 +54,12 @@ export function FeaturedNeeds({ needs, isLoading = false }: FeaturedNeedsProps) 
               Real people. Real needs. Real impact. Back a tradesperson today.
             </p>
           </div>
-          <Link href="/browse" className="cursor-pointer">
-            <Button variant="ghost" className="font-semibold flex items-center gap-2 hover:opacity-80 px-6 rounded-full">
-              View all active needs
-              <ArrowRight className="h-5 w-5" />
-            </Button>
+          <Link 
+            href="/browse" 
+            className="group inline-flex items-center gap-2 px-6 py-2 rounded-full font-semibold text-on-surface-variant hover:text-primary hover:bg-surface-variant transition-all cursor-pointer"
+          >
+            View all active needs
+            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
 

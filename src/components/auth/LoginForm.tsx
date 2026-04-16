@@ -3,35 +3,46 @@
 import * as React from "react"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/useAuth"
+import { useDemoAuth } from "@/contexts/DemoAuthContext"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import Link from "next/link"
-import { Phone, ArrowRight, ShieldCheck } from "lucide-react"
+import { Phone, ArrowRight, ShieldCheck, Mail, Sparkles, Eye, EyeOff } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+const DEMO_MODE = true
 
 export default function LoginForm() {
   const router = useRouter()
-  const { signInWithPhone, verifyOTP } = useAuth()
-  
+  const { sendDemoOtp, verifyDemoOtp, signInDemoEmail, otpSession } = useDemoAuth()
+
+  // Method Selection
+  const [method, setMethod] = useState<"phone" | "email">("phone")
+  const [showPassword, setShowPassword] = useState(false)
+
   // View State
-  const [step, setStep] = useState<"phone" | "otp">("phone")
+  const [step, setStep] = useState<"enter" | "otp">("enter")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Phone State
   const [phone, setPhone] = useState("")
   const [formattedPhone, setFormattedPhone] = useState("")
-  
+
+  // Email State
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
   // OTP State
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const otpRefs = useRef<(HTMLInputElement | null)[]>([])
-  
+
   // Timer State
-  const [timeLeft, setTimeLeft] = useState(300) // 5 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(300)
 
   useEffect(() => {
-    let timer: NodeJS.Timeout
+    let timer: any
     if (step === "otp" && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft((prev) => prev - 1)
@@ -40,54 +51,69 @@ export default function LoginForm() {
     return () => clearInterval(timer)
   }, [step, timeLeft])
 
+  // Resume session if exists
+  useEffect(() => {
+    if (otpSession && step === 'enter') {
+      setStep('otp')
+      setFormattedPhone(otpSession.phone)
+    }
+  }, [otpSession, step])
+
   const formatTime = (seconds: number) => {
     const min = Math.floor(seconds / 60)
     const sec = seconds % 60
     return `${min}:${sec.toString().padStart(2, "0")}`
   }
 
-  // Handle phone screen submission
-  const handleSendOtp = async (e: React.FormEvent) => {
+  // Handle Phone Path
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setErrorMsg(null)
 
-    // Basic client validation
-    const rawVal = phone.replace(/[^0-9+]/g, '')
-    if (rawVal.length < 10) {
-      setErrorMsg("Please enter a valid phone number.")
-      setIsLoading(false)
-      return
-    }
-
-    const { success, error, formattedPhone: sentPhone } = await signInWithPhone(rawVal)
-    
-    if (success) {
-      setFormattedPhone(sentPhone || rawVal)
+    const result = await sendDemoOtp(phone)
+    if (result.success) {
+      let cleanPhone = phone.trim()
+      if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
+        cleanPhone = "+234" + cleanPhone.slice(1)
+      } else if (!cleanPhone.startsWith("+")) {
+        cleanPhone = "+234" + cleanPhone
+      }
+      setFormattedPhone(cleanPhone)
       setStep("otp")
-      setTimeLeft(300) // reset timer
+      setTimeLeft(300)
     } else {
-      setErrorMsg(error || "Something went wrong.")
+      setErrorMsg(result.error || "Failed to send OTP. Please try again.")
     }
     setIsLoading(false)
   }
 
-  // Handle individual digit input
-  const handleOtpChange = (index: number, value: string) => {
-    if (!/^[0-9]*$/.test(value)) return; // Only allow numbers
+  // Handle Email Path
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setErrorMsg(null)
 
-    const newOtp = [...otp]
-    newOtp[index] = value.substring(value.length - 1) // strictly 1 char
-    setOtp(newOtp)
-
-    // Auto-advance
-    if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus()
+    // Demo Mode: Accept any email/password
+    const result = await signInDemoEmail(email)
+    if (result.success) {
+      router.push("/dashboard")
+    } else {
+      setErrorMsg(result.error || "Login failed.")
     }
+    setIsLoading(false)
+  }
+
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^[0-9]*$/.test(value)) return;
+    const newOtp = [...otp]
+    newOtp[index] = value.substring(value.length - 1)
+    setOtp(newOtp)
+    if (value && index < 5) otpRefs.current[index + 1]?.focus()
   }
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Navigate backwards on backspace if current is empty
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       otpRefs.current[index - 1]?.focus()
     }
@@ -98,12 +124,8 @@ export default function LoginForm() {
     const pastedData = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 6)
     if (pastedData) {
       const newOtp = [...otp]
-      for (let i = 0; i < pastedData.length; i++) {
-        newOtp[i] = pastedData[i]
-      }
+      for (let i = 0; i < pastedData.length; i++) newOtp[i] = pastedData[i]
       setOtp(newOtp)
-      
-      // Auto-focus next empty or last
       const nextIndex = Math.min(pastedData.length, 5)
       otpRefs.current[nextIndex]?.focus()
     }
@@ -112,7 +134,7 @@ export default function LoginForm() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     const token = otp.join("")
-    
+
     if (token.length !== 6) {
       setErrorMsg("Please enter all 6 digits.")
       return
@@ -121,95 +143,150 @@ export default function LoginForm() {
     setIsLoading(true)
     setErrorMsg(null)
 
-    const { success, error, requiresOnboarding } = await verifyOTP(formattedPhone, token)
+    const result = await verifyDemoOtp(formattedPhone, token)
 
-    if (success) {
-      // Force NextJS to refresh server cache components for the new Session
-      router.refresh()
-      
-      if (requiresOnboarding) {
-        router.push("/onboarding")
-      } else {
-        router.push("/dashboard")
-      }
+    if (result.success) {
+      router.push("/dashboard")
     } else {
-      setErrorMsg(error || "Invalid code.")
-      setIsLoading(false)
+      setErrorMsg(result.error || "Invalid OTP. Please try again.")
     }
+    setIsLoading(false)
   }
 
   const handleResend = async () => {
     if (timeLeft > 0 || isLoading) return
     setIsLoading(true)
     setErrorMsg(null)
-    
-    const { success, error } = await signInWithPhone(formattedPhone)
-    if (success) {
+    const result = await sendDemoOtp(formattedPhone)
+    if (result.success) {
       setTimeLeft(300)
     } else {
-      setErrorMsg(error || "Couldn't resend code.")
+      setErrorMsg(result.error || "Couldn't resend code.")
     }
     setIsLoading(false)
   }
 
   return (
-    <Card className="w-full max-w-md p-8 shadow-sm">
-      {step === "phone" ? (
-        <form onSubmit={handleSendOtp} className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2 text-center">
-            <h1 className="text-headline-medium text-primary">Log in</h1>
-            <p className="text-body-medium text-on-surface-variant">
-              Enter your phone number to continue to BuildBridge.
+    <Card className="w-full max-w-lg p-10 shadow-2xl rounded-[2.5rem] border-primary/10 overflow-hidden relative">
+      <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+        <Sparkles className="w-24 h-24 text-primary" />
+      </div>
+
+      {step === "enter" ? (
+        <div className="flex flex-col gap-8 relative z-10">
+          <div className="flex flex-col gap-3 text-center">
+            <h1 className="text-4xl font-black text-on-surface tracking-tight">Welcome <span className="text-primary italic">Back.</span></h1>
+            <p className="text-on-surface-variant font-medium leading-relaxed">
+              Securely access your BuildBridge account.
             </p>
           </div>
 
-          <div className="flex flex-col gap-1 relative">
-            <div className="absolute left-4 top-[38px] text-on-surface-variant z-10 pointer-events-none">
-              <Phone className="w-5 h-5" />
-            </div>
-            <Input
-              label="Phone Number"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="0801 234 5678"
-              error={errorMsg || undefined}
-              className="pl-12"
-              required
-            />
+          {/* Toggle Tabs */}
+          <div className="flex p-1 bg-surface-variant/20 rounded-2xl border border-outline-variant shadow-inner">
+            <button
+              onClick={() => { setMethod("phone"); setErrorMsg(null); }}
+              className={cn(
+                "flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2",
+                method === "phone" ? "bg-primary text-white shadow-xl" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              <Phone className="h-4 w-4" /> Phone
+            </button>
+            <button
+              onClick={() => { setMethod("email"); setErrorMsg(null); }}
+              className={cn(
+                "flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2",
+                method === "email" ? "bg-primary text-white shadow-xl" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              <Mail className="h-4 w-4" /> Email
+            </button>
           </div>
 
-          <Button type="submit" isLoading={isLoading} className="w-full mt-2" disabled={!phone}>
-            <span>Continue</span>
-            {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
-          </Button>
+          <form onSubmit={method === "phone" ? handlePhoneSubmit : handleEmailSubmit} className="flex flex-col gap-6">
+            {method === "phone" ? (
+              <div className="flex flex-col gap-2 relative">
+                <Input
+                  label="Phone Number"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0801 234 5678"
+                  autoComplete="tel"
+                  error={errorMsg || undefined}
+                  className="h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
+                  required
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setErrorMsg(null); }}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    error={method === 'email' && errorMsg && !password ? errorMsg : undefined}
+                    className="h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2 relative">
+                  <Input
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setErrorMsg(null); }}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    error={errorMsg || undefined}
+                    className="pr-14 h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-6 top-[42px] text-on-surface-variant hover:text-primary transition-colors focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+                  </button>
+                </div>
+              </div>
+            )}
 
-          <div className="text-center text-body-small text-on-surface-variant">
+            <Button type="submit" isLoading={isLoading} className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20">
+              <span>Continue</span>
+              {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
+            </Button>
+          </form>
+
+
+          <div className="text-center text-sm font-bold text-on-surface-variant/60 uppercase tracking-widest mt-2 px-2">
             New to BuildBridge?{" "}
-            <Link href="/register" className="text-primary font-semibold hover:underline">
+            <Link href="/onboarding" className="text-primary font-black hover:underline ml-1">
               Create an account
             </Link>
           </div>
-        </form>
+        </div>
       ) : (
-        <form onSubmit={handleVerifyOtp} className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2 text-center">
-             <div className="mx-auto w-12 h-12 bg-surface-variant rounded-full flex items-center justify-center text-primary mb-2">
-               <ShieldCheck className="w-6 h-6" />
-             </div>
-            <h1 className="text-headline-medium text-primary">Verify your number</h1>
-            <p className="text-body-medium text-on-surface-variant">
-              We texted a 6-digit code to <strong className="text-on-surface">{formattedPhone}</strong>
+        <form onSubmit={handleVerifyOtp} className="flex flex-col gap-8 relative z-10">
+          <div className="flex flex-col gap-4 text-center">
+            <div className="mx-auto w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary mb-2 shadow-inner">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <h1 className="text-4xl font-black text-on-surface tracking-tight">Verify Identity</h1>
+            <p className="text-on-surface-variant font-medium leading-relaxed">
+              We texted a code to <strong className="text-on-surface">{formattedPhone}</strong>
             </p>
           </div>
 
-          <div className="flex justify-between gap-2 mt-4">
+          <div className="flex justify-between gap-3 px-2">
             {otp.map((digit, index) => (
               <input
                 key={index}
-                ref={(el) => {
-                    otpRefs.current[index] = el
-                }}
+                ref={(el) => { otpRefs.current[index] = el }}
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -219,50 +296,34 @@ export default function LoginForm() {
                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                 onPaste={handleOtpPaste}
                 autoFocus={index === 0}
-                className={`w-12 h-14 text-center rounded-md border text-headline-small text-on-surface focus-visible:outline-none focus-visible:ring-2 bg-transparent transition-colors ${
-                  errorMsg ? 'border-error focus-visible:ring-error text-error' : 'border-outline focus-visible:border-transparent focus-visible:ring-primary'
-                }`}
+                className={`w-full h-16 text-center rounded-2xl border-2 text-2xl font-black text-on-surface focus-visible:outline-none bg-surface-variant/20 transition-all ${errorMsg ? 'border-error text-error' : 'border-outline-variant focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/5'
+                  }`}
                 disabled={isLoading}
               />
             ))}
           </div>
 
-          {errorMsg && (
-            <p className="text-body-small text-error text-center">{errorMsg}</p>
-          )}
+          {errorMsg && <p className="text-sm font-bold text-error text-center bg-error/5 py-2 rounded-xl border border-error/10">{errorMsg}</p>}
 
-          <Button type="submit" isLoading={isLoading} className="w-full mt-4" disabled={otp.join("").length !== 6}>
-            Verify Code
-          </Button>
-
-          <div className="flex flex-col gap-3 mt-4 text-center items-center">
-            {timeLeft > 0 ? (
-              <p className="text-body-small text-on-surface-variant">
-                Didn't get the code? Resend in <strong className="text-on-surface font-medium border-b border-on-surface-variant/30">{formatTime(timeLeft)}</strong>
-              </p>
-            ) : (
-              <button 
-                type="button" 
-                onClick={handleResend}
+          <div className="flex flex-col gap-6">
+            <Button type="submit" isLoading={isLoading} className="h-16 rounded-full text-lg font-black shadow-xl" disabled={otp.join("").length !== 6}>
+              Verify Code
+            </Button>
+            <div className="flex flex-col gap-4 text-center items-center">
+              {timeLeft > 0 ? (
+                <p className="text-sm font-bold text-on-surface-variant/60 uppercase tracking-widest">
+                  Resend in <span className="text-primary">{formatTime(timeLeft)}</span>
+                </p>
+              ) : (
+                <button type="button" onClick={handleResend} disabled={isLoading} className="text-sm font-black text-primary hover:underline uppercase tracking-widest">Resend Code</button>
+              )}
+              <button
+                type="button"
+                onClick={() => { setStep("enter"); setOtp(["", "", "", "", "", ""]); setErrorMsg(null); }}
                 disabled={isLoading}
-                className="text-body-small text-primary hover:underline font-medium"
-              >
-                Resend SMS Code
-              </button>
-            )}
-            
-            <button 
-              type="button" 
-              onClick={() => {
-                setStep("phone")
-                setOtp(["", "", "", "", "", ""])
-                setErrorMsg(null)
-              }}
-              disabled={isLoading}
-              className="text-body-small text-on-surface hover:text-primary transition-colors"
-            >
-              Use a different phone number
-            </button>
+                className="text-xs font-black text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest"
+              >Use different number</button>
+            </div>
           </div>
         </form>
       )}

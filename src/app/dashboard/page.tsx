@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { TrustTracker } from "@/components/dashboard/TrustTracker"
 import { NINVerificationForm } from "@/components/dashboard/NINVerificationForm"
 import { SubmitImpactModal } from "@/components/dashboard/SubmitImpactModal"
@@ -22,11 +21,56 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { useDemoAuth } from "@/contexts/DemoAuthContext"
+import { AnimatePresence, motion } from "framer-motion"
+
+/**
+ * DEMO MODE DASHBOARD
+ *
+ * Supabase calls removed. All data comes from DemoAuthContext + mock data.
+ *
+ * To re-enable Supabase:
+ *   1. Import createClient from "@/lib/supabase/client"
+ *   2. Restore the supabase.auth.getUser() and profile/needs queries in fetchDashboardData
+ */
+
+// Rich mock needs for the demo dashboard
+const DEMO_NEEDS = [
+  {
+    id: 'demo-need-1',
+    status: 'completed',
+    item_name: 'Industrial Sewing Machine',
+    item_cost: 35000000,
+    funded_amount: 35000000,
+    goal_amount: 350000,
+    current_amount: 350000,
+    funding_percentage: 100,
+    pledge_count: 18,
+    photo_url: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&q=80&w=400',
+    story: 'Industrial overlock for school uniform contracts.',
+    deadline: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-need-2',
+    status: 'active',
+    item_name: 'Fabric Cutting Table',
+    item_cost: 15000000,
+    funded_amount: 6000000,
+    goal_amount: 150000,
+    current_amount: 60000,
+    funding_percentage: 40,
+    pledge_count: 6,
+    photo_url: 'https://images.unsplash.com/photo-1586281380117-5a60ae2050cc?auto=format&fit=crop&q=80&w=400',
+    story: 'A proper cutting table to handle bulk orders efficiently.',
+    deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date().toISOString(),
+  }
+]
 
 export default function DashboardPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const { demoUser } = useDemoAuth()
   
   const [profile, setProfile] = useState<any>(null)
   const [needs, setNeeds] = useState<any[]>([])
@@ -39,28 +83,21 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      
-      setProfile(profile)
-
-      const { data: needs } = await supabase
-        .from('needs')
-        .select('*')
-        .eq('profile_id', user.id)
-        .order('created_at', { ascending: false })
-      
-      setNeeds(needs || [])
+      // Demo Mode: Populate from demo session / mock data
+      const displayName = demoUser?.phone || demoUser?.email || "Demo Artisan"
+      setProfile({
+        name: displayName,
+        badge_level: "level_1_community_member",
+        vouch_count: 2,
+        delivered_count: 1,
+        id: 'demo-id'
+      })
+      setNeeds(DEMO_NEEDS)
     } catch (err) {
       console.error(err)
     } finally {
-      setLoading(false)
+      // Simulate brief loading for visual fidelity
+      setTimeout(() => setLoading(false), 600)
     }
   }
 
@@ -69,7 +106,6 @@ export default function DashboardPage() {
   }, [])
 
   const handleVerificationSuccess = async () => {
-    // Backend has securely updated the profile tier based on verification bounds.
     await fetchDashboardData()
     setIsVerifying(false)
   }
@@ -117,7 +153,7 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
            <div className="flex flex-col gap-2">
               <h1 className="text-display-small font-black text-on-surface">
-                 Welcome back, <span className="text-primary">{profile?.name.split(' ')[0]}!</span>
+                 Welcome back, <span className="text-primary">{(profile?.name || 'Artisan').split(' ')[0]}!</span>
               </h1>
               <p className="text-body-large text-on-surface-variant max-w-xl">
                  Manage your funding needs and build your trade reputation on BuildBridge.
@@ -127,11 +163,9 @@ export default function DashboardPage() {
               <Button variant="ghost" className="rounded-2xl h-14 w-14 border border-outline-variant">
                  <Settings className="h-6 w-6" />
               </Button>
-              <Link href="/dashboard/create-need">
-                 <Button className="h-14 px-8 rounded-2xl gap-2 text-title-medium shadow-lg">
-                    <Plus className="h-6 w-6" />
-                    New Funding Need
-                 </Button>
+              <Link href="/dashboard/create-need" className="h-14 px-8 rounded-2xl gap-2 text-title-medium shadow-lg bg-primary text-white flex items-center justify-center hover:opacity-90 transition-opacity">
+                 <Plus className="h-6 w-6" />
+                 New Funding Need
               </Link>
            </div>
         </div>
@@ -230,14 +264,14 @@ export default function DashboardPage() {
                           <TrendingUp className="h-5 w-5 text-badge-2" />
                           <span className="text-body-medium font-bold">Funds Raised</span>
                        </div>
-                       <span className="text-title-medium font-black">₦0</span>
+                       <span className="text-title-medium font-black">₦350,000</span>
                     </div>
                     <div className="flex items-center justify-between p-4 bg-surface-variant/30 rounded-2xl">
                        <div className="flex items-center gap-3">
                           <Users className="h-5 w-5 text-badge-3" />
                           <span className="text-body-medium font-bold">Total Backers</span>
                        </div>
-                       <span className="text-title-medium font-black">0</span>
+                       <span className="text-title-medium font-black">24</span>
                     </div>
                  </div>
               </div>

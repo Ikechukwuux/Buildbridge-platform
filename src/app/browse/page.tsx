@@ -1,19 +1,160 @@
 "use client"
 
 import * as React from "react"
-import { createClient } from "@/lib/supabase/client"
 import { NeedCard, NeedCardSkeleton } from "@/components/ui/NeedCard"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { BrowseFilters } from "@/components/browse/BrowseFilters"
 import { BrowseSort, type SortOption } from "@/components/browse/BrowseSort"
-import { type Need, type Profile } from "@/types"
 import { Search } from "lucide-react"
 
+/**
+ * DEMO MODE: Uses mock needs data with client-side filtering/sorting.
+ * No Supabase queries.
+ *
+ * To re-enable Supabase:
+ *   1. Import createClient from "@/lib/supabase/client"
+ *   2. Restore the Supabase query builder in fetchNeeds
+ */
+
+// Rich mock needs for the browse page
+const MOCK_BROWSE_NEEDS = [
+  {
+    id: "demo-browse-001",
+    item_name: "Industrial Overlock Machine",
+    item_cost: 35000000,
+    funded_amount: 21500000,
+    funding_percentage: 61,
+    pledge_count: 14,
+    status: "active",
+    photo_url: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&q=80&w=800",
+    story: "I need an overlock machine to take on more uniform contracts.",
+    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Amina S.",
+      location_lga: "Surulere",
+      location_state: "lagos",
+      trade_category: "tailor",
+      badge_level: "level_3_established",
+      vouch_count: 8,
+      photo_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+  {
+    id: "demo-browse-002",
+    item_name: "Precision Wood Planer",
+    item_cost: 52000000,
+    funded_amount: 39000000,
+    funding_percentage: 75,
+    pledge_count: 22,
+    status: "active",
+    photo_url: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=800",
+    story: "A planer to finish furniture sets in half the time.",
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Chidi O.",
+      location_lga: "Enugu North",
+      location_state: "enugu",
+      trade_category: "carpenter",
+      badge_level: "level_4_platform_verified",
+      vouch_count: 15,
+      photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+  {
+    id: "demo-browse-003",
+    item_name: "Commercial Baking Oven",
+    item_cost: 28000000,
+    funded_amount: 8400000,
+    funding_percentage: 30,
+    pledge_count: 7,
+    status: "active",
+    photo_url: "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?auto=format&fit=crop&q=80&w=800",
+    story: "A new oven to serve 3 communities and hire 2 more hands.",
+    deadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Fatima B.",
+      location_lga: "Kano Municipal",
+      location_state: "kano",
+      trade_category: "baker",
+      badge_level: "level_2_trusted_tradesperson",
+      vouch_count: 5,
+      photo_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+  {
+    id: "demo-browse-004",
+    item_name: "TIG Welding Machine",
+    item_cost: 45000000,
+    funded_amount: 31500000,
+    funding_percentage: 70,
+    pledge_count: 19,
+    status: "active",
+    photo_url: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=800",
+    story: "Upgrade from arc welding to TIG for precision metalwork contracts.",
+    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Ibrahim K.",
+      location_lga: "Wuse",
+      location_state: "abuja",
+      trade_category: "welder",
+      badge_level: "level_3_established",
+      vouch_count: 11,
+      photo_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+  {
+    id: "demo-browse-005",
+    item_name: "Professional Hair Dryer Station",
+    item_cost: 18000000,
+    funded_amount: 14400000,
+    funding_percentage: 80,
+    pledge_count: 12,
+    status: "active",
+    photo_url: "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=800",
+    story: "A professional dryer station to reduce wait times and serve more clients.",
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Grace N.",
+      location_lga: "Ikeja",
+      location_state: "lagos",
+      trade_category: "hair_stylist",
+      badge_level: "level_2_trusted_tradesperson",
+      vouch_count: 6,
+      photo_url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+  {
+    id: "demo-browse-006",
+    item_name: "Industrial Pipe Threading Set",
+    item_cost: 22000000,
+    funded_amount: 5500000,
+    funding_percentage: 25,
+    pledge_count: 4,
+    status: "active",
+    photo_url: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&q=80&w=800",
+    story: "Threading set for taking on commercial plumbing contracts across the state.",
+    deadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Emeka A.",
+      location_lga: "Port Harcourt",
+      location_state: "rivers",
+      trade_category: "plumber",
+      badge_level: "level_1_community_member",
+      vouch_count: 3,
+      photo_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+]
+
 export default function BrowsePage() {
-  const supabase = createClient()
-  
   // State for needs
-  const [needs, setNeeds] = React.useState<(Need & { profile?: Profile })[]>([])
+  const [needs, setNeeds] = React.useState<any[]>([])
   const [loading, setLoading] = React.useState(true)
   
   // State for filters
@@ -37,69 +178,53 @@ export default function BrowsePage() {
     return () => clearTimeout(timer)
   }, [filters.search])
 
-  // Fetch logic
+  // Client-side filtering & sorting of mock data
   const fetchNeeds = React.useCallback(async () => {
     setLoading(true)
-    try {
-      // Base select
-      let selectStr = '*, profile:profiles(*)'
-      
-      // If we have filters that target the profile, we need an inner join to filter correctly
-      const hasProfileFilters = filters.category || filters.state || filters.badgeLevel !== null
-      if (hasProfileFilters) {
-         selectStr = '*, profile:profiles!inner(*)'
-      }
+    
+    // Simulate network delay for visual fidelity
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    let filtered = [...MOCK_BROWSE_NEEDS]
 
-      let query = supabase
-        .from('needs')
-        .select(selectStr)
-        .eq('status', 'active')
-
-      // Apply Filters
-      if (filters.category) {
-        query = query.eq('profile.trade_category', filters.category)
-      }
-      
-      if (filters.state) {
-        query = query.eq('profile.location_state', filters.state.toLowerCase())
-      }
-      
-      if (filters.badgeLevel !== null) {
-        const levels = ['level_1_community_member', 'level_2_trusted_tradesperson', 'level_3_established', 'level_4_platform_verified']
-        query = query.eq('profile.badge_level', levels[filters.badgeLevel - 1])
-      }
-
-      if (debouncedSearch) {
-        // Complex OR across joins is restricted in simple client-side queries
-        // Scaling search usually requires a dedicated RPC or view, but for MVP:
-        query = query.or(`item_name.ilike.%${debouncedSearch}%,story.ilike.%${debouncedSearch}%`)
-      }
-
-      // Apply Sorting
-      switch (sort) {
-        case 'urgent':
-          query = query.order('deadline', { ascending: true })
-          break
-        case 'newest':
-          query = query.order('created_at', { ascending: false })
-          break
-        case 'nearly_funded':
-          query = query.order('funding_percentage', { ascending: false })
-          break
-        case 'most_pledged':
-          query = query.order('funded_amount', { ascending: false })
-          break
-      }
-
-      const { data, error } = await query.limit(50)
-      
-      if (error) throw error
-      setNeeds((data as any) || [])
-    } catch (err) {
-      console.error("Fetch error:", err)
-    } finally {
-      setLoading(false)
+    // Apply Filters
+    if (filters.category) {
+      filtered = filtered.filter(n => n.profile.trade_category === filters.category)
     }
+    if (filters.state) {
+      filtered = filtered.filter(n => n.profile.location_state === filters.state.toLowerCase())
+    }
+    if (filters.badgeLevel !== null) {
+      const levels = ['level_1_community_member', 'level_2_trusted_tradesperson', 'level_3_established', 'level_4_platform_verified']
+      filtered = filtered.filter(n => n.profile.badge_level === levels[filters.badgeLevel! - 1])
+    }
+    if (debouncedSearch) {
+      const search = debouncedSearch.toLowerCase()
+      filtered = filtered.filter(n => 
+        n.item_name.toLowerCase().includes(search) || 
+        n.story.toLowerCase().includes(search) ||
+        n.profile.name.toLowerCase().includes(search)
+      )
+    }
+
+    // Apply Sorting
+    switch (sort) {
+      case 'urgent':
+        filtered.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+        break
+      case 'newest':
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        break
+      case 'nearly_funded':
+        filtered.sort((a, b) => b.funding_percentage - a.funding_percentage)
+        break
+      case 'most_pledged':
+        filtered.sort((a, b) => b.funded_amount - a.funded_amount)
+        break
+    }
+
+    setNeeds(filtered)
+    setLoading(false)
   }, [filters.category, filters.state, filters.badgeLevel, debouncedSearch, sort])
 
   React.useEffect(() => {

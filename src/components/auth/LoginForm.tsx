@@ -11,7 +11,7 @@ import Link from "next/link"
 import { Phone, ArrowRight, ShieldCheck, Mail, Sparkles, Eye, EyeOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const DEMO_MODE = true
+const DEMO_MODE = false
 
 export default function LoginForm() {
   const router = useRouter()

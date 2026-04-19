@@ -3,23 +3,17 @@
 import * as React from "react"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useDemoAuth } from "@/contexts/DemoAuthContext"
+import { createClient } from "@/lib/supabase/client"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import Link from "next/link"
-import { Phone, ArrowRight, ShieldCheck, Mail, Sparkles, Eye, EyeOff } from "lucide-react"
+import { Phone, ArrowRight, ShieldCheck, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const DEMO_MODE = false
 
 export default function LoginForm() {
   const router = useRouter()
-  const { sendDemoOtp, verifyDemoOtp, signInDemoEmail, otpSession } = useDemoAuth()
-
-  // Method Selection
-  const [method, setMethod] = useState<"phone" | "email">("phone")
-  const [showPassword, setShowPassword] = useState(false)
+  const supabase = createClient()
 
   // View State
   const [step, setStep] = useState<"enter" | "otp">("enter")
@@ -29,10 +23,6 @@ export default function LoginForm() {
   // Phone State
   const [phone, setPhone] = useState("")
   const [formattedPhone, setFormattedPhone] = useState("")
-
-  // Email State
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
 
   // OTP State
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
@@ -51,59 +41,74 @@ export default function LoginForm() {
     return () => clearInterval(timer)
   }, [step, timeLeft])
 
-  // Resume session if exists
-  useEffect(() => {
-    if (otpSession && step === 'enter') {
-      setStep('otp')
-      setFormattedPhone(otpSession.phone)
-    }
-  }, [otpSession, step])
-
   const formatTime = (seconds: number) => {
     const min = Math.floor(seconds / 60)
     const sec = seconds % 60
     return `${min}:${sec.toString().padStart(2, "0")}`
   }
 
-  // Handle Phone Path
+  // Format phone for Twilio
+  const formatPhone = (raw: string) => {
+    let cleanPhone = raw.trim()
+    if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
+      cleanPhone = "+234" + cleanPhone.slice(1)
+    } else if (!cleanPhone.startsWith("+")) {
+      cleanPhone = "+234" + cleanPhone
+    }
+    return cleanPhone
+  }
+
+  // Sign in existing user with phone
+  const signInUserWithPhone = async (phoneNumber: string): Promise<boolean> => {
+    try {
+      const email = `${phoneNumber.replace(/[^0-9]/g, '')}@buildbridge.app`
+      const password = `buildbridge-${phoneNumber.replace(/[^0-9]/g, '')}`
+      
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      
+      if (error) {
+        console.error('Sign in failed:', error)
+        return false
+      }
+      
+      const { data: { session } } = await supabase.auth.getSession()
+      return !!session
+    } catch (error) {
+      console.error('Error in phone user auth:', error)
+      return false
+    }
+  }
+
+  // Handle Phone Login - send OTP via Twilio
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setErrorMsg(null)
 
-    const result = await sendDemoOtp(phone)
-    if (result.success) {
-      let cleanPhone = phone.trim()
-      if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
-        cleanPhone = "+234" + cleanPhone.slice(1)
-      } else if (!cleanPhone.startsWith("+")) {
-        cleanPhone = "+234" + cleanPhone
+    const cleanPhone = formatPhone(phone)
+    
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone })
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error || "Failed to send OTP. Please try again.")
+      } else {
+        setFormattedPhone(cleanPhone)
+        setStep("otp")
+        setTimeLeft(300)
       }
-      setFormattedPhone(cleanPhone)
-      setStep("otp")
-      setTimeLeft(300)
-    } else {
-      setErrorMsg(result.error || "Failed to send OTP. Please try again.")
+    } catch (error) {
+      setErrorMsg("Network error. Please check your connection.")
     }
+    
     setIsLoading(false)
   }
-
-  // Handle Email Path
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setErrorMsg(null)
-
-    // Demo Mode: Accept any email/password
-    const result = await signInDemoEmail(email)
-    if (result.success) {
-      router.push("/dashboard")
-    } else {
-      setErrorMsg(result.error || "Login failed.")
-    }
-    setIsLoading(false)
-  }
-
 
   const handleOtpChange = (index: number, value: string) => {
     if (!/^[0-9]*$/.test(value)) return;
@@ -111,6 +116,12 @@ export default function LoginForm() {
     newOtp[index] = value.substring(value.length - 1)
     setOtp(newOtp)
     if (value && index < 5) otpRefs.current[index + 1]?.focus()
+    
+    // Auto-submit when all 6 digits entered
+    const joined = newOtp.join("")
+    if (joined.length === 6) {
+      handleVerifyOtpDirect(joined)
+    }
   }
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -128,41 +139,78 @@ export default function LoginForm() {
       setOtp(newOtp)
       const nextIndex = Math.min(pastedData.length, 5)
       otpRefs.current[nextIndex]?.focus()
+      
+      if (pastedData.length === 6) {
+        handleVerifyOtpDirect(pastedData)
+      }
     }
+  }
+
+  // Direct verify (called by auto-submit)
+  const handleVerifyOtpDirect = async (code: string) => {
+    setIsLoading(true)
+    setErrorMsg(null)
+
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: formattedPhone, code })
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error || "Invalid code. Please try again.")
+      } else {
+        // OTP verified - sign in Supabase user
+        const authSuccess = await signInUserWithPhone(formattedPhone)
+        if (authSuccess) {
+          router.push("/dashboard")
+        } else {
+          setErrorMsg("Account not found. Please sign up first.")
+        }
+      }
+    } catch (error) {
+      setErrorMsg("Network error. Please try again.")
+    }
+    
+    setIsLoading(false)
   }
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     const token = otp.join("")
-
     if (token.length !== 6) {
       setErrorMsg("Please enter all 6 digits.")
       return
     }
-
-    setIsLoading(true)
-    setErrorMsg(null)
-
-    const result = await verifyDemoOtp(formattedPhone, token)
-
-    if (result.success) {
-      router.push("/dashboard")
-    } else {
-      setErrorMsg(result.error || "Invalid OTP. Please try again.")
-    }
-    setIsLoading(false)
+    await handleVerifyOtpDirect(token)
   }
 
   const handleResend = async () => {
     if (timeLeft > 0 || isLoading) return
     setIsLoading(true)
     setErrorMsg(null)
-    const result = await sendDemoOtp(formattedPhone)
-    if (result.success) {
-      setTimeLeft(300)
-    } else {
-      setErrorMsg(result.error || "Couldn't resend code.")
+    
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: formattedPhone })
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error || "Couldn't resend code.")
+      } else {
+        setTimeLeft(300)
+      }
+    } catch (error) {
+      setErrorMsg("Network error. Please try again.")
     }
+    
     setIsLoading(false)
   }
 
@@ -181,91 +229,35 @@ export default function LoginForm() {
             </p>
           </div>
 
-          {/* Toggle Tabs */}
-          <div className="flex p-1 bg-surface-variant/20 rounded-2xl border border-outline-variant shadow-inner">
-            <button
-              onClick={() => { setMethod("phone"); setErrorMsg(null); }}
-              className={cn(
-                "flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2",
-                method === "phone" ? "bg-primary text-white shadow-xl" : "text-on-surface-variant hover:text-on-surface"
-              )}
-            >
-              <Phone className="h-4 w-4" /> Phone
-            </button>
-            <button
-              onClick={() => { setMethod("email"); setErrorMsg(null); }}
-              className={cn(
-                "flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2",
-                method === "email" ? "bg-primary text-white shadow-xl" : "text-on-surface-variant hover:text-on-surface"
-              )}
-            >
-              <Mail className="h-4 w-4" /> Email
-            </button>
-          </div>
+          <form onSubmit={handlePhoneSubmit} className="flex flex-col gap-6">
+            <div className="flex flex-col gap-2 relative">
+              <Input
+                label="Phone Number"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0801 234 5678"
+                autoComplete="tel"
+                error={errorMsg || undefined}
+                className="h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
+                required
+              />
+            </div>
 
-          <form onSubmit={method === "phone" ? handlePhoneSubmit : handleEmailSubmit} className="flex flex-col gap-6">
-            {method === "phone" ? (
-              <div className="flex flex-col gap-2 relative">
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="0801 234 5678"
-                  autoComplete="tel"
-                  error={errorMsg || undefined}
-                  className="h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
-                  required
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <Input
-                    label="Email Address"
-                    type="email"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setErrorMsg(null); }}
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                    error={method === 'email' && errorMsg && !password ? errorMsg : undefined}
-                    className="h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2 relative">
-                  <Input
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setErrorMsg(null); }}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    error={errorMsg || undefined}
-                    className="pr-14 h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-6 top-[42px] text-on-surface-variant hover:text-primary transition-colors focus:outline-none"
-                  >
-                    {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <Button type="submit" isLoading={isLoading} className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20">
+            <Button 
+              type="submit" 
+              isLoading={isLoading} 
+              className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20"
+              disabled={phone.length < 10}
+            >
               <span>Continue</span>
               {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
             </Button>
           </form>
 
-
           <div className="text-center text-sm font-bold text-on-surface-variant/60 uppercase tracking-widest mt-2 px-2">
             New to BuildBridge?{" "}
-            <Link href="/onboarding" className="text-primary font-black hover:underline ml-1">
+            <Link href="/create-need" className="text-primary font-black hover:underline ml-1">
               Create an account
             </Link>
           </div>
@@ -296,8 +288,9 @@ export default function LoginForm() {
                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                 onPaste={handleOtpPaste}
                 autoFocus={index === 0}
-                className={`w-full h-16 text-center rounded-2xl border-2 text-2xl font-black text-on-surface focus-visible:outline-none bg-surface-variant/20 transition-all ${errorMsg ? 'border-error text-error' : 'border-outline-variant focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/5'
-                  }`}
+                className={`w-full h-16 text-center rounded-2xl border-2 text-2xl font-black text-on-surface focus-visible:outline-none bg-surface-variant/20 transition-all ${
+                  errorMsg ? 'border-error text-error' : 'border-outline-variant focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/5'
+                }`}
                 disabled={isLoading}
               />
             ))}

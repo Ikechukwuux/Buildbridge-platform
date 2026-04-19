@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Providers } from "@/components/Providers";
+import { NetworkFailureBanner } from "@/components/ui/NetworkFailureBanner";
 
 export default function RootLayout({
   children,
@@ -26,13 +27,14 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400;1,700;1,900&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased min-h-screen flex flex-col bg-white font-sans" style={{ fontFamily: "'Roboto', sans-serif" }}>
-        <Providers>
-          <Navbar />
-          <main className="flex-grow pt-28">
-            {children}
-          </main>
-          <Footer />
-        </Providers>
+         <Providers>
+           <Navbar />
+           <NetworkFailureBanner />
+           <main className="flex-grow pt-28">
+             {children}
+           </main>
+           <Footer />
+         </Providers>
       </body>
     </html>
   );

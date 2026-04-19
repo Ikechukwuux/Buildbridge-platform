@@ -99,7 +99,7 @@ const MOCK_FEATURED_NEEDS = [
 export default async function Home() {
   return (
     <div className="flex flex-col w-full overflow-x-hidden">
-      <Hero stats={MOCK_STATS} />
+       <Hero stats={MOCK_STATS} isLoading={false} />
       
       <PartnerLogos />
 
@@ -107,8 +107,8 @@ export default async function Home() {
 
       <ImpactHighlights />
       
-      {/* Demo: Rich mock needs data */}
-      <FeaturedNeeds needs={MOCK_FEATURED_NEEDS as any} />
+       {/* Demo: Rich mock needs data */}
+       <FeaturedNeeds needs={MOCK_FEATURED_NEEDS as any} isLoading={false} />
       
       <HowItWorks />
       

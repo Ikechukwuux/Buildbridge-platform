@@ -138,8 +138,8 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
            {/* Right Column: Pledge & Profile Sidebar */}
            <div className="lg:col-span-5 flex flex-col gap-8">
               
-              {/* Pledge Card */}
-              <div className="p-8 rounded-3xl bg-surface border-2 border-primary/20 shadow-xl flex flex-col gap-6 sticky top-28">
+               {/* Pledge Card */}
+               <div className="p-8 rounded-3xl bg-surface border-2 border-primary/20 shadow-xl flex flex-col gap-6">
                  <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-end">
                        <span className="text-display-small font-black text-on-surface">{formattedRaised}</span>
@@ -201,6 +201,37 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
                     </div>
                  </div>
                  <Badge level={need.profile.badge_level === 'level_4_platform_verified' ? 4 : need.profile.badge_level === 'level_3_established' ? 3 : need.profile.badge_level === 'level_2_trusted_tradesperson' ? 2 : need.profile.badge_level === 'level_1_community_member' ? 1 : 0} />
+              </div>
+
+              {/* Recent Backers */}
+              <div className="p-6 rounded-3xl bg-surface border border-outline-variant flex flex-col gap-4">
+                 <p className="text-label-small uppercase font-bold text-on-surface-variant tracking-widest flex items-center justify-between">
+                    Recent Backers 
+                    <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-[10px]">{need.pledge_count}</span>
+                 </p>
+                 <div className="flex flex-col gap-4 divide-y divide-outline-variant/30">
+                    {[
+                      { name: "Chinedu O.", time: "2 hours ago", amount: "₦20,000", comment: "Keep building! We need more tailors like you." },
+                      { name: "Anonymous", time: "5 hours ago", amount: "₦50,000", comment: "" },
+                      { name: "Sarah M.", time: "1 day ago", amount: "₦10,000", comment: "Happy to support." }
+                    ].map((backer, i) => (
+                      <div key={i} className="pt-4 first:pt-0 flex flex-col gap-1">
+                         <div className="flex justify-between items-baseline">
+                            <span className="font-bold text-sm text-on-surface">{backer.name}</span>
+                            <span className="text-xs font-black text-primary">{backer.amount}</span>
+                         </div>
+                         <div className="flex justify-between items-center text-xs text-on-surface-variant mt-1">
+                            <span>{backer.time}</span>
+                         </div>
+                         {backer.comment && (
+                            <p className="text-sm font-medium text-on-surface-variant/80 mt-2 bg-surface-variant/20 p-3 rounded-xl rounded-tl-none relative leading-snug">
+                               "{backer.comment}"
+                            </p>
+                         )}
+                      </div>
+                    ))}
+                 </div>
+                 <Button variant="secondary" className="w-full mt-2 rounded-xl text-xs font-bold uppercase tracking-widest bg-surface-variant text-on-surface hover:text-primary">See All</Button>
               </div>
 
            </div>

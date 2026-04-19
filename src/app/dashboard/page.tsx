@@ -21,56 +21,12 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useDemoAuth } from "@/contexts/DemoAuthContext"
+import { createClient } from "@/lib/supabase/client"
 import { AnimatePresence, motion } from "framer-motion"
-
-/**
- * DEMO MODE DASHBOARD
- *
- * Supabase calls removed. All data comes from DemoAuthContext + mock data.
- *
- * To re-enable Supabase:
- *   1. Import createClient from "@/lib/supabase/client"
- *   2. Restore the supabase.auth.getUser() and profile/needs queries in fetchDashboardData
- */
-
-// Rich mock needs for the demo dashboard
-const DEMO_NEEDS = [
-  {
-    id: 'demo-need-1',
-    status: 'completed',
-    item_name: 'Industrial Sewing Machine',
-    item_cost: 35000000,
-    funded_amount: 35000000,
-    goal_amount: 350000,
-    current_amount: 350000,
-    funding_percentage: 100,
-    pledge_count: 18,
-    photo_url: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&q=80&w=400',
-    story: 'Industrial overlock for school uniform contracts.',
-    deadline: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'demo-need-2',
-    status: 'active',
-    item_name: 'Fabric Cutting Table',
-    item_cost: 15000000,
-    funded_amount: 6000000,
-    goal_amount: 150000,
-    current_amount: 60000,
-    funding_percentage: 40,
-    pledge_count: 6,
-    photo_url: 'https://images.unsplash.com/photo-1586281380117-5a60ae2050cc?auto=format&fit=crop&q=80&w=400',
-    story: 'A proper cutting table to handle bulk orders efficiently.',
-    deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-    created_at: new Date().toISOString(),
-  }
-]
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { demoUser } = useDemoAuth()
+  const supabase = createClient()
   
   const [profile, setProfile] = useState<any>(null)
   const [needs, setNeeds] = useState<any[]>([])
@@ -79,26 +35,59 @@ export default function DashboardPage() {
   const [isSubmittingImpact, setIsSubmittingImpact] = useState(false)
   const [selectedNeedForImpact, setSelectedNeedForImpact] = useState<any>(null)
   const [showCopied, setShowCopied] = useState(false)
+  const [userName, setUserName] = useState("Artisan")
 
   const fetchDashboardData = async () => {
     setLoading(true)
     try {
-      // Demo Mode: Simulate short network delay
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const displayName = demoUser?.name || (typeof window !== "undefined" ? localStorage.getItem("buildbridge_user_name") : null) || demoUser?.phone || demoUser?.email || "Demo Artisan"
-      setProfile({
-        name: displayName,
-        badge_level: "level_1_community_member",
-        vouch_count: 2,
-        delivered_count: 1,
-        id: 'demo-id'
-      })
-      setNeeds(DEMO_NEEDS)
+      // 1. Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        // Not authenticated - redirect to signup
+        router.push("/signup")
+        return
+      }
+
+      // Get display name from user metadata
+      const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Artisan"
+      setUserName(fullName)
+
+      // 2. Get profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      
+      if (profileData) {
+        setProfile(profileData)
+        
+        // 3. Get needs for this profile
+        const { data: needsData, error: needsError } = await supabase
+          .from('needs')
+          .select('*')
+          .eq('profile_id', profileData.id)
+          .order('created_at', { ascending: false })
+        
+        if (needsData) {
+          setNeeds(needsData)
+        }
+      } else {
+        // Profile might not exist yet (trigger might have created it)
+        setProfile({
+          full_name: fullName,
+          badge_level: 'level_0_unverified',
+          vouch_count: 0,
+          delivered_count: 0,
+          id: null
+        })
+        setNeeds([])
+      }
     } catch (err) {
-      console.error(err)
+      console.error("Dashboard data fetch error:", err)
     } finally {
-      // Simulate brief loading for visual fidelity
-      setTimeout(() => setLoading(false), 200)
+      setLoading(false)
     }
   }
 
@@ -124,6 +113,20 @@ export default function DashboardPage() {
     setTimeout(() => setShowCopied(false), 3000)
   }
 
+  // Calculate impact stats from needs
+  const calculateImpactStats = () => {
+    if (!needs.length) {
+      return { totalFunded: 0, totalBackers: 0 }
+    }
+    
+    const totalFunded = needs.reduce((sum, need) => sum + (need.funded_amount || 0), 0)
+    const totalBackers = needs.reduce((sum, need) => sum + (need.pledge_count || 0), 0)
+    
+    return { totalFunded, totalBackers }
+  }
+  
+  const { totalFunded, totalBackers } = calculateImpactStats()
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background pt-24 px-4 sm:px-6 lg:px-8">
@@ -146,6 +149,8 @@ export default function DashboardPage() {
     'level_4_platform_verified': 4
   }
 
+  const firstName = userName.split(' ')[0]
+
   return (
     <main className="min-h-screen bg-background pt-24 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto flex flex-col gap-12">
@@ -154,14 +159,14 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
            <div className="flex flex-col gap-2">
                <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tight">
-                  Welcome back, <span className="text-primary italic">{demoUser?.name?.split(' ')[0] || (profile?.name || 'Artisan').split(' ')[0]}!</span>
+                  Welcome back, <span className="text-primary italic">{firstName}!</span>
                </h1>
               <p className="text-body-large text-on-surface-variant max-w-xl">
                  Manage your funding needs and build your trade reputation on BuildBridge.
               </p>
            </div>
            <div className="flex gap-4">
-              <Link href="/dashboard/create-need" className="h-14 px-8 rounded-2xl gap-2 text-title-medium shadow-xl shadow-primary/20 bg-primary text-white flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] transition-all">
+              <Link href="/create-need" className="h-14 px-8 rounded-2xl gap-2 text-title-medium shadow-xl shadow-primary/20 bg-primary text-white flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] transition-all">
                  <Plus className="h-6 w-6" />
                  New Funding Need
               </Link>
@@ -239,7 +244,7 @@ export default function DashboardPage() {
                    title="Your first goal starts here"
                    description="Create a need to get tools, equipment, or materials backed by the community."
                    actionLabel="Start a Request"
-                   onAction={() => router.push('/dashboard/create-need')}
+                   onAction={() => router.push('/create-need')}
                 />
               )}
            </div>
@@ -278,14 +283,20 @@ export default function DashboardPage() {
                           <TrendingUp className="h-5 w-5 text-badge-2" />
                           <span className="text-body-medium font-bold">Funds Raised</span>
                        </div>
-                       <span className="text-title-medium font-black">₦350,000</span>
+                        <span className="text-title-medium font-black">
+                          {new Intl.NumberFormat("en-NG", {
+                            style: "currency",
+                            currency: "NGN",
+                            maximumFractionDigits: 0,
+                          }).format(totalFunded)}
+                        </span>
                     </div>
                     <div className="flex items-center justify-between p-4 bg-surface-variant/20 rounded-2xl border border-white/50">
                        <div className="flex items-center gap-3">
                           <Users className="h-5 w-5 text-badge-3" />
                           <span className="text-body-medium font-bold">Total Backers</span>
                        </div>
-                       <span className="text-title-medium font-black">24</span>
+                        <span className="text-title-medium font-black">{totalBackers}</span>
                     </div>
                  </div>
               </div>

@@ -140,3 +140,5 @@ vite.config.ts.timestamp-*
 
 # Secrets / API keys
 Api-keys.md
+
+rough.md

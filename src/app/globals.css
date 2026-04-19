@@ -29,6 +29,9 @@
 
   --color-success: var(--primitive-colors-2-key-colors-success);
   --color-on-success: var(--color-material-theme-sys-light-on-primary);
+  
+  --color-warning: var(--primitive-colors-2-key-colors-warning);
+  --color-on-warning: var(--color-material-theme-sys-light-on-warning);
 
   --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.05);
   --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
@@ -116,6 +119,8 @@
   --color-material-theme-sys-light-on-error: #ffffffff;
   --color-material-theme-sys-light-error-container: #f9dedcff;
   --color-material-theme-sys-light-on-error-container: #8c1d18ff;
+  --color-material-theme-sys-light-warning: var(--primitive-colors-2-key-colors-warning);
+  --color-material-theme-sys-light-on-warning: #1d1b20ff;
   --color-material-theme-sys-light-background: #fef7ffff;
   --color-material-theme-sys-light-on-background: #1d1b20ff;
   --color-material-theme-sys-light-surface: #fef7ffff;
@@ -700,11 +705,17 @@
   --typography-material-theme-title-small-lineHeight: 20px;
 }
 
+html {
+  min-height: 100dvh;
+}
+
 body {
   font-family: var(--typography-material-theme-body-medium-fontFamily, 'Roboto', sans-serif);
   background-color: #ffffff;
-  /* Cleaner white for GoFundMe feel */
   color: var(--color-material-theme-sys-light-on-background, #1d1b20);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 @layer utilities {
@@ -832,5 +843,15 @@ body {
     line-height: 20px;
     font-weight: 500;
     letter-spacing: 0.1px;
+  }
+
+  /* Shimmer animation for skeleton loading */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
 }

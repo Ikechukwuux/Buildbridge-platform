@@ -113,63 +113,83 @@ export function DemoAuthProvider({ children }: { children: ReactNode }) {
     // Simulation delay
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    let cleanPhone = phone.trim();
-    if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
-      cleanPhone = "+234" + cleanPhone.slice(1);
-    } else if (!cleanPhone.startsWith("+")) {
-      cleanPhone = "+234" + cleanPhone;
+    try {
+      let cleanPhone = phone.trim();
+      if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
+        cleanPhone = "+234" + cleanPhone.slice(1);
+      } else if (!cleanPhone.startsWith("+")) {
+        cleanPhone = "+234" + cleanPhone;
+      }
+
+      // Basic validation: Nigerian phone numbers should be +234 followed by 10 digits
+      if (!/^\+234\d{10}$/.test(cleanPhone)) {
+        return { success: false, error: "Please enter a valid Nigerian phone number (e.g., 08012345678)." };
+      }
+
+      const expiresAt = Date.now() + SESSION_DURATION;
+      const session = {
+        phone: cleanPhone,
+        expiresAt,
+      };
+      
+      setOtpSession(session);
+      saveOtpSession(session);
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send demo OTP:", error);
+      return { success: false, error: "Failed to send OTP. Please try again." };
     }
-
-    const expiresAt = Date.now() + SESSION_DURATION;
-    const session = {
-      phone: cleanPhone,
-      expiresAt,
-    };
-    
-    setOtpSession(session);
-    saveOtpSession(session);
-
-    return { success: true };
   }, []);
 
   const verifyDemoOtp = useCallback(async (phone: string, token: string, name?: string) => {
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    let cleanPhone = phone.trim();
-    if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
-      cleanPhone = "+234" + cleanPhone.slice(1);
-    } else if (!cleanPhone.startsWith("+")) {
-      cleanPhone = "+234" + cleanPhone;
-    }
+    try {
+      let cleanPhone = phone.trim();
+      if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
+        cleanPhone = "+234" + cleanPhone.slice(1);
+      } else if (!cleanPhone.startsWith("+")) {
+        cleanPhone = "+234" + cleanPhone;
+      }
 
-    // Check if session exists (either in state or loaded from storage)
-    if (!otpSession || otpSession.phone !== cleanPhone) {
-      return { success: false, error: "No OTP session found. Please request a new code." };
-    }
+      // Basic validation: Nigerian phone numbers should be +234 followed by 10 digits
+      if (!/^\+234\d{10}$/.test(cleanPhone)) {
+        return { success: false, error: "Please enter a valid Nigerian phone number (e.g., 08012345678)." };
+      }
 
-    if (Date.now() > otpSession.expiresAt) {
+      // Check if session exists (either in state or loaded from storage)
+      if (!otpSession || otpSession.phone !== cleanPhone) {
+        return { success: false, error: "No OTP session found. Please request a new code." };
+      }
+
+      if (Date.now() > otpSession.expiresAt) {
+        setOtpSession(null);
+        saveOtpSession(null);
+        return { success: false, error: "OTP has expired. Please request a new code." };
+      }
+
+      // MANDATORY DEMO RULE: Only 123456 is valid
+      if (token !== DEMO_OTP) {
+        return { success: false, error: "Invalid OTP. For demo purposes, use 123456." };
+      }
+
+      const user: DemoUser = {
+        name: name || (typeof window !== "undefined" ? localStorage.getItem("buildbridge_user_name") || undefined : undefined),
+        phone: cleanPhone,
+        verifiedAt: Date.now(),
+      };
+
       setOtpSession(null);
       saveOtpSession(null);
-      return { success: false, error: "OTP has expired. Please request a new code." };
+      setDemoUser(user);
+      saveDemoUser(user);
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to verify demo OTP:", error);
+      return { success: false, error: "Failed to verify OTP. Please try again." };
     }
-
-    // MANDATORY DEMO RULE: Only 123456 is valid
-    if (token !== DEMO_OTP) {
-      return { success: false, error: "Invalid OTP. For demo purposes, use 123456." };
-    }
-
-    const user: DemoUser = {
-      name: name || (typeof window !== "undefined" ? localStorage.getItem("buildbridge_user_name") || undefined : undefined),
-      phone: cleanPhone,
-      verifiedAt: Date.now(),
-    };
-
-    setOtpSession(null);
-    saveOtpSession(null);
-    setDemoUser(user);
-    saveDemoUser(user);
-
-    return { success: true };
   }, [otpSession]);
 
   const clearDemoSession = useCallback(() => {
@@ -181,16 +201,21 @@ export function DemoAuthProvider({ children }: { children: ReactNode }) {
     // Simulation delay
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const user: DemoUser = {
-      name: name || (typeof window !== "undefined" ? localStorage.getItem("buildbridge_user_name") || undefined : undefined),
-      email,
-      verifiedAt: Date.now(),
-    };
+    try {
+      const user: DemoUser = {
+        name: name || (typeof window !== "undefined" ? localStorage.getItem("buildbridge_user_name") || undefined : undefined),
+        email,
+        verifiedAt: Date.now(),
+      };
 
-    setDemoUser(user);
-    saveDemoUser(user);
+      setDemoUser(user);
+      saveDemoUser(user);
 
-    return { success: true };
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to sign in with email:", error);
+      return { success: false, error: "Failed to sign in. Please try again." };
+    }
   }, []);
 
   const signOut = useCallback(() => {

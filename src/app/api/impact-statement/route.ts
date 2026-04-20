@@ -50,15 +50,11 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.DEEPSEEK_API_KEY;
 
     if (!apiKey) {
-      console.warn("DEEPSEEK_API_KEY missing, returning mock response");
-      // High-fidelity mock based on trade
-      const mockStatement = `This ${item_name} will help me double my daily ${trade} output and allow me to train my first apprentice by December.`;
-      
-      return NextResponse.json({
-        statement: mockStatement,
-        source: "ai_generated",
-        is_mock: true
-      });
+      console.error("DEEPSEEK_API_KEY missing. Check your .env file.");
+      return NextResponse.json(
+        { error: "AI generation is not configured. Please contact support." },
+        { status: 500 }
+      );
     }
 
     // Real DeepSeek API Call

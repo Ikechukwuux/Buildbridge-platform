@@ -5,15 +5,17 @@ import { motion } from "framer-motion"
 import CountUp from "react-countup"
 import Link from "next/link"
 import { Sparkles, ArrowUpRight } from "lucide-react"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 interface HeroProps {
   stats: {
     totalFunded: number;
     totalTradespeople: number;
   };
+  isLoading?: boolean;
 }
 
-export function Hero({ stats }: HeroProps) {
+export function Hero({ stats, isLoading = false }: HeroProps) {
   return (
     <section className="relative overflow-hidden pt-32 pb-20 md:pt-48 md:pb-32 bg-white flex flex-col items-center text-center">
       {/* Background Decor */}
@@ -71,35 +73,88 @@ export function Hero({ stats }: HeroProps) {
             </span>
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-lg md:text-xl font-medium text-on-surface-variant leading-relaxed max-w-2xl mx-auto mb-12"
-          >
-            Join a community of thousands backing the dreams of verified tradespeople. 
-            From tailors to mechanics—your capital builds lives and legacies.
-          </motion.p>
+           <motion.p
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.2 }}
+             className="text-lg md:text-xl font-medium text-on-surface-variant leading-relaxed max-w-2xl mx-auto mb-12"
+           >
+             Join a community of thousands backing the dreams of verified tradespeople. 
+             From tailors to mechanics—your capital builds lives and legacies.
+           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-5 justify-center items-center"
-          >
-            <Link 
-              href="/browse" 
-              className="w-full sm:w-auto h-16 px-10 rounded-full font-black text-lg bg-primary text-on-primary shadow-2xl shadow-primary/30 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
-            >
-              Start Supporting
-            </Link>
-            <Link 
-              href="/onboarding"
-              className="h-16 px-10 rounded-full border-2 border-primary text-primary bg-transparent font-black text-lg transition-all flex items-center justify-center hover:bg-primary/5 active:scale-[0.98]"
-            >
-              Join as Artisan
-            </Link>
-          </motion.div>
+           {/* Impact Stats */}
+           {(stats.totalFunded > 0 || stats.totalTradespeople > 0) && (
+             <motion.div
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: 0.25 }}
+               className="flex flex-wrap justify-center gap-8 md:gap-12 mb-12"
+             >
+               {isLoading ? (
+                 <>
+                   <div className="flex flex-col items-center">
+                     <Skeleton className="h-12 w-32 mb-2" />
+                     <Skeleton className="h-4 w-24" />
+                   </div>
+                   <div className="flex flex-col items-center">
+                     <Skeleton className="h-12 w-32 mb-2" />
+                     <Skeleton className="h-4 w-24" />
+                   </div>
+                 </>
+               ) : (
+                 <>
+                   <div className="flex flex-col items-center">
+                     <div className="text-4xl md:text-5xl font-black text-primary">
+                       ₦<CountUp
+                         start={0}
+                         end={stats.totalFunded / 100}
+                         duration={2.5}
+                         separator=","
+                         suffix=""
+                       />
+                     </div>
+                     <div className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mt-2">
+                       Total Funded
+                     </div>
+                   </div>
+                   <div className="flex flex-col items-center">
+                     <div className="text-4xl md:text-5xl font-black text-primary">
+                       <CountUp
+                         start={0}
+                         end={stats.totalTradespeople}
+                         duration={2.5}
+                         separator=","
+                       />
+                     </div>
+                     <div className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mt-2">
+                       Tradespeople Backed
+                     </div>
+                   </div>
+                 </>
+               )}
+             </motion.div>
+           )}
+
+           <motion.div
+             initial={{ opacity: 0, scale: 0.95 }}
+             animate={{ opacity: 1, scale: 1 }}
+             transition={{ delay: 0.3 }}
+             className="flex flex-col sm:flex-row gap-5 justify-center items-center"
+           >
+             <Link 
+               href="/browse" 
+               className="w-full sm:w-auto h-16 px-10 rounded-full font-black text-lg bg-primary text-on-primary shadow-2xl shadow-primary/30 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2"
+             >
+               Start Supporting
+             </Link>
+             <Link 
+                href="/onboarding"
+                className="h-16 px-10 rounded-full border-2 border-primary text-primary bg-transparent font-black text-lg transition-all flex items-center justify-center hover:bg-primary/5 active:scale-[0.98]"
+             >
+               Join as Artisan
+             </Link>
+           </motion.div>
 
         </div>
 

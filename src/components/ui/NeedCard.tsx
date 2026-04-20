@@ -1,5 +1,8 @@
+"use client"
+
 import * as React from "react"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 import { Card } from "./Card"
 import { ProgressBar } from "./ProgressBar"
 import { Skeleton } from "./Skeleton"
@@ -26,6 +29,16 @@ interface NeedCardProps {
 }
 
 export function NeedCard({ need, className, onClick }: NeedCardProps) {
+  const router = useRouter();
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      router.push(`/needs/${need.id}`);
+    }
+  };
+
   const formattedCost = new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
@@ -35,11 +48,55 @@ export function NeedCard({ need, className, onClick }: NeedCardProps) {
   const percentage = (need.funded_amount / need.item_cost) * 100;
   const isCompleted = need.status === 'completed' || percentage >= 100;
   
-  const deadlineDate = new Date(need.deadline);
-  const today = new Date();
-  const diffTime = deadlineDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const daysRemaining = Math.max(0, diffDays);
+   const deadlineDate = new Date(need.deadline);
+   const today = new Date();
+   const diffTime = deadlineDate.getTime() - today.getTime();
+   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+   const daysRemaining = Math.max(0, diffDays);
+   const isDeadlinePassed = diffDays <= 0;
+   const isNearlyFunded = percentage >= 80 && percentage < 100 && !isDeadlinePassed;
+   const isFullyFunded = percentage >= 100;
+   const isPartiallyFundedDeadline = isDeadlinePassed && percentage > 0 && percentage < 100;
+   const isZeroPledgesDeadline = isDeadlinePassed && need.pledge_count === 0;
+   const amountLeft = need.item_cost - need.funded_amount;
+   const formattedAmountLeft = new Intl.NumberFormat("en-NG", {
+     style: "currency",
+     currency: "NGN",
+     maximumFractionDigits: 0,
+   }).format(amountLeft / 100);
+   
+   // Progress bar color and label
+   let progressColor = "bg-primary";
+   let progressLabel = "";
+   if (isFullyFunded) {
+     progressColor = "bg-green-500";
+     progressLabel = "Fully Funded ✓";
+   } else if (isNearlyFunded) {
+     progressColor = "bg-green-500";
+     progressLabel = `Almost there — just ${formattedAmountLeft} left`;
+   } else if (isPartiallyFundedDeadline) {
+     progressColor = "bg-on-surface-variant/40";
+     progressLabel = "Closed — Partially Funded";
+   } else if (isZeroPledgesDeadline) {
+     progressColor = "bg-on-surface-variant/40";
+     // This state is private dashboard only, not shown in browse feed
+   }
+   
+   // Button text and state
+   let buttonText = "Back now";
+   let buttonDisabled = false;
+   let buttonClassName = "bg-primary text-white shadow-primary/20";
+   if (isFullyFunded) {
+     buttonText = "View Story";
+     buttonClassName = "bg-primary/10 text-primary shadow-none";
+   } else if (isPartiallyFundedDeadline || isZeroPledgesDeadline) {
+     buttonText = "Closed";
+     buttonDisabled = true;
+     buttonClassName = "bg-surface-variant/20 text-on-surface-variant shadow-none cursor-not-allowed";
+   } else if (isCompleted) {
+     buttonText = "View Impact";
+     buttonClassName = "bg-primary/10 text-primary shadow-none";
+   }
 
   const TradeIcon = need.profile?.trade_category ? TRADE_ICONS_MAP[need.profile.trade_category] : MoreHorizontal;
 
@@ -51,7 +108,7 @@ export function NeedCard({ need, className, onClick }: NeedCardProps) {
   return (
     <Card 
       hoverLift 
-      onClick={onClick}
+      onClick={handleCardClick}
       className={cn(
         "overflow-hidden flex flex-col h-full bg-white rounded-[2rem] border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] cursor-pointer group transition-all", 
         isCompleted && "ring-2 ring-primary/20 bg-primary/5",
@@ -150,20 +207,27 @@ export function NeedCard({ need, className, onClick }: NeedCardProps) {
                    Days Left
                 </span>
                 <span className="text-sm font-black text-on-surface bg-on-surface-variant/10 px-3 py-1 rounded-full">
-                   {isCompleted ? "Ended" : daysRemaining}
+                    {isDeadlinePassed ? "Ended" : daysRemaining}
                 </span>
              </div>
           </div>
           
-          <div className="relative h-3 w-full bg-surface-variant/20 rounded-full overflow-hidden">
-            <motion.div 
-               initial={{ width: 0 }}
-               whileInView={{ width: `${Math.min(100, percentage)}%` }}
-               viewport={{ once: true }}
-               transition={{ duration: 1, ease: "easeOut" }}
-               className={cn("h-full rounded-full", isCompleted ? "bg-primary" : "bg-primary")}
-            />
-          </div>
+           {/* Progress Label */}
+           {progressLabel && (
+             <div className="text-xs font-black uppercase tracking-widest text-center py-1 px-3 rounded-full bg-surface-variant/20 text-on-surface-variant">
+               {progressLabel}
+             </div>
+           )}
+           
+           <div className="relative h-3 w-full bg-surface-variant/20 rounded-full overflow-hidden">
+             <motion.div 
+                initial={{ width: 0 }}
+                whileInView={{ width: `${Math.min(100, percentage)}%` }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className={cn("h-full rounded-full", progressColor)}
+             />
+           </div>
 
           <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-on-surface-variant/60">
              <span>₦{new Intl.NumberFormat().format(need.funded_amount / 100)} raised</span>
@@ -180,14 +244,16 @@ export function NeedCard({ need, className, onClick }: NeedCardProps) {
                 <span className="text-xs font-black text-on-surface">{need.profile?.vouch_count || 0}</span>
              </div>
           </div>
-          <Button 
-            className={cn(
-               "rounded-full px-8 font-black text-xs shadow-xl transition-all hover:-translate-y-1",
-               isCompleted ? "bg-primary/10 text-primary shadow-none" : "bg-primary text-white shadow-primary/20"
-            )}
-          >
-            {isCompleted ? "View Impact" : "Fund Now"}
-          </Button>
+           <Button 
+             className={cn(
+                "rounded-full px-8 font-black text-xs shadow-xl transition-all hover:-translate-y-1",
+                buttonClassName,
+                buttonDisabled && "cursor-not-allowed"
+             )}
+             disabled={buttonDisabled}
+           >
+             {buttonText}
+           </Button>
         </div>
       </div>
     </Card>

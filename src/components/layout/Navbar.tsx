@@ -3,17 +3,18 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, Hammer, LogOut, User } from "lucide-react"
-import { Button } from "@/components/ui/Button"
+import { Menu, User, LogOut } from "lucide-react"
 import { MobileNav } from "./MobileNav"
-import { useDemoAuth } from "@/contexts/DemoAuthContext"
+import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 export function Navbar() {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const { isAuthenticated, signOut, demoUser } = useDemoAuth();
+  const [user, setUser] = React.useState<SupabaseUser | null>(null);
+  const supabase = React.useMemo(() => createClient(), []);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -23,6 +24,31 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    fetchUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push("/");
+  };
+
+  const isAuthenticated = user !== null;
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
   return (
     <>
@@ -81,36 +107,33 @@ export function Navbar() {
 
           {/* Right Action Area */}
           <div className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <>
-                <Link 
-                  href="/dashboard" 
-                  className={`hidden sm:flex group cursor-pointer text-sm font-black items-center gap-2 transition-colors duration-300 ${isScrolled ? 'text-on-surface-variant hover:text-primary' : 'text-on-surface-variant hover:text-primary'}`}
-                >
-                  <User className="h-4 w-4" />
-                  Login
-                </Link>
-                
-                <button
-                  onClick={() => {
-                    signOut();
-                    router.push("/");
-                  }}
-                  className={`hidden sm:flex h-11 px-7 rounded-full font-extrabold text-sm transition-all items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/10 ${
-                    isScrolled ? 'bg-primary text-white' : 'bg-primary text-white'
-                  }`}
-                >
-                  Get Started
-                </button>
-              </>
-            ) : (
+             {isAuthenticated ? (
+               <>
+                 <Link 
+                   href="/dashboard" 
+                   className={`hidden sm:flex group cursor-pointer text-sm font-black items-center gap-2 transition-colors duration-300 ${isScrolled ? 'text-on-surface-variant hover:text-primary' : 'text-on-surface-variant hover:text-primary'}`}
+                 >
+                   <User className="h-4 w-4" />
+                   Dashboard
+                 </Link>
+                 
+                 <button
+                   onClick={handleSignOut}
+                   className={`hidden sm:flex h-11 px-7 rounded-full font-extrabold text-sm transition-all items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/10 ${
+                     isScrolled ? 'bg-primary text-white' : 'bg-primary text-white'
+                   }`}
+                 >
+                   Log out
+                 </button>
+               </>
+             ) : (
               <>
                 <Link href="/login" className={`hidden sm:flex group cursor-pointer text-sm font-bold transition-colors duration-300 ${isScrolled ? 'text-on-surface-variant hover:text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
                   Log In
                 </Link>
                 
                 <Link 
-                  href="/onboarding" 
+                  href="/create-need" 
                   className={`hidden sm:flex h-11 px-7 rounded-full font-extrabold text-sm transition-all items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/10 ${
                     isScrolled ? 'bg-primary text-white' : 'bg-primary text-white'
                   }`}

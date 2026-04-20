@@ -1,103 +1,87 @@
 import { NextRequest, NextResponse } from "next/server"
-
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID!
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN!
-const TWILIO_VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID!
-
-/**
- * Normalise a Nigerian phone number to E.164 format.
- */
-function toE164(phone: string): string {
-  let cleaned = phone.replace(/[\s\-()]/g, "")
-  if (cleaned.startsWith("0") && cleaned.length === 11) {
-    return "+234" + cleaned.slice(1)
-  }
-  if (cleaned.startsWith("234") && !cleaned.startsWith("+")) {
-    return "+" + cleaned
-  }
-  if (!cleaned.startsWith("+")) {
-    return "+234" + cleaned
-  }
-  return cleaned
-}
+import twilio from "twilio"
 
 export async function POST(req: NextRequest) {
-  try {
-    const { phone, code } = await req.json()
+  const accountSid = process.env.TWILIO_ACCOUNT_SID
+  const authToken = process.env.TWILIO_AUTH_TOKEN
+  const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID
 
+  if (!accountSid || !authToken || !verifyServiceSid) {
+    console.error("Missing Twilio credentials. Check your .env file.")
+    return NextResponse.json(
+      { success: false, error: "Server configuration error. Missing Twilio credentials." },
+      { status: 500 }
+    )
+  }
+
+  const client = twilio(accountSid, authToken)
+  
+  try {
+    const body = await req.json()
+    const { phone, code } = body
+    
     if (!phone || !code) {
       return NextResponse.json(
-        { success: false, error: "Phone number and OTP code are required." },
+        { success: false, error: "Phone number and verification code are required." },
         { status: 400 }
       )
     }
 
-    const e164Phone = toE164(phone)
-
-    // Validate env vars
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
-      console.error("Missing Twilio env vars")
-      return NextResponse.json(
-        { success: false, error: "Server configuration error. Please contact support." },
-        { status: 500 }
-      )
+    // Format phone number: ensure it starts with +234
+    let formattedPhone = phone.trim()
+    if (formattedPhone.startsWith("0") && formattedPhone.length === 11) {
+      formattedPhone = "+234" + formattedPhone.slice(1)
+    } else if (!formattedPhone.startsWith("+")) {
+      formattedPhone = "+234" + formattedPhone
     }
 
-    // Call Twilio Verify API — check OTP
-    const twilioUrl = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`
+    // Verify OTP via Twilio Verify
+    const verificationCheck = await client.verify.v2
+      .services(verifyServiceSid)
+      .verificationChecks.create({ to: formattedPhone, code })
 
-    const response = await fetch(twilioUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization:
-          "Basic " +
-          Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString("base64"),
-      },
-      body: new URLSearchParams({
-        To: e164Phone,
-        Code: code,
-      }),
+    if (verificationCheck.status === "approved") {
+      return NextResponse.json({ 
+        success: true, 
+        message: "Phone number verified successfully"
+      })
+    } else {
+      return NextResponse.json(
+        { success: false, error: "That code didn't match. Please try again." },
+        { status: 400 }
+      )
+    }
+    
+  } catch (error: any) {
+    console.error("Twilio OTP verification error:", {
+      message: error.message,
+      code: error.code,
     })
-
-    const data = await response.json()
-
-    if (response.ok && data.status === "approved") {
-      return NextResponse.json({ success: true, status: "approved" })
-    }
-
-    if (response.ok && data.status === "pending") {
+    
+    // Handle specific Twilio errors
+    if (error.code === 60202) {
       return NextResponse.json(
-        { success: false, status: "pending", error: "Invalid code. Please try again." },
+        { success: false, error: "That code didn't match. Please try again." },
         { status: 400 }
       )
     }
-
-    // Handle rate limiting
-    if (response.status === 429) {
+    
+    if (error.code === 20404) {
       return NextResponse.json(
-        { success: false, error: "Too many attempts. Please wait and try again." },
+        { success: false, error: "This code has expired. Please request a new one." },
+        { status: 404 }
+      )
+    }
+    
+    if (error.code === 60203) {
+      return NextResponse.json(
+        { success: false, error: "Too many attempts. Please wait 1 hour before trying again." },
         { status: 429 }
       )
     }
-
-    // Handle expired / not found verification
-    if (data.code === 20404 || data.message?.includes("not found")) {
-      return NextResponse.json(
-        { success: false, error: "Verification expired or not found. Please request a new code." },
-        { status: 400 }
-      )
-    }
-
-    console.error("Twilio Verify check error:", data)
+    
     return NextResponse.json(
-      { success: false, error: data.message || "Verification failed." },
-      { status: response.status }
-    )
-  } catch (err: any) {
-    console.error("Verify OTP exception:", err)
-    return NextResponse.json(
-      { success: false, error: "An unexpected error occurred." },
+      { success: false, error: "Failed to verify code. Please try again." },
       { status: 500 }
     )
   }

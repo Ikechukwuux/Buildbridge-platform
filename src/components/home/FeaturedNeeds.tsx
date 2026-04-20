@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { motion } from "framer-motion"
-import { NeedCard } from "@/components/ui/NeedCard"
+import { NeedCard, NeedCardSkeleton } from "@/components/ui/NeedCard"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
@@ -15,7 +15,35 @@ interface FeaturedNeedsProps {
 }
 
 export function FeaturedNeeds({ needs, isLoading = false }: FeaturedNeedsProps) {
-  if (!isLoading && needs.length === 0) {
+  // Loading state: show 3 skeleton cards
+  if (isLoading) {
+    return (
+      <section className="py-24 relative" style={{ background: 'var(--color-surface-container-low)' }}>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-[0.05]" style={{ background: 'var(--color-primary)', filter: 'blur(80px)' }} />
+          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-[0.05]" style={{ background: 'var(--color-tertiary)', filter: 'blur(80px)' }} />
+        </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+          <div className="mb-16 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+            <div className="flex flex-col gap-3">
+              <div className="w-12 h-1 rounded-full bg-surface-variant" />
+              <div className="h-10 w-48 bg-surface-variant rounded-lg shimmer" />
+              <div className="h-6 w-64 bg-surface-variant rounded shimmer" />
+            </div>
+            <div className="h-10 w-40 bg-surface-variant rounded-full shimmer" />
+          </div>
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <NeedCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // Empty state
+  if (needs.length === 0) {
     return (
       <section className="py-24" style={{ background: 'var(--color-surface-container-low)' }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

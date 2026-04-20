@@ -1,103 +1,99 @@
 import { NextRequest, NextResponse } from "next/server"
-
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID!
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN!
-const TWILIO_VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID!
-
-/**
- * Normalise a Nigerian phone number to E.164 format.
- * "0801..." → "+234801..."
- * "234801..." → "+234801..."
- * Already "+234..." → kept as-is
- */
-function toE164(phone: string): string {
-  let cleaned = phone.replace(/[\s\-()]/g, "")
-  if (cleaned.startsWith("0") && cleaned.length === 11) {
-    return "+234" + cleaned.slice(1)
-  }
-  if (cleaned.startsWith("234") && !cleaned.startsWith("+")) {
-    return "+" + cleaned
-  }
-  if (!cleaned.startsWith("+")) {
-    return "+234" + cleaned
-  }
-  return cleaned
-}
+import twilio from "twilio"
 
 export async function POST(req: NextRequest) {
-  try {
-    const { phone } = await req.json()
+  const accountSid = process.env.TWILIO_ACCOUNT_SID
+  const authToken = process.env.TWILIO_AUTH_TOKEN
+  const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID
 
+  if (!accountSid || !authToken || !verifyServiceSid) {
+    console.error("Missing Twilio credentials. Check your .env file.")
+    return NextResponse.json(
+      { success: false, error: "Server configuration error. Missing Twilio credentials." },
+      { status: 500 }
+    )
+  }
+
+  const client = twilio(accountSid, authToken)
+  
+  try {
+    const body = await req.json()
+    const { phone } = body
+    
     if (!phone) {
       return NextResponse.json(
-        { success: false, error: "Phone number is required." },
+        { success: false, error: "Phone number is required" },
         { status: 400 }
       )
     }
 
-    const e164Phone = toE164(phone)
+    // Format phone number: ensure it starts with +234
+    let formattedPhone = phone.trim()
+    if (formattedPhone.startsWith("0") && formattedPhone.length === 11) {
+      formattedPhone = "+234" + formattedPhone.slice(1)
+    } else if (!formattedPhone.startsWith("+")) {
+      formattedPhone = "+234" + formattedPhone
+    }
 
-    // Validate that the env vars are set
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
-      console.error("Missing Twilio env vars")
+    // Send OTP via Twilio Verify
+    const verification = await client.verify.v2
+      .services(verifyServiceSid)
+      .verifications.create({ to: formattedPhone, channel: "sms" })
+
+    console.log("Twilio verification sent:", verification.sid)
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: "OTP sent successfully",
+      formattedPhone
+    })
+    
+  } catch (error: any) {
+    console.error("Twilio OTP send error:", {
+      message: error.message,
+      code: error.code,
+    })
+    
+    // Handle specific Twilio errors
+    if (error.code === 60200) {
       return NextResponse.json(
-        { success: false, error: "Server configuration error. Please contact support." },
-        { status: 500 }
+        { success: false, error: "Invalid phone number format." },
+        { status: 400 }
       )
     }
-
-    // Call Twilio Verify API — send SMS OTP
-    const twilioUrl = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/Verifications`
-
-    const response = await fetch(twilioUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization:
-          "Basic " +
-          Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString("base64"),
-      },
-      body: new URLSearchParams({
-        To: e164Phone,
-        Channel: "sms",
-      }),
-    })
-
-    const data = await response.json()
-
-    if (response.ok && data.status === "pending") {
-      return NextResponse.json({ success: true })
-    }
-
-    // Handle specific Twilio errors gracefully
-    if (response.status === 429) {
+    
+    if (error.code === 60203) {
       return NextResponse.json(
-        { success: false, error: "Too many requests. Please wait a moment and try again." },
+        { success: false, error: "Too many attempts. Please wait a while before trying again." },
         { status: 429 }
       )
     }
-
-    // Free trial: unverified number error
-    if (data.code === 21608 || data.message?.includes("unverified")) {
+    
+    if (error.code === 20404) {
       return NextResponse.json(
-        {
-          success: false,
-          error:
-            "This number is not verified on our Twilio trial. Please add it as a Verified Caller ID in the Twilio Console, or use the number you registered with.",
-        },
+        { success: false, error: "Verification not found. Please request a new OTP." },
+        { status: 404 }
+      )
+    }
+    
+    // Geo Permissions / Fraud Guard blocked prefix
+    if (error.code === 60410) {
+      return NextResponse.json(
+        { success: false, error: "SMS delivery to this region is temporarily unavailable. Please try again later or contact support." },
+        { status: 403 }
+      )
+    }
+    
+    // Trial account restrictions
+    if (error.code === 21211 || error.code === 21408 || error.code === 21610) {
+      return NextResponse.json(
+        { success: false, error: "This phone number cannot receive SMS. Please try a different number." },
         { status: 400 }
       )
     }
-
-    console.error("Twilio Verify send error:", data)
+    
     return NextResponse.json(
-      { success: false, error: data.message || "Failed to send OTP." },
-      { status: response.status }
-    )
-  } catch (err: any) {
-    console.error("Send OTP exception:", err)
-    return NextResponse.json(
-      { success: false, error: "An unexpected error occurred." },
+      { success: false, error: `Failed to send OTP. Please try again.` },
       { status: 500 }
     )
   }

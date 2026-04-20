@@ -5,7 +5,7 @@ import { NeedCard, NeedCardSkeleton } from "@/components/ui/NeedCard"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { BrowseFilters } from "@/components/browse/BrowseFilters"
 import { BrowseSort, type SortOption } from "@/components/browse/BrowseSort"
-import { Search } from "lucide-react"
+import { Search, MapPin } from "lucide-react"
 
 /**
  * DEMO MODE: Uses mock needs data with client-side filtering/sorting.
@@ -265,22 +265,86 @@ export default function BrowsePage() {
              ))
            ) : needs.length > 0 ? (
              needs.map((need) => (
-                <NeedCard key={need.id} need={need} onBack={() => {}} />
+                <NeedCard key={need.id} need={need} />
              ))
-           ) : (
-             <div className="col-span-full py-20 px-4">
-                <EmptyState 
-                   icon={Search}
-                   title="No matches found"
-                   description="We couldn't find any needs matching these filters. Try expanding your search or clearing the selection."
-                   actionLabel="Clear All Filters"
-                   onAction={() => setFilters({ category: null, state: null, badgeLevel: null, search: "" })}
-                   className="bg-transparent border-none"
-                />
+            ) : (
+              <div className="col-span-full py-20 px-4">
+                 {(() => {
+                   // Determine empty state type based on filters
+                   if (debouncedSearch) {
+                     return (
+                       <EmptyState 
+                         icon={Search}
+                         title={`No results for '${debouncedSearch}'`}
+                         description="Check the spelling or try a different word."
+                         actionLabel="Clear search"
+                         onAction={() => setFilters({ ...filters, search: "" })}
+                         className="bg-transparent border-none"
+                       />
+                     );
+                   } else if (filters.state) {
+                     return (
+                       <EmptyState 
+                         icon={MapPin}
+                         title="No needs in this area yet"
+                         description="Know a tradesperson here who needs backing? Help them get started."
+                         actionLabel="Create a Need"
+                         onAction={() => window.location.href = "/onboarding"}
+                         className="bg-transparent border-none"
+                       />
+                     );
+                   } else if (filters.category || filters.badgeLevel !== null) {
+                     return (
+                       <EmptyState 
+                         icon={Search}
+                         title="No needs match your search"
+                         description="Try a different trade category, location, or remove some filters."
+                         actionLabel="Clear all filters"
+                         onAction={() => setFilters({ category: null, state: null, badgeLevel: null, search: "" })}
+                         className="bg-transparent border-none"
+                       />
+                     );
+                   } else {
+                     // Generic empty state (no needs in platform)
+                     return (
+                       <EmptyState 
+                         icon={Search}
+                         title="No active needs at the moment"
+                         description="Check back soon or create a need for a tradesperson you know."
+                         actionLabel="Create a Need"
+                         onAction={() => window.location.href = "/onboarding"}
+                         className="bg-transparent border-none"
+                       />
+                     );
+                   }
+                 })()}
+              </div>
+            )}
+         </div>
+         
+         {/* End of feed message */}
+         {!loading && needs.length > 0 && (
+           <div className="mt-12 pt-8 border-t border-outline-variant/30 text-center">
+             <p className="text-body-large text-on-surface-variant mb-4">
+               You've seen all open needs.
+             </p>
+             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+               <button 
+                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                 className="px-6 py-2 rounded-full font-bold bg-surface-variant/30 text-on-surface hover:bg-surface-variant/50 transition-colors"
+               >
+                 Back to top
+               </button>
+               <a 
+                 href="/onboarding" 
+                 className="px-6 py-2 rounded-full font-bold text-primary hover:bg-primary/5 transition-colors"
+               >
+                 Create a Need for a tradesperson you know →
+               </a>
              </div>
-           )}
-        </div>
-      </div>
-    </div>
-  )
-}
+           </div>
+         )}
+       </div>
+     </div>
+   )
+ }

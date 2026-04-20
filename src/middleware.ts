@@ -1,54 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * DEMO MODE MIDDLEWARE
+ * Production Middleware
  *
- * In demo mode, we skip all Supabase session logic entirely.
- * We only check for the demo session cookie to protect routes.
- *
- * To re-enable real Supabase middleware:
- *   1. Set DEMO_MODE to false
- *   2. Uncomment the Supabase imports and logic below
+ * Uses real Supabase session checking to protect routes.
+ * No demo mode.
  */
-
-// ─── DEMO MODE FLAG ────────────────────────────────────────────────────────────
-const DEMO_MODE = false;
-// ────────────────────────────────────────────────────────────────────────────────
-
-// import { createServerClient } from "@supabase/ssr"; // Re-enable for real Supabase
 
 /**
  * Paths that require an authenticated session.
- * Unauthenticated users hitting these routes are redirected to /signup.
+ * Unauthenticated users hitting these routes are redirected to /login.
  */
 const PROTECTED_PATHS = ["/dashboard", "/admin"];
 
 export default async function middleware(request: NextRequest) {
-  const supabaseResponse = NextResponse.next({ request });
-
-  if (DEMO_MODE) {
-    // ── Demo Mode: Only check for demo cookie ─────────────────────────────
-    const { pathname } = request.nextUrl;
-    const isProtected = PROTECTED_PATHS.some(
-      (path) => pathname === path || pathname.startsWith(`${path}/`)
-    );
-
-    const demoSession = request.cookies.get("buildbridge_demo_session");
-    const isDemoAuthenticated = !!demoSession?.value;
-
-    if (isProtected && !isDemoAuthenticated) {
-      const signupUrl = request.nextUrl.clone();
-      signupUrl.pathname = "/signup";
-      signupUrl.searchParams.set("redirectTo", pathname);
-      return NextResponse.redirect(signupUrl);
-    }
-
-    return supabaseResponse;
-  }
-
-  // ── Real Supabase Middleware (re-enable later) ────────────────────────────
-  // Uncomment this block when switching back to real Supabase:
-  /*
   const { createServerClient } = await import("@supabase/ssr");
 
   let response = NextResponse.next({ request });
@@ -80,10 +45,7 @@ export default async function middleware(request: NextRequest) {
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
 
-  const demoSession = request.cookies.get("buildbridge_demo_session");
-  const isDemoAuthenticated = !!demoSession?.value;
-
-  if (isProtected && !user && !isDemoAuthenticated) {
+  if (isProtected && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirectTo", pathname);
@@ -91,9 +53,6 @@ export default async function middleware(request: NextRequest) {
   }
 
   return response;
-  */
-
-  return supabaseResponse;
 }
 
 /**

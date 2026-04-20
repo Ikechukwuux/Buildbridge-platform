@@ -9,14 +9,12 @@ import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { Phone, ArrowRight, ShieldCheck, CheckCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { useDemoAuth } from "@/contexts/DemoAuthContext"
 
-const DEMO_MODE = false
 
 export default function RegisterForm() {
   const router = useRouter()
   const supabase = createClient()
-  const { sendDemoOtp, verifyDemoOtp } = useDemoAuth()
+  
   
   const [step, setStep] = useState<"phone" | "otp" | "success">("phone")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -76,34 +74,20 @@ export default function RegisterForm() {
       cleanPhone = "+234" + cleanPhone
     }
 
-    if (DEMO_MODE) {
-      const result = await sendDemoOtp(cleanPhone)
-      if (result.success) {
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone })
+      })
+      const data = await res.json()
+      if (data.success) {
         setFormattedPhone(formatPhoneNumber(rawVal))
         setStep("otp")
         setTimeLeft(300)
       } else {
-        setErrorMsg(result.error || "Failed to send OTP.")
+        setErrorMsg(data.error || "Failed to send OTP.")
       }
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: cleanPhone,
-      })
-
-      if (error) {
-        if (error.message?.includes("sms provider") || error.status === 400) {
-          throw new Error("We couldn't send a text to that number. Please check for typos.")
-        }
-        throw new Error(error.message)
-      }
-
-      setFormattedPhone(formatPhoneNumber(rawVal))
-      setStep("otp")
-      setTimeLeft(300)
     } catch (err: any) {
       setErrorMsg(err.message || "Something went wrong. Please try again.")
     }
@@ -163,36 +147,20 @@ export default function RegisterForm() {
       cleanPhone = "+234" + cleanPhone
     }
 
-    if (DEMO_MODE) {
-      const result = await verifyDemoOtp(cleanPhone, token)
-      if (result.success) {
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone, code: token })
+      })
+      const data = await res.json()
+      if (data.success) {
         setStep("success")
         setTimeout(() => {
           router.push("/onboarding")
         }, 2000)
       } else {
-        setErrorMsg(result.error || "Invalid OTP. Please try again.")
-      }
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: cleanPhone,
-        token: token,
-        type: "sms",
-      })
-
-      if (error) {
-        throw new Error("The code entered is incorrect or has expired.")
-      }
-
-      if (data?.user) {
-        setStep("success")
-        setTimeout(() => {
-          router.push("/onboarding")
-        }, 2000)
+        setErrorMsg(data.error || "Invalid code. Please try again.")
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Invalid code. Please try again.")
@@ -205,14 +173,6 @@ export default function RegisterForm() {
     setIsLoading(true)
     setErrorMsg(null)
     
-    if (DEMO_MODE) {
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      setTimeLeft(300)
-      setOtp(["", "", "", "", "", ""])
-      setIsLoading(false)
-      return
-    }
-
     let cleanPhone = formattedPhone.replace(/[^0-9]/g, "")
     if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
       cleanPhone = "+234" + cleanPhone.slice(1)
@@ -221,16 +181,18 @@ export default function RegisterForm() {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: cleanPhone,
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone })
       })
-
-      if (error) {
-        throw new Error(error.message)
+      const data = await res.json()
+      if (data.success) {
+        setTimeLeft(300)
+        setOtp(["", "", "", "", "", ""])
+      } else {
+        setErrorMsg(data.error || "Couldn't resend code. Please try again.")
       }
-
-      setTimeLeft(300)
-      setOtp(["", "", "", "", "", ""])
     } catch (err: any) {
       setErrorMsg(err.message || "Couldn't resend code. Please try again.")
     }

@@ -46,15 +46,13 @@ export function MaintenanceMode({ estimatedReturnTime }: MaintenanceModeProps) {
           <p className="text-body-large text-on-surface-variant mb-6">
             Need immediate assistance?
           </p>
-          <a 
-            href="https://wa.me/2341234567890" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 bg-[#25D366] text-white px-8 py-4 rounded-full text-body-large font-bold hover:opacity-90 transition-opacity shadow-lg"
+          <Link 
+            href="/contact" 
+            className="inline-flex items-center gap-3 bg-primary text-white px-8 py-4 rounded-full text-body-large font-bold hover:opacity-90 transition-opacity shadow-lg"
           >
             <span>💬</span>
-            Chat with us on WhatsApp
-          </a>
+            Contact Support
+          </Link>
         </div>
       </div>
     </div>

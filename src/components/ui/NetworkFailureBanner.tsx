@@ -3,6 +3,7 @@
 import * as React from "react"
 import { AlertTriangle, X } from "lucide-react"
 import { Button } from "./Button"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 interface NetworkFailureBannerProps {
@@ -90,14 +91,12 @@ export function NetworkFailureBanner({ className, showDemo = false }: NetworkFai
               <p className="text-sm font-bold">
                 You appear to be offline. Check your connection and try again.
               </p>
-              <a 
-                href="https://wa.me/2341234567890" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <Link 
+                href="/contact" 
                 className="text-sm font-medium underline hover:opacity-80 transition-opacity"
               >
-                Need help? Chat with us on WhatsApp →
-              </a>
+                Need help? Contact support →
+              </Link>
             </div>
           </div>
           <div className="flex items-center gap-2">

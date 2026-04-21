@@ -19,7 +19,7 @@ export function Footer() {
       { name: "Discover Needs", href: "/browse" },
       { name: "Collaborate", href: "/partners" },
       { name: "About Us", href: "/about" },
-      { name: "Careers", href: "/about" },
+      { name: "Careers", href: "/careers" },
     ],
     Support: [
       { name: "Contact Us", href: "/contact" },
@@ -130,7 +130,7 @@ export function Footer() {
             &copy; {currentYear} BuildBridge Impact Platform. All Rights Reserved.
           </p>
           <div className="flex gap-8">
-            {["Privacy", "Terms", "Support"].map((legal) => (
+            {["Privacy", "Terms", "Contact"].map((legal) => (
               <Link key={legal} href={`/${legal.toLowerCase()}`} className="text-[10px] font-bold text-white/40 hover:text-white/80 transition-colors uppercase tracking-[0.2em]">
                 {legal}
               </Link>

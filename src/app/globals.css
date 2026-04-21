@@ -847,11 +847,18 @@ body {
 
   /* Shimmer animation for skeleton loading */
   @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Shine animation for primary CTA guidance */
+  @keyframes shine {
+    0% { transform: translateX(-100%) skewX(-15deg); }
+    50% { transform: translateX(100%) skewX(-15deg); }
+    100% { transform: translateX(100%) skewX(-15deg); }
+  }
+
+  .animate-shine {
+    animation: shine 3s infinite;
   }
 }

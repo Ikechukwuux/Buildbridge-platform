@@ -25,12 +25,12 @@ export function BrowseSort({ onSortChange, activeSort }: BrowseSortProps) {
   return (
     <div className="relative">
       <div className="flex items-center gap-3">
-        <span className="text-label-small uppercase font-bold text-on-surface-variant tracking-widest pl-1 hidden sm:inline">
-          Sort By:
+        <span className="text-[10px] uppercase font-black tracking-widest pl-1 hidden sm:inline" style={{ color: 'var(--color-on-surface-variant)' }}>
+          Sort:
         </span>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface border border-outline-variant text-label-large font-bold text-on-surface hover:border-primary transition-all whitespace-nowrap"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border-2 border-outline-variant/50 text-sm font-bold text-on-surface hover:border-primary transition-all whitespace-nowrap"
         >
           <ArrowDownAZ className="h-4 w-4 text-primary" />
           <span>{SORT_OPTIONS.find(o => o.id === activeSort)?.label}</span>
@@ -47,7 +47,7 @@ export function BrowseSort({ onSortChange, activeSort }: BrowseSortProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute top-[calc(100%+8px)] right-0 min-w-[200px] z-30 bg-surface border border-outline-variant shadow-xl rounded-2xl p-2"
+              className="absolute top-[calc(100%+8px)] right-0 min-w-[220px] z-30 bg-white border border-outline-variant/30 shadow-xl rounded-2xl p-2"
             >
               {SORT_OPTIONS.map((opt) => (
                 <button
@@ -57,7 +57,7 @@ export function BrowseSort({ onSortChange, activeSort }: BrowseSortProps) {
                     setIsOpen(false)
                   }}
                   className={cn(
-                    "w-full text-left p-4 rounded-xl hover:bg-primary/5 text-body-medium transition-colors flex items-center justify-between",
+                    "w-full text-left p-4 rounded-xl hover:bg-primary/5 text-sm font-medium transition-colors flex items-center justify-between",
                     activeSort === opt.id && "bg-primary/10 text-primary font-black"
                   )}
                 >

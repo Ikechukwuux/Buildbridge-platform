@@ -1,11 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { motion } from "framer-motion"
 import { NeedCard, NeedCardSkeleton } from "@/components/ui/NeedCard"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { BrowseFilters } from "@/components/browse/BrowseFilters"
 import { BrowseSort, type SortOption } from "@/components/browse/BrowseSort"
-import { Search, MapPin } from "lucide-react"
+import { Search, MapPin, Sparkles, ArrowRight, X } from "lucide-react"
+import Link from "next/link"
 
 /**
  * DEMO MODE: Uses mock needs data with client-side filtering/sorting.
@@ -178,6 +180,13 @@ export default function BrowsePage() {
     return () => clearTimeout(timer)
   }, [filters.search])
 
+  // Check if any filter is active
+  const hasActiveFilters = filters.category !== null || filters.state !== null || filters.badgeLevel !== null || debouncedSearch !== ""
+
+  const clearAllFilters = () => {
+    setFilters({ category: null, state: null, badgeLevel: null, search: "" })
+  }
+
   // Client-side filtering & sorting of mock data
   const fetchNeeds = React.useCallback(async () => {
     setLoading(true)
@@ -232,41 +241,106 @@ export default function BrowsePage() {
   }, [fetchNeeds])
 
   return (
-    <div className="min-h-screen bg-background py-16 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl flex flex-col gap-10">
-        
-        {/* Header Section */}
-        <div className="flex flex-col gap-4">
-           <h1 className="text-display-small sm:text-display-medium font-black text-on-surface">
-              Discover <span className="text-primary italic">Needs.</span>
-           </h1>
-           <p className="text-body-large text-on-surface-variant max-w-2xl">
-              Back verified tradespeople building their futures. Every pledge is held in escrow and only deployed once goals are reached.
-           </p>
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
+      {/* Hero Header Band */}
+      <section className="relative pt-32 pb-16 overflow-hidden" style={{ background: 'var(--color-surface)' }}>
+        {/* Decorative mesh background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 -left-20 w-96 h-96 rounded-full opacity-[0.06]" style={{ background: 'var(--color-primary)', filter: 'blur(100px)' }} />
+          <div className="absolute bottom-0 right-10 w-72 h-72 rounded-full opacity-[0.06]" style={{ background: 'var(--color-tertiary)', filter: 'blur(80px)' }} />
         </div>
 
-        {/* Filters & Sort Interface */}
-        <div className="flex flex-col gap-6 p-6 rounded-3xl bg-surface-variant/30 border border-outline-variant shadow-none">
-           <BrowseFilters onFilterChange={setFilters} activeFilters={filters} />
-           
-           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-outline-variant/30">
-              <div className="text-body-medium font-bold text-on-surface-variant">
-                 Showing <span className="text-on-surface">{needs.length}</span> active needs
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col gap-6 max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest w-fit"
+              style={{ background: 'var(--color-primary-container)', color: 'var(--color-on-primary-container)' }}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {loading ? "Loading..." : `${MOCK_BROWSE_NEEDS.length} Active Needs Across Nigeria`}
+            </motion.div>
+
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight"
+              style={{ color: 'var(--color-on-surface)' }}
+            >
+              Discover{" "}
+              <span className="text-primary italic decoration-yellow-400 underline decoration-4 underline-offset-8">
+                Needs.
+              </span>
+            </motion.h1>
+
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-lg md:text-xl font-medium max-w-2xl leading-relaxed"
+              style={{ color: 'var(--color-on-surface-variant)' }}
+            >
+              Back verified tradespeople building their futures. Every pledge is held in escrow and only deployed once goals are reached.
+            </motion.p>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="flex-grow pb-24 px-4 sm:px-6 lg:px-8 -mt-2" style={{ background: 'var(--color-surface-container-low)' }}>
+        <div className="mx-auto max-w-7xl flex flex-col gap-10 pt-10">
+        
+          {/* Filter Panel — Elevated Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col gap-6 p-6 md:p-8 rounded-[2rem] bg-white border border-outline-variant/30"
+            style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.04)' }}
+          >
+            <BrowseFilters onFilterChange={setFilters} activeFilters={filters} />
+             
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-outline-variant/20">
+              <div className="flex items-center gap-3">
+                <p className="text-sm font-bold" style={{ color: 'var(--color-on-surface-variant)' }}>
+                  Showing{" "}
+                  <span className="text-on-surface font-black">{loading ? "..." : needs.length}</span>{" "}
+                  active needs
+                </p>
+                {hasActiveFilters && (
+                  <button 
+                    onClick={clearAllFilters}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-error/10 text-error text-xs font-black uppercase tracking-widest hover:bg-error/20 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                    Clear All
+                  </button>
+                )}
               </div>
               <BrowseSort onSortChange={setSort} activeSort={sort} />
-           </div>
-        </div>
+            </div>
+          </motion.div>
 
-        {/* Results Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-           {loading ? (
-             Array.from({ length: 6 }).map((_, i) => (
+          {/* Results Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
                 <NeedCardSkeleton key={i} />
-             ))
-           ) : needs.length > 0 ? (
-             needs.map((need) => (
-                <NeedCard key={need.id} need={need} />
-             ))
+              ))
+            ) : needs.length > 0 ? (
+              needs.map((need, index) => (
+                <motion.div
+                  key={need.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.08 }}
+                >
+                  <NeedCard need={need} />
+                </motion.div>
+              ))
             ) : (
               <div className="col-span-full py-20 px-4">
                  {(() => {
@@ -322,29 +396,46 @@ export default function BrowsePage() {
             )}
          </div>
          
-         {/* End of feed message */}
+         {/* End-of-Feed CTA */}
          {!loading && needs.length > 0 && (
-           <div className="mt-12 pt-8 border-t border-outline-variant/30 text-center">
-             <p className="text-body-large text-on-surface-variant mb-4">
-               You've seen all open needs.
-             </p>
-             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-               <button 
-                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                 className="px-6 py-2 rounded-full font-bold bg-surface-variant/30 text-on-surface hover:bg-surface-variant/50 transition-colors"
-               >
-                 Back to top
-               </button>
-               <a 
-                 href="/onboarding" 
-                 className="px-6 py-2 rounded-full font-bold text-primary hover:bg-primary/5 transition-colors"
-               >
-                 Create a Need for a tradesperson you know →
-               </a>
+           <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true }}
+             transition={{ duration: 0.6 }}
+             className="mt-8 rounded-[2rem] p-10 md:p-16 text-center relative overflow-hidden"
+             style={{ 
+               background: 'var(--color-surface-container)',
+               boxShadow: '0 8px 30px rgba(0,0,0,0.03)'
+             }}
+           >
+             <div className="relative z-10 flex flex-col items-center gap-6 max-w-lg mx-auto">
+               <p className="text-xl md:text-2xl font-black" style={{ color: 'var(--color-on-surface)' }}>
+                 You&apos;ve seen all open needs.
+               </p>
+               <p className="text-base font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>
+                 Know a tradesperson who needs backing? Help them get started on BuildBridge.
+               </p>
+               <div className="flex flex-col sm:flex-row gap-4 items-center">
+                 <Link 
+                   href="/onboarding"
+                   className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3.5 rounded-full text-base font-black tracking-wide shadow-lg hover:shadow-xl transition-all"
+                 >
+                   Create a Need
+                   <ArrowRight className="h-4 w-4" />
+                 </Link>
+                 <button 
+                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                   className="px-6 py-3 rounded-full font-bold text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
+                 >
+                   Back to top
+                 </button>
+               </div>
              </div>
-           </div>
+           </motion.div>
          )}
        </div>
-     </div>
-   )
- }
+      </section>
+    </div>
+  )
+}

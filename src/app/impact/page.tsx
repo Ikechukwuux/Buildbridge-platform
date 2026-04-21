@@ -1,7 +1,8 @@
 import * as React from "react"
 import { ImpactGrid } from "@/components/impact/ImpactGrid"
 import { BadgeDisplay } from "@/components/ui/BadgeDisplay"
-import { Sparkles } from "lucide-react"
+import { ImpactHero } from "@/components/impact/ImpactHero"
+import { ImpactCTA } from "@/components/impact/ImpactCTA"
 
 export const metadata = {
   title: "The Impact Wall | BuildBridge Success Stories",
@@ -27,7 +28,8 @@ const MOCK_SUBMISSIONS = [
       trade_category: "welding",
       location_lga: "Kano",
       location_state: "Kano",
-      badge_level: "level_4_platform_verified"
+      badge_level: "level_4_platform_verified",
+      photo_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200",
     },
     published_at: new Date().toISOString()
   },
@@ -40,7 +42,8 @@ const MOCK_SUBMISSIONS = [
       trade_category: "fashion",
       location_lga: "Lekki",
       location_state: "Lagos",
-      badge_level: "level_3_established"
+      badge_level: "level_3_established",
+      photo_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=200",
     },
     published_at: new Date().toISOString()
   },
@@ -53,7 +56,36 @@ const MOCK_SUBMISSIONS = [
       trade_category: "woodwork",
       location_lga: "Enugu",
       location_state: "Enugu",
-      badge_level: "level_4_platform_verified"
+      badge_level: "level_4_platform_verified",
+      photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
+    },
+    published_at: new Date().toISOString()
+  },
+  {
+    id: "mock-4",
+    photo_url: "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=800",
+    caption: "My salon now serves 40 clients daily, up from 12. The dryer stations changed everything for my business.",
+    profile: {
+      name: "Grace N.",
+      trade_category: "hair_styling",
+      location_lga: "Ikeja",
+      location_state: "Lagos",
+      badge_level: "level_2_trusted_tradesperson",
+      photo_url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200",
+    },
+    published_at: new Date().toISOString()
+  },
+  {
+    id: "mock-5",
+    photo_url: "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?auto=format&fit=crop&q=80&w=800",
+    caption: "From a roadside oven to a proper bakery. Now I supply bread to three communities and employ two helpers.",
+    profile: {
+      name: "Fatima B.",
+      trade_category: "baking",
+      location_lga: "Kano Municipal",
+      location_state: "Kano",
+      badge_level: "level_3_established",
+      photo_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200",
     },
     published_at: new Date().toISOString()
   }
@@ -61,36 +93,25 @@ const MOCK_SUBMISSIONS = [
 
 export default async function ImpactPage() {
   return (
-    <main className="min-h-screen bg-background pt-32 pb-24 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto flex flex-col gap-16">
-        
-        {/* Header Section */}
-        <div className="flex flex-col items-center text-center gap-6">
-           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-label-large font-black uppercase tracking-widest animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <Sparkles className="h-4 w-4" />
-              Direct Community Result
-           </div>
-           <h1 className="text-display-small sm:text-display-medium lg:text-display-large font-black text-on-surface max-w-4xl tracking-tight leading-[1.1]">
-              The <span className="text-primary italic">Impact</span> Wall.
-           </h1>
-           <p className="text-body-large text-on-surface-variant max-w-2xl leading-relaxed">
-              BuildBridge is more than just funding—it's transformation. Witness the real results of backer-powered growth in local Nigerian trade across the nation.
-           </p>
+    <div className="flex flex-col w-full overflow-x-hidden">
+      <ImpactHero count={MOCK_SUBMISSIONS.length} />
+
+      {/* Impact Grid */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8" style={{ background: 'var(--color-surface-container-low)' }}>
+        <div className="max-w-7xl mx-auto">
+          <ImpactGrid submissions={(MOCK_SUBMISSIONS as any) || []} />
         </div>
+      </section>
 
-        {/* The Grid Component — using mock data directly */}
-        <ImpactGrid submissions={(MOCK_SUBMISSIONS as any) || []} />
-
-        {/* Global Reference Area */}
-        <div className="mt-20 pt-20 border-t border-outline-variant flex flex-col gap-12">
-            <div className="text-center flex flex-col gap-2">
-                <h2 className="text-headline-large font-black text-on-surface">Verified Excellence</h2>
-                <p className="text-body-medium text-on-surface-variant">Every person on this wall has been verified across multiple trust tiers.</p>
-            </div>
-            <BadgeDisplay />
+      {/* Trust Ladder Section */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden" style={{ background: 'var(--color-surface)' }}>
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-64 h-64 rounded-full opacity-[0.05]" style={{ background: 'var(--color-primary)', filter: 'blur(80px)' }} />
+        <div className="max-w-7xl mx-auto">
+          <BadgeDisplay />
         </div>
+      </section>
 
-      </div>
-    </main>
+      <ImpactCTA />
+    </div>
   )
 }

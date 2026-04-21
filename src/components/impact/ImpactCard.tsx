@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { motion } from "framer-motion"
+import Link from "next/link"
 import { Share2, ExternalLink, Quote, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { type ImpactWallSubmission, type Profile } from "@/types"
@@ -82,10 +83,14 @@ export function ImpactCard({ submission }: ImpactCardProps) {
               <button className="h-9 w-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-primary hover:border-primary transition-all">
                  <Share2 className="h-4 w-4" />
               </button>
-              <button className="h-9 px-4 rounded-full bg-white text-on-surface font-black text-xs flex items-center gap-1.5 hover:bg-primary hover:text-white transition-all">
+              <Link 
+                 href={`/impact/${submission.id}`}
+                 onClick={(e) => e.stopPropagation()}
+                 className="h-9 px-4 rounded-full bg-white text-on-surface font-black text-xs flex items-center gap-1.5 hover:bg-primary hover:text-white transition-all"
+              >
                  View Story
                  <ExternalLink className="h-3.5 w-3.5" />
-              </button>
+              </Link>
            </div>
         </div>
       </div>

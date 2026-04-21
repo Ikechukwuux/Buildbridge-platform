@@ -20,7 +20,7 @@ export function VelocityOtpInput({ phone, onVerify, onBack, isLoading, error }: 
 
   const handleChange = (index: number, value: string) => {
     if (!/^[0-9]*$/.test(value)) return;
-    
+
     const newOtp = [...otp];
     // Take last digit if multiple (e.g. from autocomplete)
     newOtp[index] = value.substring(value.length - 1);
@@ -66,7 +66,7 @@ export function VelocityOtpInput({ phone, onVerify, onBack, isLoading, error }: 
       transition={{ duration: 0.2 }}
       className="flex flex-col gap-8 w-full"
     >
-      <button 
+      <button
         onClick={onBack}
         className="self-start flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-black uppercase tracking-widest"
       >
@@ -88,7 +88,7 @@ export function VelocityOtpInput({ phone, onVerify, onBack, isLoading, error }: 
         {otp.map((digit, index) => (
           <input
             key={index}
-            ref={(el) => (inputRefs.current[index] = el)}
+            ref={(el) => { inputRefs.current[index] = el; }}
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -100,9 +100,8 @@ export function VelocityOtpInput({ phone, onVerify, onBack, isLoading, error }: 
             onPaste={handlePaste}
             autoFocus={index === 0}
             disabled={isLoading}
-            className={`w-full h-16 sm:h-20 text-center rounded-[1.5rem] border-2 text-3xl font-black text-on-surface focus-visible:outline-none bg-surface-variant/10 shadow-inner transition-all ${
-              error ? 'border-error text-error' : 'border-outline-variant focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/5'
-            }`}
+            className={`w-full h-16 sm:h-20 text-center rounded-[1.5rem] border-2 text-3xl font-black text-on-surface focus-visible:outline-none bg-surface-variant/10 shadow-inner transition-all ${error ? 'border-error text-error' : 'border-outline-variant focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/5'
+              }`}
           />
         ))}
       </div>
@@ -115,8 +114,8 @@ export function VelocityOtpInput({ phone, onVerify, onBack, isLoading, error }: 
 
       {isLoading && (
         <div className="flex justify-center flex-col items-center gap-4">
-           <Loader2 className="w-8 h-8 text-primary animate-spin" />
-           <span className="text-[10px] font-black uppercase tracking-widest text-primary animate-pulse">Checking Securely...</span>
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-primary animate-pulse">Checking Securely...</span>
         </div>
       )}
     </motion.div>

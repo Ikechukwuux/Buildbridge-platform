@@ -20,13 +20,12 @@ export const InfoLayout: React.FC<InfoLayoutProps> = ({
   return (
     <div className="min-h-screen mesh-bg pt-20 pb-16">
       {/* Hero Section */}
-      <section className="relative overflow-hidden px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+      <section className="relative overflow-hidden px-4 sm:px-6 lg:px-8 pt-0 pb-16 sm:pt-8 sm:pb-24">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-left"
           >
             <div className="flex justify-start mb-6">
               <Link href="/">
@@ -37,15 +36,17 @@ export const InfoLayout: React.FC<InfoLayoutProps> = ({
               </Link>
             </div>
 
-            <h1 className="text-display-large text-gradient font-bold tracking-tight mb-4 text-left">
-              {heroTitle}
-            </h1>
-            
-            {heroSubtitle && (
-              <p className="text-headline-small text-on-surface-variant max-w-3xl font-light text-left">
-                {heroSubtitle}
-              </p>
-            )}
+            <div className="flex flex-col items-center text-center">
+              <h1 className="text-display-large text-gradient font-bold tracking-tight mb-4">
+                {heroTitle}
+              </h1>
+              
+              {heroSubtitle && (
+                <p className="text-headline-small text-on-surface-variant max-w-3xl font-light">
+                  {heroSubtitle}
+                </p>
+              )}
+            </div>
           </motion.div>
         </div>
 

@@ -27,10 +27,13 @@ export function Navbar() {
 
   React.useEffect(() => {
     const fetchUser = async () => {
+      if (!supabase) return;
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
     };
     fetchUser();
+
+    if (!supabase) return;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
@@ -42,6 +45,7 @@ export function Navbar() {
   }, [supabase]);
 
   const handleSignOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     setUser(null);
     router.push("/");

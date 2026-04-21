@@ -329,10 +329,9 @@ export default function LoginForm() {
                     if (oauthError) setOauthError(null)
                   }}
                  placeholder="0801 234 5678"
-                 className="placeholder:opacity-50"
                  autoComplete="tel"
                  error={errorMsg || undefined}
-                 className="h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
+                 className="placeholder:opacity-50 h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
                  required
                />
              </div>

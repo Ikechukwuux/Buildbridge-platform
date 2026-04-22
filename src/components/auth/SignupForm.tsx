@@ -17,21 +17,21 @@ export default function SignupForm() {
   const searchParams = useSearchParams()
   const redirectPath = searchParams.get("redirectTo") || searchParams.get("redirect") || "/dashboard"
   const supabase = createClient()
-  
+
   // View State
   const [step, setStep] = useState<"enter" | "otp">("enter")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Form State
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
   const [formattedPhone, setFormattedPhone] = useState("")
-  
+
   // OTP State
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const otpRefs = useRef<(HTMLInputElement | null)[]>([])
-  
+
   // Timer State
   const [timeLeft, setTimeLeft] = useState(300)
 
@@ -79,7 +79,7 @@ export default function SignupForm() {
       const error = params.get('error');
       const errorDescription = params.get('error_description');
       console.error('OAuth error from hash:', { error, errorDescription });
-      
+
       let decodedError = errorDescription || error;
       if (decodedError) {
         // Decode URL-encoded characters (like %253A -> :, %252F -> /)
@@ -89,7 +89,7 @@ export default function SignupForm() {
           console.warn('Failed to decode error description:', e);
         }
       }
-      
+
       setErrorMsg(`Google OAuth failed: ${decodedError || 'Unknown error'}`);
       // Clear hash
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -118,23 +118,23 @@ export default function SignupForm() {
     try {
       const email = `${phoneNumber.replace(/[^0-9]/g, '')}@buildbridge.app`
       const password = `buildbridge-${phoneNumber.replace(/[^0-9]/g, '')}`
-      
+
       const syncResult = await adminSyncPhoneUser(phoneNumber, fullName.trim())
       if (!syncResult.success) {
         console.error("Failed to sync user via admin API:", syncResult.error)
         return false
       }
-      
+
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      
+
       if (signInError) {
         console.error("Sign in failed:", signInError)
         return false
       }
-      
+
       const { data: { session } } = await supabase.auth.getSession()
       return !!session
     } catch (error) {
@@ -148,8 +148,12 @@ export default function SignupForm() {
     setIsLoading(true)
     setErrorMsg(null)
     try {
+      // Set cookies for the callback route to read
+      document.cookie = `auth_flow=signup; path=/; max-age=300; SameSite=Lax`;
+      document.cookie = `auth_next=${redirectPath || '/dashboard'}; path=/; max-age=300; SameSite=Lax`;
+      
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-      const redirectTo = `${baseUrl}/auth/callback?next=/onboarding&flow=signup`
+      const redirectTo = `${baseUrl}/auth/callback`
       console.log('Google OAuth redirectTo:', redirectTo)
       await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -171,16 +175,16 @@ export default function SignupForm() {
     setErrorMsg(null)
 
     const cleanPhone = formatPhone(phone)
-    
+
     try {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: cleanPhone })
       })
-      
+
       const data = await res.json()
-      
+
       if (!res.ok || !data.success) {
         setErrorMsg(data.error || "Failed to send OTP. Please try again.")
       } else {
@@ -191,7 +195,7 @@ export default function SignupForm() {
     } catch (error) {
       setErrorMsg("Network error. Please check your connection.")
     }
-    
+
     setIsLoading(false)
   }
 
@@ -201,7 +205,7 @@ export default function SignupForm() {
     newOtp[index] = value.substring(value.length - 1)
     setOtp(newOtp)
     if (value && index < 5) otpRefs.current[index + 1]?.focus()
-    
+
     // Auto-submit when all 6 digits entered
     const joined = newOtp.join("")
     if (joined.length === 6) {
@@ -224,7 +228,7 @@ export default function SignupForm() {
       setOtp(newOtp)
       const nextIndex = Math.min(pastedData.length, 5)
       otpRefs.current[nextIndex]?.focus()
-      
+
       if (pastedData.length === 6) {
         handleVerifyOtpDirect(pastedData)
       }
@@ -242,9 +246,9 @@ export default function SignupForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: formattedPhone, code })
       })
-      
+
       const data = await res.json()
-      
+
       if (!res.ok || !data.success) {
         setErrorMsg(data.error || "Invalid code. Please try again.")
       } else {
@@ -261,7 +265,7 @@ export default function SignupForm() {
     } catch (error) {
       setErrorMsg("Network error. Please try again.")
     }
-    
+
     setIsLoading(false)
   }
 
@@ -279,16 +283,16 @@ export default function SignupForm() {
     if (timeLeft > 0 || isLoading) return
     setIsLoading(true)
     setErrorMsg(null)
-    
+
     try {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: formattedPhone })
       })
-      
+
       const data = await res.json()
-      
+
       if (!res.ok || !data.success) {
         setErrorMsg(data.error || "Couldn't resend code.")
       } else {
@@ -297,21 +301,21 @@ export default function SignupForm() {
     } catch (error) {
       setErrorMsg("Network error. Please try again.")
     }
-    
+
     setIsLoading(false)
   }
 
   return (
     <Card className="w-full max-w-lg p-10 shadow-2xl rounded-[2.5rem] border-primary/10 overflow-hidden relative">
       <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-         <Sparkles className="w-24 h-24 text-primary" />
+        <Sparkles className="w-24 h-24 text-primary" />
       </div>
 
       {step === "enter" ? (
         <div className="flex flex-col gap-8 relative z-10">
           <div className="flex flex-col gap-4 text-center">
             <span className="inline-block self-center px-4 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
-                Join the Network
+              Join the Network
             </span>
             <h1 className="text-4xl font-black text-on-surface tracking-tight">Create your <span className="text-primary italic">Account.</span></h1>
             <p className="text-on-surface-variant font-medium leading-relaxed">
@@ -332,7 +336,7 @@ export default function SignupForm() {
                 required
               />
             </div>
-            
+
             <div className="flex flex-col gap-2">
               <Input
                 label="Phone Number"
@@ -347,16 +351,16 @@ export default function SignupForm() {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              isLoading={isLoading} 
+            <Button
+              type="submit"
+              isLoading={isLoading}
               className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20"
               disabled={fullName.trim().length < 2 || phone.length < 10}
             >
               <span>Continue</span>
               {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
             </Button>
-            
+
             <p className="text-center text-sm font-bold text-on-surface-variant/60 uppercase tracking-widest">
               Already have an account?{" "}
               <Link href="/login" className="text-primary font-black hover:underline">Log In</Link>
@@ -366,9 +370,9 @@ export default function SignupForm() {
       ) : (
         <form onSubmit={handleVerifyOtp} className="flex flex-col gap-8 relative z-10">
           <div className="flex flex-col gap-4 text-center">
-             <div className="mx-auto w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary mb-2 shadow-inner">
-               <ShieldCheck className="w-8 h-8" />
-             </div>
+            <div className="mx-auto w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary mb-2 shadow-inner">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
             <h1 className="text-4xl font-black text-on-surface tracking-tight">Verify Identity</h1>
             <p className="text-on-surface-variant font-medium leading-relaxed">
               We texted a code to <strong className="text-on-surface">{formattedPhone}</strong>
@@ -389,9 +393,8 @@ export default function SignupForm() {
                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                 onPaste={handleOtpPaste}
                 autoFocus={index === 0}
-                className={`w-full h-16 text-center rounded-2xl border-2 text-2xl font-black text-on-surface focus-visible:outline-none bg-surface-variant/20 transition-all ${
-                  errorMsg ? 'border-error text-error' : 'border-outline-variant focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/5'
-                }`}
+                className={`w-full h-16 text-center rounded-2xl border-2 text-2xl font-black text-on-surface focus-visible:outline-none bg-surface-variant/20 transition-all ${errorMsg ? 'border-error text-error' : 'border-outline-variant focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/5'
+                  }`}
                 disabled={isLoading}
               />
             ))}
@@ -411,8 +414,8 @@ export default function SignupForm() {
               ) : (
                 <button type="button" onClick={handleResend} disabled={isLoading} className="text-sm font-black text-primary hover:underline uppercase tracking-widest">Resend Code</button>
               )}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => { setStep("enter"); setOtp(["", "", "", "", "", ""]); setErrorMsg(null); }}
                 disabled={isLoading}
                 className="text-xs font-black text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest"

@@ -7,18 +7,27 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { NIGERIA_LOCATIONS } from "@/lib/data/nigeria"
-import { ChevronLeft, ChevronRight, Camera, Mic, Loader2, ShieldCheck, CheckCircle, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Camera, Mic, Loader2, ShieldCheck, CheckCircle, X, Copy, Share2, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { adminSyncPhoneUser } from "@/app/actions/auth"
-// Steps based on Sign-Up.md specification
-const STEPS = [
+
+// ─── STEP DEFINITIONS ───────────────────────────────────────────────────────
+
+// Onboarding steps (new user from homepage)
+// Flow: Location & Trade → How it Works → Create Account → OTP → redirect to /dashboard
+const ONBOARDING_STEPS = [
   { id: "location_trade", title: "Location & Trade", leftHeading: "Let's begin your fundraising journey", leftSubtext: "We're here to guide you every step of the way." },
-  { id: "who_for", title: "Who Are You Raising For?", leftHeading: "Who are you fundraising for?", leftSubtext: "You can create a need for yourself or on behalf of a tradesperson in your community." },
-  { id: "goal_amount", title: "Goal Amount", leftHeading: "Set your fundraising goal", leftSubtext: "Enter the exact cost of the item or service. Specific amounts build more trust with backers." },
+  { id: "how_it_works", title: "How BuildBridge Works", leftHeading: "Here's how it works", leftSubtext: "Three simple steps — and your community does the rest." },
   { id: "create_account", title: "Create Your Account", leftHeading: "Create your account", leftSubtext: "Save your progress and get your need live for backers to find." },
   { id: "otp_verification", title: "OTP Verification", leftHeading: "Check your messages", leftSubtext: "We sent a confirmation code to your phone. Enter it below to continue." },
-  { id: "how_it_works", title: "How BuildBridge Works", leftHeading: "Here's how it works", leftSubtext: "Three simple steps — and your community does the rest." },
+]
+
+// Create steps (logged-in user from dashboard)
+// Flow: Who For → Goal → Cover Photo → Story → Impact → Title → Review → Share
+const CREATE_STEPS = [
+  { id: "who_for", title: "Who Are You Raising For?", leftHeading: "Who are you fundraising for?", leftSubtext: "You can create a need for yourself or on behalf of a tradesperson in your community." },
+  { id: "goal_amount", title: "Goal Amount", leftHeading: "Set your fundraising goal", leftSubtext: "Enter the exact cost of the item or service. Specific amounts build more trust with backers." },
   { id: "cover_photo", title: "Cover Photo", leftHeading: "Add a cover photo", leftSubtext: "A great photo is the first thing backers notice. Make it count." },
   { id: "the_story", title: "The Story", leftHeading: "Tell people about this work", leftSubtext: "This is the first thing backers will read. Be honest, be specific, and make it yours." },
   { id: "ai_impact", title: "AI Impact Statement", leftHeading: "Your impact statement", leftSubtext: "One sentence that tells backers exactly what their support will make possible." },
@@ -45,55 +54,58 @@ const TRADE_CATEGORIES = [
 // Nigerian states
 const NIGERIAN_STATES = Object.keys(NIGERIA_LOCATIONS).sort()
 
-export default function NeedCreationFlow() {
+interface NeedCreationFlowProps {
+  mode?: "onboarding" | "create"
+}
+
+export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: NeedCreationFlowProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
+  
+  const [mode] = useState<"onboarding" | "create">(initialMode)
+  const steps = mode === "onboarding" ? ONBOARDING_STEPS : CREATE_STEPS
+  
   const [currentStep, setCurrentStep] = useState(0)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [hasProfile, setHasProfile] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isGeneratingStory, setIsGeneratingStory] = useState(false)
   const [isGeneratingImpact, setIsGeneratingImpact] = useState(false)
   const [regenerateCount, setRegenerateCount] = useState(0)
   
-  // Debug: log search params and auth state
-  useEffect(() => {
-    console.log('NeedCreationFlow mount:', { 
-      searchParams: searchParams ? Object.fromEntries(searchParams.entries()) : null,
-      isAuthenticated,
-      hasProfile,
-      isLoading 
-    })
-  }, [searchParams, isAuthenticated, hasProfile, isLoading])
-
+  // Profile data for create mode (pre-populated from existing profile)
+  const [profileId, setProfileId] = useState<string | null>(null)
+  
+  // Created need ID for share page
+  const [createdNeedId, setCreatedNeedId] = useState<string | null>(null)
+  
   // Form state
   const [formData, setFormData] = useState({
-    // Screen 1
+    // Location & Trade (onboarding)
     state: "",
     lga: "",
     tradeCategory: "",
     customTrade: "",
     
-    // Screen 2
+    // Who for (create)
     whoFor: "", // "myself" or "someone_else"
     
-    // Screen 3
+    // Goal amount (create)
     goalAmount: "",
     
-    // Screen 4
+    // Auth (onboarding)
     authMethod: "", // "google" or "phone"
     fullName: "",
     phone: "",
     
-    // Screen 4a
+    // OTP (onboarding)
     otpCode: "",
     
-    // Screen 6
+    // Cover photo (create)
     photoFile: null as File | null,
     photoUrl: "",
     
-    // Screen 7
+    // Story (create)
     story: "",
     storyMethod: "write", // "write", "record", "ai"
     aiPrompts: {
@@ -103,13 +115,13 @@ export default function NeedCreationFlow() {
       equipment: ""
     },
     
-    // Screen 8
+    // Impact statement (create)
     impactStatement: "",
     
-    // Screen 9
+    // Need title (create)
     needTitle: "",
     
-    // Screen 10
+    // Review (create)
     agreedToTerms: false,
   })
   
@@ -124,96 +136,116 @@ export default function NeedCreationFlow() {
   // Submission error state
   const [submitError, setSubmitError] = useState("")
   
-  // Carousel state for Screen 5
+  // Carousel state for How It Works
   const [carouselSlide, setCarouselSlide] = useState(0)
+  
+  // Copied state for share page
+  const [messageCopied, setMessageCopied] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
   
   // File input ref for photo upload
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  // Load auth status and subscribe to changes
+  // ─── AUTH & PROFILE LOADING ───────────────────────────────────────────────
+  
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       const authenticated = !!session
       setIsAuthenticated(authenticated)
       
-      if (authenticated && session?.user) {
-        // Check if user has a profile
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle()
-        
-        if (!error && profile) {
-          console.log('User has profile, setting hasProfile to true')
-          setHasProfile(true)
-        } else {
-          console.log('User has no profile or error checking:', error)
-          setHasProfile(false)
+      if (mode === "create") {
+        if (!authenticated) {
+          // Not logged in - can't use create mode, redirect to login
+          router.push(`/login?redirectTo=${encodeURIComponent('/create-need?mode=create')}`)
+          return
         }
-      } else {
-        setHasProfile(false)
+        
+        // Pre-populate profile data for create mode
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, trade_category, trade_other_description, location_state, location_lga, full_name')
+            .eq('user_id', session.user.id)
+            .maybeSingle()
+          
+          if (profile) {
+            setProfileId(profile.id)
+            // Pre-populate form data from profile
+            const tradeLabel = getTradeLabel(profile.trade_category)
+            setFormData(prev => ({
+              ...prev,
+              state: profile.location_state ? formatStateName(profile.location_state) : prev.state,
+              lga: profile.location_lga || prev.lga,
+              tradeCategory: tradeLabel,
+              customTrade: profile.trade_other_description || "",
+              fullName: profile.full_name || session.user.user_metadata?.full_name || "",
+            }))
+          }
+        }
+      }
+      
+      if (mode === "onboarding" && authenticated) {
+        // Check if already has profile — if so, go straight to dashboard
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle()
+          
+          if (profile) {
+            router.push('/dashboard')
+            return
+          }
+        }
       }
       
       setIsLoading(false)
     }
-    checkAuth()
+    init()
     
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const authenticated = !!session
       setIsAuthenticated(authenticated)
       
-      if (authenticated && session?.user) {
-        // Check if user has a profile
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle()
-        
-        if (!error && profile) {
-          console.log('Auth state change: user has profile')
-          setHasProfile(true)
-        } else {
-          setHasProfile(false)
-        }
-      } else {
-        setHasProfile(false)
+      if (mode === "onboarding" && authenticated) {
+        // Auth complete in onboarding → redirect to dashboard
+        console.log('Onboarding auth complete, redirecting to dashboard')
+        router.push('/dashboard')
       }
     })
     
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [supabase, mode, router])
   
-  // Parse OAuth errors from hash fragment
+  // Parse OAuth errors from hash fragment (onboarding mode)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const hash = window.location.hash;
+    if (mode !== "onboarding") return
+    if (typeof window === 'undefined') return
+    const hash = window.location.hash
     if (hash && hash.includes('error=')) {
-      const params = new URLSearchParams(hash.slice(1));
-      const error = params.get('error');
-      const errorDescription = params.get('error_description');
-      console.error('OAuth error from hash:', { error, errorDescription });
+      const params = new URLSearchParams(hash.slice(1))
+      const error = params.get('error')
+      const errorDescription = params.get('error_description')
+      console.error('OAuth error from hash:', { error, errorDescription })
       
-      let decodedError = errorDescription || error;
+      let decodedError = errorDescription || error
       if (decodedError) {
-        // Decode URL-encoded characters (like %253A -> :, %252F -> /)
         try {
-          decodedError = decodeURIComponent(decodedError.replace(/\+/g, ' '));
+          decodedError = decodeURIComponent(decodedError.replace(/\+/g, ' '))
         } catch (e) {
-          console.warn('Failed to decode error description:', e);
+          console.warn('Failed to decode error description:', e)
         }
       }
       
-      setAuthError(`Google OAuth failed: ${decodedError || 'Unknown error'}`);
-      // Clear hash
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      setAuthError(`Google OAuth failed: ${decodedError || 'Unknown error'}`)
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
     }
-  }, [])
+  }, [mode])
   
   // OTP timer
   useEffect(() => {
@@ -226,48 +258,26 @@ export default function NeedCreationFlow() {
     return () => clearTimeout(timer)
   }, [otpSent, otpTimeLeft])
   
-  // Auto-advance when authenticated on auth screens
+  // Auto-advance when authenticated on auth screens (onboarding mode)
   useEffect(() => {
-    console.log('Auto-advance check:', { isAuthenticated, currentStep, stepId: STEPS[currentStep].id })
-    const stepId = STEPS[currentStep].id
+    if (mode !== "onboarding") return
+    const stepId = steps[currentStep]?.id
     if (isAuthenticated && (stepId === "create_account" || stepId === "otp_verification")) {
-      // Skip to "how_it_works" screen (step 5)
-      console.log('Skipping auth steps, moving to step 5')
-      setCurrentStep(5)
-    }
-  }, [isAuthenticated, currentStep])
-
-  // Redirect to dashboard if user has a profile (already completed onboarding)
-  useEffect(() => {
-    if (hasProfile && !isLoading) {
-      console.log('User has profile, redirecting to dashboard')
+      // Auth complete → redirect to dashboard
+      console.log('Onboarding: auth complete, redirecting to dashboard')
       router.push('/dashboard')
     }
-  }, [hasProfile, isLoading, router])
-
-  // Redirect to dashboard if coming from Google OAuth with resumedAuth or new_user flag
-  useEffect(() => {
-    const resumedAuth = searchParams?.get('resumedAuth') === 'true'
-    const newUser = searchParams?.get('new_user') === 'true'
-    if (!isLoading && isAuthenticated && (resumedAuth || newUser)) {
-      console.log('OAuth flag detected, redirecting to dashboard:', { resumedAuth, newUser })
-      // Clear the query params to prevent infinite redirect
-      const newUrl = new URL(window.location.href)
-      newUrl.searchParams.delete('resumedAuth')
-      newUrl.searchParams.delete('new_user')
-      window.history.replaceState({}, '', newUrl.toString())
-      router.push('/dashboard')
-    }
-  }, [isLoading, isAuthenticated, searchParams, router])
-
+  }, [isAuthenticated, currentStep, mode, steps, router])
+  
   // Auto-generate impact statement when reaching AI impact screen
   useEffect(() => {
-    const stepId = STEPS[currentStep].id
+    if (mode !== "create") return
+    const stepId = steps[currentStep]?.id
     if (stepId === "ai_impact" && !formData.impactStatement && formData.story) {
       handleGenerateImpactStatement()
     }
-  }, [currentStep, formData.impactStatement, formData.story])
-
+  }, [currentStep, formData.impactStatement, formData.story, mode])
+  
   // Auto-scroll to top when screen changes
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -281,6 +291,35 @@ export default function NeedCreationFlow() {
     setOtpError("")
     setAuthError("")
   }, [currentStep])
+  
+  // ─── HELPERS ──────────────────────────────────────────────────────────────
+  
+  // Map trade category enum back to label
+  const getTradeLabel = (categoryId: string | null): string => {
+    if (!categoryId) return ""
+    const mapping: Record<string, string> = {
+      "baker": "Baker / Food Vendor",
+      "tailor": "Tailor",
+      "carpenter": "Carpenter",
+      "welder": "Welder",
+      "cobbler": "Cobbler",
+      "market_trader": "Market Trader",
+      "electrician": "Electrician",
+      "plumber": "Plumber",
+      "hair_stylist": "Hairdresser",
+      "other": "Other"
+    }
+    return mapping[categoryId] || "Other"
+  }
+  
+  // Format state name from DB format back to display
+  const formatStateName = (dbState: string): string => {
+    if (!dbState) return ""
+    // Convert e.g. "lagos" -> "Lagos", "cross_river" -> "Cross River"
+    return dbState.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ')
+  }
   
   // Map trade category label to enum ID
   const getTradeCategoryId = (label: string): string => {
@@ -300,32 +339,74 @@ export default function NeedCreationFlow() {
     return mapping[label] || "other"
   }
   
-  // Handle continue button
+  // Helper for badge guidance
+  const getBadgeGuidance = (amount: number) => {
+    if (amount === 0) return ""
+    if (amount <= 20000) return "✅ Your current account level can list this need right away."
+    if (amount <= 50000) return "ℹ️ You will need 3 community vouches (Level 1) to list this amount."
+    if (amount <= 150000) return "ℹ️ You will need Level 2 verification — 5 vouches and a geotagged workspace photo."
+    if (amount <= 500000) return "ℹ️ You will need a community leader endorsement (Level 3) for this amount."
+    return "ℹ️ Needs above ₦500,000 require full Platform Verification by the BuildBridge team."
+  }
+  
+  // Helper for phone display formatting
+  const formatPhoneDisplay = (phone: string) => {
+    const cleaned = phone.replace(/[^0-9]/g, "")
+    if (cleaned.length === 11 && cleaned.startsWith("0")) {
+      return `+234 ${cleaned.slice(1, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`
+    }
+    if (cleaned.length === 10) {
+      return `+234 ${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`
+    }
+    return phone
+  }
+  
+  // Get LGAs for selected state
+  const getLGAs = () => {
+    if (!formData.state) return []
+    return NIGERIA_LOCATIONS[formData.state] || []
+  }
+
+  // ─── NAVIGATION ───────────────────────────────────────────────────────────
+  
   const handleContinue = async () => {
-    if (currentStep === STEPS.length - 2) {
-      // Review & Launch step - submit the need
-      await handleSubmitNeed()
-    } else if (currentStep === STEPS.length - 1) {
-      // Done step - sign up process complete, redirect to dashboard as logged in user
-      router.push("/dashboard")
+    const stepId = steps[currentStep]?.id
+    
+    if (mode === "onboarding") {
+      // In onboarding, the last reachable step is create_account or otp_verification
+      // Auth completion triggers redirect to dashboard automatically
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(prev => prev + 1)
+      }
     } else {
-      // Normal flow - go to next screen
-      setCurrentStep(prev => prev + 1)
+      // Create mode
+      if (stepId === "review_launch") {
+        // Submit the need
+        await handleSubmitNeed()
+      } else if (stepId === "share_need") {
+        // Done → go to dashboard
+        router.push("/dashboard")
+      } else {
+        setCurrentStep(prev => prev + 1)
+      }
     }
   }
   
-  // Handle back button
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1)
     } else {
-      router.push("/")
+      if (mode === "create") {
+        router.push("/dashboard")
+      } else {
+        router.push("/")
+      }
     }
   }
   
   // Check if current step is complete
   const isStepComplete = () => {
-    const stepId = STEPS[currentStep].id
+    const stepId = steps[currentStep]?.id
     
     switch (stepId) {
       case "location_trade":
@@ -336,19 +417,15 @@ export default function NeedCreationFlow() {
       case "goal_amount":
         return parseInt(formData.goalAmount) > 0
       case "create_account":
-        // If already authenticated, skip
         if (isAuthenticated) return true
-        
-        if (formData.authMethod === "google") {
-          return true // Google auth handled separately
-        }
-        // Phone path: require full name and valid phone
+        if (formData.authMethod === "google") return true
         return formData.fullName.trim().length >= 2 && formData.phone.length >= 10
       case "otp_verification":
         return formData.otpCode.length === 6
-      case "cover_photo":
-        // Photo is optional (can be skipped)
+      case "how_it_works":
         return true
+      case "cover_photo":
+        return true // optional
       case "the_story":
         return formData.story.split(/\s+/).length >= 30
       case "ai_impact":
@@ -357,10 +434,14 @@ export default function NeedCreationFlow() {
         return formData.needTitle.length >= 10
       case "review_launch":
         return formData.agreedToTerms
+      case "share_need":
+        return true
       default:
         return true
     }
   }
+  
+  // ─── AUTH ACTIONS (onboarding mode) ─────────────────────────────────────
   
   // Handle OTP send
   const handleSendOtp = async () => {
@@ -369,7 +450,6 @@ export default function NeedCreationFlow() {
     setAuthError("")
     
     try {
-      // Format phone number
       let cleanPhone = formData.phone.replace(/[^0-9]/g, "")
       if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
         cleanPhone = "+234" + cleanPhone.slice(1)
@@ -377,7 +457,6 @@ export default function NeedCreationFlow() {
         cleanPhone = "+234" + cleanPhone
       }
       
-      // Send OTP via Twilio API
       console.log("Sending OTP to phone:", cleanPhone)
       let res
       try {
@@ -392,11 +471,9 @@ export default function NeedCreationFlow() {
         return
       }
       
-      console.log("OTP API response status:", res.status, "ok:", res.ok)
       let data
       try {
         data = await res.json()
-        console.log("OTP API response data:", data)
       } catch (jsonError) {
         console.error("Failed to parse JSON response:", jsonError)
         setOtpError(`Server error (${res.status}). Please try again.`)
@@ -408,8 +485,11 @@ export default function NeedCreationFlow() {
       } else {
         setOtpSent(true)
         setOtpTimeLeft(60)
-        // Automatically advance to OTP verification screen (Screen 4a)
-        setCurrentStep(4)
+        // Advance to OTP verification step
+        const otpStepIndex = steps.findIndex(s => s.id === "otp_verification")
+        if (otpStepIndex >= 0) {
+          setCurrentStep(otpStepIndex)
+        }
       }
     } catch (error: any) {
       console.error("OTP send error:", error)
@@ -419,17 +499,15 @@ export default function NeedCreationFlow() {
     }
   }
   
-   // Create or sign in Supabase user with phone number
+  // Create or sign in Supabase user with phone number
   const createOrSignInUserWithPhone = async (phone: string): Promise<boolean> => {
     try {
-      // Use phone as email (phone@buildbridge.app) for Supabase auth
       const email = `${phone.replace(/[^0-9]/g, '')}@buildbridge.app`
       const password = `buildbridge-${phone.replace(/[^0-9]/g, '')}`
       const userName = formData.fullName.trim()
       
       console.log("Attempting auth with email:", email)
       
-      // 1. Ensure user is synced and email_confirmed via server admin key
       const syncResult = await adminSyncPhoneUser(phone, userName)
       if (!syncResult.success) {
         console.error("Failed to sync user via admin API:", syncResult.error)
@@ -437,13 +515,10 @@ export default function NeedCreationFlow() {
         return false
       }
       
-      // 2. Sign in with the now-guaranteed-confirmed account
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      
-      console.log("Sign in attempt result:", { signInData, signInError })
       
       if (signInError) {
         console.error("Sign in failed:", signInError)
@@ -451,7 +526,6 @@ export default function NeedCreationFlow() {
         return false
       }
       
-      // Verify session is set
       const { data: { session } } = await supabase.auth.getSession()
       console.log("Session after auth attempt:", session ? "Exists" : "None")
       
@@ -470,7 +544,6 @@ export default function NeedCreationFlow() {
     setAuthError("")
     
     try {
-      // Format phone number
       let cleanPhone = formData.phone.replace(/[^0-9]/g, "")
       if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
         cleanPhone = "+234" + cleanPhone.slice(1)
@@ -478,9 +551,8 @@ export default function NeedCreationFlow() {
         cleanPhone = "+234" + cleanPhone
       }
       
-      const otpToVerify = typeof overrideCode === 'string' ? overrideCode : formData.otpCode;
+      const otpToVerify = typeof overrideCode === 'string' ? overrideCode : formData.otpCode
       
-      // Verify OTP via Twilio API
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -492,12 +564,10 @@ export default function NeedCreationFlow() {
       if (!res.ok || !data.success) {
         setOtpError(data.error || "The code entered is incorrect or has expired.")
       } else {
-        // OTP verified successfully - create or sign in Supabase user
         const authSuccess = await createOrSignInUserWithPhone(cleanPhone)
         if (authSuccess) {
-          // Mark as authenticated
           setIsAuthenticated(true)
-          // Auto-advance will be handled by useEffect
+          // Auth state change listener will redirect to dashboard
         } else {
           setOtpError("Failed to create account. Please try again.")
         }
@@ -509,6 +579,29 @@ export default function NeedCreationFlow() {
       setIsLoading(false)
     }
   }
+  
+  // Handle Google OAuth
+  const handleGoogleAuth = async () => {
+    setIsLoading(true)
+    setAuthError('')
+    try {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+      const redirectTo = `${baseUrl}/auth/callback?next=/dashboard&flow=signup`
+      console.log('Google OAuth redirectTo:', redirectTo)
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo
+        }
+      })
+    } catch (error) {
+      console.error('Google OAuth error:', error)
+      setAuthError('Failed to sign in with Google. Please check your configuration and try again.')
+      setIsLoading(false)
+    }
+  }
+  
+  // ─── CREATE MODE ACTIONS ──────────────────────────────────────────────────
   
   // Handle AI story generation
   const handleGenerateStory = async () => {
@@ -529,10 +622,8 @@ export default function NeedCreationFlow() {
       const data = await res.json()
       
       if (data.success) {
-        // Update story and switch to write tab
         setFormData(prev => ({ ...prev, story: data.story, storyMethod: "write" }))
       } else {
-        // Show error (could add error state)
         console.error("Failed to generate story:", data.error)
       }
     } catch (error) {
@@ -575,54 +666,28 @@ export default function NeedCreationFlow() {
     }
   }
   
-  // Handle Google OAuth
-  const handleGoogleAuth = async () => {
-    setIsLoading(true)
-    setAuthError('')
-    try {
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-      const redirectTo = `${baseUrl}/auth/callback?next=/create-need&flow=signup`
-      console.log('Google OAuth redirectTo:', redirectTo)
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo
-        }
-      })
-    } catch (error) {
-      console.error('Google OAuth error:', error)
-      setAuthError('Failed to sign in with Google. Please check your configuration and try again.')
-      setIsLoading(false)
-    }
-  }
-  
-
   // Handle photo upload
   const handlePhotoUpload = async (file: File) => {
     setIsLoading(true)
     try {
-      // Generate unique filename
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `needs/${fileName}`
       
-      // Upload to Supabase storage
       const { data, error } = await supabase.storage
         .from('needs')
         .upload(filePath, file)
       
       if (error) {
         console.error("Photo upload error:", error.message)
-        // TODO: show error to user
+        setSubmitError("Failed to upload photo: " + error.message)
         return
       }
       
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('needs')
         .getPublicUrl(filePath)
       
-      // Update form data
       setFormData(prev => ({
         ...prev,
         photoFile: file,
@@ -630,17 +695,16 @@ export default function NeedCreationFlow() {
       }))
     } catch (error: any) {
       console.error("Photo upload failed:", error)
+      setSubmitError("Failed to upload photo. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Trigger file input for photo upload
   const triggerFileInput = () => {
     fileInputRef.current?.click()
   }
 
-  // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -648,27 +712,17 @@ export default function NeedCreationFlow() {
     }
   }
 
-  // Handle need submission
+  // Handle need submission (create mode only)
   const handleSubmitNeed = async () => {
-    console.log("handleSubmitNeed called - step:", currentStep, "isAuthenticated:", isAuthenticated)
     setIsLoading(true)
     setSubmitError("")
     
     try {
-      // Validate required form data before proceeding
-      if (!formData.state) {
-        throw new Error("State is required. Please go back to the Location & Trade step.")
-      }
-      if (!formData.lga) {
-        throw new Error("Local Government Area is required. Please go back to the Location & Trade step.")
-      }
-      if (!formData.tradeCategory) {
-        throw new Error("Trade category is required. Please go back to the Location & Trade step.")
-      }
+      // Validate required form data
       if (!formData.goalAmount || parseFloat(formData.goalAmount) <= 0) {
         throw new Error("Valid goal amount is required. Please go back to the Goal Amount step.")
       }
-      if (!formData.story || formData.story.trim().length < 30) {
+      if (!formData.story || formData.story.trim().split(/\s+/).length < 30) {
         throw new Error("Story is required and must be at least 30 words. Please go back to the Story step.")
       }
       if (!formData.impactStatement) {
@@ -677,107 +731,107 @@ export default function NeedCreationFlow() {
       if (!formData.needTitle || formData.needTitle.length < 10) {
         throw new Error("Need title is required and must be at least 10 characters. Please go back to the Need Title step.")
       }
-      // 1. Get current user
-      console.log("Getting current user...")
+      
+      // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser()
-      console.log("User fetch result:", { user: user?.id, error: userError })
       if (userError || !user) {
-        console.error("User not authenticated:", userError)
-        throw new Error("You must be logged in to create a need")
+        throw new Error("You must be logged in to create a need. Please log in again.")
       }
       
-      // 2. Get or create profile for user
-      console.log("Getting/creating profile for user:", user.id)
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle()
+      // Use existing profile ID from create mode
+      let finalProfileId = profileId
       
-      console.log("Profile fetch result:", { profile, error: profileError })
-      let profileId
-      if (profileError || !profile) {
-        // Create profile
-        console.log("Creating new profile...")
-        const tradeCategoryId = getTradeCategoryId(formData.tradeCategory)
-        const { data: newProfile, error: createError } = await supabase
+      if (!finalProfileId) {
+        // Fetch profile if not pre-loaded
+        const { data: profile } = await supabase
           .from('profiles')
-           .insert({
-             user_id: user.id,
-             full_name: formData.fullName || '',
-             trade_category: tradeCategoryId as any,
-             trade_other_description: formData.tradeCategory === "Other" ? formData.customTrade : null,
-             location_state: formData.state.toLowerCase().replace(/\s+/g, '_') as any,
-             location_lga: formData.lga,
-           })
           .select('id')
-          .single()
+          .eq('user_id', user.id)
+          .maybeSingle()
         
-        console.log("Profile creation result:", { newProfile, error: createError })
-        if (createError) {
-          console.error("Failed to create profile:", createError)
-          // Try to continue with default profile (maybe exists via trigger)
-          // Fetch again
-          const { data: existingProfile } = await supabase
+        if (!profile) {
+          // Create profile for users who don't have one yet
+          const tradeCategoryId = getTradeCategoryId(formData.tradeCategory)
+          const { data: newProfile, error: createError } = await supabase
             .from('profiles')
+            .insert({
+              user_id: user.id,
+              full_name: formData.fullName || user.user_metadata?.full_name || '',
+              trade_category: tradeCategoryId as any,
+              trade_other_description: formData.tradeCategory === "Other" ? formData.customTrade : null,
+              location_state: formData.state.toLowerCase().replace(/\s+/g, '_') as any,
+              location_lga: formData.lga,
+            })
             .select('id')
-            .eq('user_id', user.id)
-            .maybeSingle()
-          if (!existingProfile) {
-            throw new Error("Could not create profile")
+            .single()
+          
+          if (createError) {
+            // Try to fetch existing profile (may have been created by trigger)
+            const { data: existingProfile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('user_id', user.id)
+              .maybeSingle()
+            if (!existingProfile) {
+              throw new Error("Could not create profile: " + createError.message)
+            }
+            finalProfileId = existingProfile.id
+          } else {
+            finalProfileId = newProfile.id
           }
-          profileId = existingProfile.id
         } else {
-          profileId = newProfile.id
+          finalProfileId = profile.id
         }
-      } else {
-        profileId = profile.id
       }
       
-       console.log("Profile ID:", profileId)
-       if (!profileId) {
-         throw new Error("Profile ID is missing")
-       }
+      if (!finalProfileId) {
+        throw new Error("Profile ID is missing")
+      }
       
-       // 3. Use uploaded photo URL or default placeholder
+      // Use uploaded photo URL or default placeholder
       const photoUrl = formData.photoUrl || "/images/placeholder-need.jpg"
-      console.log("Photo URL:", photoUrl)
       
-      // 4. Create need record
-      console.log("Creating need record...")
+      // Create need record
       const needData = {
-        profile_id: profileId,
+        profile_id: finalProfileId,
         item_name: formData.needTitle || formData.aiPrompts.equipment || "Equipment",
-        item_cost: parseFloat(formData.goalAmount), // DECIMAL(12,2) in Naira
+        item_cost: parseFloat(formData.goalAmount),
         photo_url: photoUrl,
-        story: formData.story.slice(0, 150), // Max 150 chars
-        impact_statement: formData.impactStatement.slice(0, 200), // Max 200 chars
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+        story: formData.story.slice(0, 150),
+        impact_statement: formData.impactStatement.slice(0, 200),
+        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: 'pending_review',
         published_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
-       console.log("Need data:", needData, "profileId:", profileId, "userId:", user?.id)
       
-      const { error: needError } = await supabase
+      const { data: createdNeed, error: needError } = await supabase
         .from('needs')
         .insert(needData)
+        .select('id')
+        .single()
       
       if (needError) {
         console.error("Need creation error:", needError)
-        throw needError
+        throw new Error("Failed to create need: " + needError.message)
       }
       
-      console.log("Need created successfully, advancing to share screen")
-      // 5. Redirect to success screen
-      setCurrentStep(STEPS.length - 1) // Share screen
+      // Store created need ID for share page
+      if (createdNeed) {
+        setCreatedNeedId(createdNeed.id)
+      }
+      
+      // Advance to share screen
+      const shareIndex = steps.findIndex(s => s.id === "share_need")
+      if (shareIndex >= 0) {
+        setCurrentStep(shareIndex)
+      }
     } catch (error) {
-       console.error("Failed to submit need:", error)
-       console.error("Error details:", typeof error, error?.constructor?.name, error?.name, error?.code, error?.details, error?.message)
-       const errorMessage = error instanceof Error ? error.message : "Failed to submit need. Please try again."
+      console.error("Failed to submit need:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to submit need. Please try again."
       if (errorMessage.includes("Auth session") || errorMessage.includes("not authenticated") || errorMessage.includes("must be logged in")) {
-        setSubmitError("Your session has expired. Please go back to the 'Create Your Account' step and sign in again.")
+        setSubmitError("Your session has expired. Please go back to the dashboard and try again.")
       } else {
         setSubmitError(errorMessage)
       }
@@ -786,15 +840,55 @@ export default function NeedCreationFlow() {
     }
   }
   
-  // Get LGAs for selected state
-  const getLGAs = () => {
-    if (!formData.state) return []
-    return NIGERIA_LOCATIONS[formData.state] || []
+  // ─── SHARE PAGE HELPERS ───────────────────────────────────────────────────
+  
+  const getNeedUrl = () => {
+    if (typeof window === 'undefined') return ''
+    return createdNeedId 
+      ? `${window.location.origin}/needs/${createdNeedId}`
+      : `${window.location.origin}/browse`
   }
   
-  // Render current step content
+  const getShareMessage = () => {
+    const amount = parseInt(formData.goalAmount || '0').toLocaleString()
+    const item = formData.aiPrompts.equipment || formData.needTitle || "trade equipment"
+    return `Hi, I just listed a need on BuildBridge — a platform that lets people back skilled tradespeople directly. I need ₦${amount} for ${item}. Would you be able to back me, or share this with someone who might? Here's the link: ${getNeedUrl()}`
+  }
+  
+  const handleCopyMessage = () => {
+    navigator.clipboard.writeText(getShareMessage())
+    setMessageCopied(true)
+    setTimeout(() => setMessageCopied(false), 3000)
+  }
+  
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(getNeedUrl())
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 3000)
+  }
+  
+  const handleWhatsAppShare = () => {
+    const text = encodeURIComponent(getShareMessage())
+    window.open(`https://wa.me/?text=${text}`, '_blank')
+  }
+  
+  const handleWhatsAppStatusShare = () => {
+    const text = encodeURIComponent(getShareMessage())
+    window.open(`https://wa.me/?text=${text}`, '_blank')
+  }
+  
+  const handleInstagramShare = () => {
+    // Instagram doesn't have a direct share URL, copy link instead
+    navigator.clipboard.writeText(getNeedUrl())
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 3000)
+    alert("Link copied! Open Instagram and paste it in your story or post.")
+  }
+  
+  // ─── RENDER FUNCTIONS ─────────────────────────────────────────────────────
+  
   const renderStepContent = () => {
-    const stepId = STEPS[currentStep].id
+    const stepId = steps[currentStep]?.id
     
     switch (stepId) {
       case "location_trade":
@@ -826,7 +920,7 @@ export default function NeedCreationFlow() {
     }
   }
   
-  // Screen 1: Location & Trade Category
+  // Screen: Location & Trade Category (onboarding)
   const renderLocationTrade = () => (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -920,7 +1014,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 2: Who Are You Raising For?
+  // Screen: Who Are You Raising For? (create)
   const renderWhoFor = () => (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -964,7 +1058,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 3: Goal Amount
+  // Screen: Goal Amount (create)
   const renderGoalAmount = () => (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -1005,29 +1099,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Helper for badge guidance
-  const getBadgeGuidance = (amount: number) => {
-    if (amount === 0) return ""
-    if (amount <= 20000) return "✅ Your current account level can list this need right away."
-    if (amount <= 50000) return "ℹ️ You will need 3 community vouches (Level 1) to list this amount."
-    if (amount <= 150000) return "ℹ️ You will need Level 2 verification — 5 vouches and a geotagged workspace photo."
-    if (amount <= 500000) return "ℹ️ You will need a community leader endorsement (Level 3) for this amount."
-    return "ℹ️ Needs above ₦500,000 require full Platform Verification by the BuildBridge team."
-  }
-  
-  // Helper for phone display formatting
-  const formatPhoneDisplay = (phone: string) => {
-    const cleaned = phone.replace(/[^0-9]/g, "")
-    if (cleaned.length === 11 && cleaned.startsWith("0")) {
-      return `+234 ${cleaned.slice(1, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`
-    }
-    if (cleaned.length === 10) {
-      return `+234 ${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`
-    }
-    return phone
-  }
-  
-  // Screen 4: Create Your Account
+  // Screen: Create Your Account (onboarding)
   const renderCreateAccount = () => {
     if (isAuthenticated) {
       return (
@@ -1036,7 +1108,7 @@ export default function NeedCreationFlow() {
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6 text-green-500" />
               <p className="text-body-large font-medium text-on-surface">
-                You're already signed in. You can continue creating your need.
+                You're already signed in. Redirecting to your dashboard...
               </p>
             </div>
           </div>
@@ -1166,7 +1238,7 @@ export default function NeedCreationFlow() {
     )
   }
   
-   // Screen 4a: OTP Verification
+  // Screen: OTP Verification (onboarding)
   const renderOtpVerification = () => (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -1188,20 +1260,17 @@ export default function NeedCreationFlow() {
                   const joined = newOtp.join("")
                   setFormData(prev => ({ ...prev, otpCode: joined }))
                   
-                  // Auto-advance
                   if (value && index < 5) {
                     const nextInput = document.getElementById(`otp-input-${index + 1}`)
                     if (nextInput) nextInput.focus()
                   }
                   
-                  // Auto-submit on 6th digit
                   if (joined.length === 6) {
                     handleVerifyOtp(joined)
                   }
                 }
               }}
               onKeyDown={(e) => {
-                // Focus previous input on backspace if current is empty
                 if (e.key === "Backspace" && !formData.otpCode[index] && index > 0) {
                   const prevInput = document.getElementById(`otp-input-${index - 1}`)
                   if (prevInput) prevInput.focus()
@@ -1233,7 +1302,10 @@ export default function NeedCreationFlow() {
           <div>
             <button
               type="button"
-              onClick={() => setCurrentStep(STEPS.findIndex(s => s.id === "create_account"))}
+              onClick={() => {
+                const acctIndex = steps.findIndex(s => s.id === "create_account")
+                if (acctIndex >= 0) setCurrentStep(acctIndex)
+              }}
               className="text-label-large text-on-surface-variant hover:text-primary"
             >
               Change number
@@ -1244,7 +1316,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 5: How BuildBridge Works
+  // Screen: How BuildBridge Works (onboarding)
   const renderHowItWorks = () => (
     <div className="space-y-8">
       <div className="space-y-6">
@@ -1278,7 +1350,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 6: Cover Photo
+  // Screen: Cover Photo (create)
   const renderCoverPhoto = () => (
     <div className="space-y-8">
       <div className="space-y-6">
@@ -1376,7 +1448,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 7: The Story (simplified)
+  // Screen: The Story (create)
   const renderTheStory = () => (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -1413,7 +1485,7 @@ export default function NeedCreationFlow() {
           <textarea
             value={formData.story}
             onChange={(e) => setFormData(prev => ({ ...prev, story: e.target.value }))}
-            placeholder="I have been doing this trade for...&#10;My work means a lot to my community because...&#10;The item I need is...&#10;Without it, I cannot..."
+            placeholder={"I have been doing this trade for...\nMy work means a lot to my community because...\nThe item I need is...\nWithout it, I cannot..."}
             className="w-full h-64 p-4 rounded-2xl border border-outline-variant bg-surface text-on-surface resize-none"
           />
           <div className="text-right">
@@ -1505,7 +1577,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 8: AI Impact Statement
+  // Screen: AI Impact Statement (create)
   const renderAiImpact = () => (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -1529,7 +1601,7 @@ export default function NeedCreationFlow() {
           </div>
         )}
         
-        <div className="flex gap-4 justify-center">
+        <div className="flex gap-4 justify-center flex-wrap">
           <button 
             onClick={handleContinue}
             disabled={!formData.impactStatement}
@@ -1549,7 +1621,6 @@ export default function NeedCreationFlow() {
           </button>
           <button 
             onClick={() => {
-              // TODO: Implement edit manually
               const newStatement = prompt("Edit impact statement:", formData.impactStatement)
               if (newStatement !== null) {
                 setFormData(prev => ({ ...prev, impactStatement: newStatement }))
@@ -1564,7 +1635,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 9: Need Title
+  // Screen: Need Title (create)
   const renderNeedTitle = () => (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -1596,7 +1667,18 @@ export default function NeedCreationFlow() {
         <p className="text-body-medium text-on-surface-variant mb-4">
           Example: "Back Emeka's drill — Carpenter in Yaba, Lagos"
         </p>
-        <button className="text-primary font-bold hover:underline">
+        <button 
+          type="button"
+          onClick={() => {
+            const name = formData.fullName?.split(' ')[0] || 'Artisan'
+            const item = formData.aiPrompts.equipment || 'equipment'
+            const trade = formData.tradeCategory === "Other" ? formData.customTrade : formData.tradeCategory
+            const location = formData.lga ? `${formData.lga}, ${formData.state}` : formData.state
+            const suggested = `Back ${name}'s ${item} — ${trade} in ${location}`
+            setFormData(prev => ({ ...prev, needTitle: suggested.slice(0, 60) }))
+          }}
+          className="text-primary font-bold hover:underline"
+        >
           Use this suggestion →
         </button>
       </div>
@@ -1625,7 +1707,7 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 10: Review & Launch
+  // Screen: Review & Launch (create)
   const renderReviewLaunch = () => (
     <div className="space-y-8">
       <div className="space-y-6">
@@ -1634,7 +1716,14 @@ export default function NeedCreationFlow() {
             <p className="text-label-small font-bold text-on-surface-variant mb-1">Title</p>
             <p className="text-body-large font-bold text-on-surface">{formData.needTitle}</p>
           </div>
-          <button className="text-primary font-bold hover:underline">Edit →</button>
+          <button 
+            type="button"
+            onClick={() => {
+              const idx = steps.findIndex(s => s.id === "need_title")
+              if (idx >= 0) setCurrentStep(idx)
+            }}
+            className="text-primary font-bold hover:underline"
+          >Edit →</button>
         </div>
         
         <div className="flex justify-between items-start p-6 bg-surface-variant/30 rounded-2xl">
@@ -1642,15 +1731,21 @@ export default function NeedCreationFlow() {
             <p className="text-label-small font-bold text-on-surface-variant mb-1">Goal amount</p>
             <p className="text-body-large font-bold text-on-surface">₦{parseInt(formData.goalAmount).toLocaleString()}</p>
           </div>
-          <button className="text-primary font-bold hover:underline">Edit →</button>
+          <button 
+            type="button"
+            onClick={() => {
+              const idx = steps.findIndex(s => s.id === "goal_amount")
+              if (idx >= 0) setCurrentStep(idx)
+            }}
+            className="text-primary font-bold hover:underline"
+          >Edit →</button>
         </div>
         
         <div className="flex justify-between items-start p-6 bg-surface-variant/30 rounded-2xl">
           <div>
             <p className="text-label-small font-bold text-on-surface-variant mb-1">Location</p>
-            <p className="text-body-large font-bold text-on-surface">{formData.lga}, {formData.state}</p>
+            <p className="text-body-large font-bold text-on-surface">{formData.lga ? `${formData.lga}, ` : ''}{formData.state}</p>
           </div>
-          <button className="text-primary font-bold hover:underline">Edit →</button>
         </div>
         
         <div className="flex justify-between items-start p-6 bg-surface-variant/30 rounded-2xl">
@@ -1660,15 +1755,41 @@ export default function NeedCreationFlow() {
               {formData.tradeCategory === "Other" ? formData.customTrade : formData.tradeCategory}
             </p>
           </div>
-          <button className="text-primary font-bold hover:underline">Edit →</button>
         </div>
+        
+        {formData.photoUrl && (
+          <div className="flex justify-between items-start p-6 bg-surface-variant/30 rounded-2xl">
+            <div className="flex items-center gap-4">
+              <img src={formData.photoUrl} alt="Cover" className="w-16 h-16 rounded-xl object-cover" />
+              <div>
+                <p className="text-label-small font-bold text-on-surface-variant mb-1">Cover photo</p>
+                <p className="text-body-large font-bold text-on-surface">Uploaded ✓</p>
+              </div>
+            </div>
+            <button 
+              type="button"
+              onClick={() => {
+                const idx = steps.findIndex(s => s.id === "cover_photo")
+                if (idx >= 0) setCurrentStep(idx)
+              }}
+              className="text-primary font-bold hover:underline"
+            >Change →</button>
+          </div>
+        )}
         
         <div className="flex justify-between items-start p-6 bg-surface-variant/30 rounded-2xl">
           <div>
             <p className="text-label-small font-bold text-on-surface-variant mb-1">Impact statement</p>
             <p className="text-body-large font-bold text-on-surface">{formData.impactStatement}</p>
           </div>
-          <button className="text-primary font-bold hover:underline">Edit →</button>
+          <button 
+            type="button"
+            onClick={() => {
+              const idx = steps.findIndex(s => s.id === "ai_impact")
+              if (idx >= 0) setCurrentStep(idx)
+            }}
+            className="text-primary font-bold hover:underline"
+          >Edit →</button>
         </div>
       </div>
       
@@ -1681,7 +1802,7 @@ export default function NeedCreationFlow() {
         </p>
       </div>
       
-        <div className="space-y-4">
+      <div className="space-y-4">
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -1708,76 +1829,103 @@ export default function NeedCreationFlow() {
     </div>
   )
   
-  // Screen 11: Share Your Need
+  // Screen: Share Your Need (create) — Polished with working buttons
   const renderShareNeed = () => (
     <div className="space-y-8">
-      <div className="p-6 bg-surface-variant/30 rounded-2xl">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-headline-small font-black text-primary">🕐</span>
+      {/* Success Banner */}
+      <div className="p-6 bg-green-500/10 border border-green-500/20 rounded-3xl">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+            <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
           <div>
-            <p className="text-body-large font-bold text-on-surface">
-              Under review — we'll notify you by WhatsApp or SMS within 24 hours when your need goes live.
+            <h3 className="text-headline-small font-black text-on-surface mb-1">Need submitted! 🎉</h3>
+            <p className="text-body-large text-on-surface-variant">
+              We'll review it within 24 hours and notify you by WhatsApp or SMS when it goes live.
             </p>
           </div>
         </div>
       </div>
       
-      <div className="space-y-6">
+      {/* Personal Message Section */}
+      <div className="space-y-4">
         <h3 className="text-headline-small font-black text-on-surface">Send a personal message first</h3>
         <p className="text-body-large text-on-surface-variant">
-          A direct message to someone who already knows your work converts far better than a public post. Use this ready-made message:
+          A direct message to someone who already knows your work converts far better than a public post.
         </p>
         
-        <div className="p-6 bg-surface-variant/30 rounded-2xl">
-          <p className="text-body-medium text-on-surface mb-4 whitespace-pre-line">
-            "Hi [Name], I just listed a need on BuildBridge — a platform that lets people back skilled tradespeople directly. I need ₦{parseInt(formData.goalAmount).toLocaleString()} to repair my sewing machine so I can keep taking orders. Would you be able to back me, or share this with someone who might? Here's the link: [need URL]"
+        <div className="p-6 bg-surface-variant/20 border border-outline-variant/30 rounded-2xl">
+          <p className="text-body-medium text-on-surface mb-5 whitespace-pre-line leading-relaxed">
+            {getShareMessage()}
           </p>
-          <div className="flex gap-3">
-            <button className="px-6 py-3 rounded-full bg-primary text-white font-bold">
-              Copy message
+          <div className="flex flex-wrap gap-3">
+            <button 
+              type="button"
+              onClick={handleCopyMessage}
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary/90 transition-all shadow-md"
+            >
+              <Copy className="h-4 w-4" />
+              {messageCopied ? "Copied! ✓" : "Copy message"}
             </button>
-            <button className="px-6 py-3 rounded-full border-2 border-primary text-primary font-bold">
+            <button 
+              type="button"
+              onClick={handleWhatsAppShare}
+              className="flex items-center gap-2 px-6 py-3 rounded-full border-2 border-green-600 text-green-600 font-bold hover:bg-green-50 transition-all"
+            >
+              <ExternalLink className="h-4 w-4" />
               Open in WhatsApp
             </button>
           </div>
         </div>
       </div>
       
-      <div className="space-y-6">
+      {/* Go Wider Section */}
+      <div className="space-y-4">
         <h3 className="text-headline-small font-black text-on-surface">Go wider</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-6 bg-surface-variant/30 rounded-2xl">
+          <div className="p-6 bg-surface-variant/20 border border-outline-variant/30 rounded-2xl flex flex-col">
             <p className="text-body-large font-bold text-on-surface mb-2">WhatsApp Status</p>
-            <p className="text-body-medium text-on-surface-variant mb-4">
-              Your 16:9 share card is ready — photo, progress bar, and impact statement included.
+            <p className="text-body-medium text-on-surface-variant mb-4 flex-1">
+              Share your need with all your WhatsApp contacts at once.
             </p>
-            <button className="w-full py-3 rounded-full bg-primary text-white font-bold">
-              Share to WhatsApp Status →
+            <button 
+              type="button"
+              onClick={handleWhatsAppStatusShare}
+              className="w-full py-3 rounded-full bg-green-600 text-white font-bold hover:bg-green-700 transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              Share to WhatsApp Status
             </button>
           </div>
           
-          <div className="p-6 bg-surface-variant/30 rounded-2xl">
-            <p className="text-body-large font-bold text-on-surface mb-2">Instagram Stories</p>
-            <p className="text-body-medium text-on-surface-variant mb-4">
-              Your 9:16 story card is ready to post.
+          <div className="p-6 bg-surface-variant/20 border border-outline-variant/30 rounded-2xl flex flex-col">
+            <p className="text-body-large font-bold text-on-surface mb-2">Copy Need Link</p>
+            <p className="text-body-medium text-on-surface-variant mb-4 flex-1">
+              Copy the direct link to share anywhere — Instagram, X, Facebook, or SMS.
             </p>
-            <button className="w-full py-3 rounded-full bg-primary text-white font-bold">
-              Share to Instagram →
+            <button 
+              type="button"
+              onClick={handleCopyLink}
+              className="w-full py-3 rounded-full bg-primary text-white font-bold hover:bg-primary/90 transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              {linkCopied ? "Copied! ✓" : "Copy link"}
             </button>
           </div>
         </div>
       </div>
       
-      <div className="p-6 bg-surface-variant/10 rounded-2xl border border-outline-variant/30">
-        <p className="text-body-medium text-on-surface">
-          🕐 *The first 48 hours matter most. Your need is featured in the BuildBridge browse feed for its first 48 hours after approval. If no pledge is received within 24 hours of going live, we'll automatically send you more ready-made messages to keep the momentum going.*
+      {/* Tip */}
+      <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl">
+        <p className="text-body-medium text-on-surface font-medium">
+          🕐 The first 48 hours matter most. Your need is featured in the BuildBridge browse feed for its first 48 hours after approval. If no pledge is received within 24 hours of going live, we'll automatically send you more ready-made messages to keep the momentum going.
         </p>
       </div>
     </div>
   )
+  
+  // ─── MAIN LAYOUT ──────────────────────────────────────────────────────────
   
   if (isLoading) {
     return (
@@ -1787,7 +1935,15 @@ export default function NeedCreationFlow() {
     )
   }
   
-  const currentStepData = STEPS[currentStep]
+  const currentStepData = steps[currentStep]
+  
+  if (!currentStepData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-12 w-12 text-primary animate-spin" />
+      </div>
+    )
+  }
   
   return (
     <div className="h-screen bg-white">
@@ -1797,13 +1953,18 @@ export default function NeedCreationFlow() {
         <div className="hidden lg:flex w-2/5 flex-shrink-0 sticky top-0 h-screen bg-surface-variant/10 p-12 flex-col justify-between">
            <div>
             <div className="mb-8">
+              <Link href="/" className="text-headline-small font-black text-primary tracking-tight">
+                Build<span className="text-on-surface">Bridge</span>
+              </Link>
+            </div>
+            
               <button
                 type="button"
                 onClick={handleBack}
                 className="flex items-center gap-2 text-label-large font-bold text-primary mb-6 hover:text-primary/80 transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
-                {currentStep === 0 ? "Back to home" : "Back"}
+                {currentStep === 0 ? (mode === "create" ? "Back to dashboard" : "Back to home") : "Back"}
               </button>
               <div className="w-12 h-1.5 rounded-full bg-primary mb-6"></div>
               <h1 className="text-display-small font-black text-on-surface mb-4">
@@ -1819,16 +1980,16 @@ export default function NeedCreationFlow() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-label-large font-bold text-on-surface">
-                    Step {currentStep + 1} of {STEPS.length}
+                    Step {currentStep + 1} of {steps.length}
                   </span>
                   <span className="text-label-large font-bold text-primary">
-                    {Math.round(((currentStep + 1) / STEPS.length) * 100)}%
+                    {Math.round(((currentStep + 1) / steps.length) * 100)}%
                   </span>
                 </div>
                 <div className="h-2 w-full bg-surface-variant/30 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-primary rounded-full transition-all duration-300"
-                    style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+                    style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
                   />
                 </div>
               </div>
@@ -1837,9 +1998,6 @@ export default function NeedCreationFlow() {
               </div>
             </div>
           </div>
-          
-
-        </div>
         
         {/* Right Panel - Scrollable */}
         <div className="flex-1 overflow-y-auto">
@@ -1852,7 +2010,7 @@ export default function NeedCreationFlow() {
                 className="flex items-center gap-2 text-label-large font-bold text-primary mb-6 hover:text-primary/80 transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
-                {currentStep === 0 ? "Back to home" : "Back"}
+                {currentStep === 0 ? (mode === "create" ? "Back to dashboard" : "Back to home") : "Back"}
               </button>
               <div className="w-12 h-1.5 rounded-full bg-primary mb-4"></div>
               <h1 className="text-display-small font-black text-on-surface mb-2">
@@ -1865,7 +2023,7 @@ export default function NeedCreationFlow() {
               {/* Mobile Step Indicator */}
               <div className="flex items-center justify-between mb-8">
                 <div className="text-label-large font-bold text-primary">
-                  Step {currentStep + 1} of {STEPS.length}
+                  Step {currentStep + 1} of {steps.length}
                 </div>
                 <div className="text-label-large font-bold text-on-surface">
                   {currentStepData.title}
@@ -1885,7 +2043,7 @@ export default function NeedCreationFlow() {
                    className="flex items-center gap-2 px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface font-bold hover:border-primary hover:text-primary"
                  >
                    <ChevronLeft className="h-5 w-5" />
-                   {currentStep === 0 ? "Back to home" : "Back"}
+                   {currentStep === 0 ? (mode === "create" ? "Dashboard" : "Home") : "Back"}
                  </button>
                 
                 <button
@@ -1902,14 +2060,14 @@ export default function NeedCreationFlow() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      {currentStep === STEPS.length - 2 ? "Submitting..." : "Loading..."}
+                      {steps[currentStep]?.id === "review_launch" ? "Submitting..." : "Loading..."}
                     </>
                   ) : (
                     <>
-                      {currentStep === STEPS.length - 2
+                      {steps[currentStep]?.id === "review_launch"
                         ? "Submit for review →"
-                        : currentStep === STEPS.length - 1
-                        ? "Done"
+                        : steps[currentStep]?.id === "share_need"
+                        ? "Go to Dashboard"
                         : "Continue →"
                       }
                     </>

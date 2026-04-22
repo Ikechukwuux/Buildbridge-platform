@@ -28,7 +28,7 @@ export default function DashboardLayout({
         pt-16 md:pt-0 — offset for mobile top bar (64px); desktop has no top bar
       */}
       <div className="flex-1 md:ml-[260px] pt-16 md:pt-0 min-h-screen flex flex-col">
-        <main className="flex-1 px-5 py-8 md:px-10 md:py-10 max-w-7xl w-full mx-auto">
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-8 max-w-[1600px] w-full mx-auto">
           {children}
         </main>
       </div>

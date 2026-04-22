@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Facebook, Twitter, Instagram, ArrowRight } from "lucide-react"
+import { Logo } from "../ui/Logo"
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -39,17 +40,7 @@ export function Footer() {
 
           {/* Column 1: Brand Info */}
           <div className="lg:col-span-2 flex flex-col gap-8 pr-8">
-            <Link href="/" className="flex items-center group cursor-pointer">
-              <div className="relative h-6 w-[150px]">
-                <Image
-                  src="/buildbridge-logo-primary.svg"
-                  alt="BuildBridge"
-                  fill
-                  className="object-contain brightness-0 invert"
-                  priority
-                />
-              </div>
-            </Link>
+            <Logo variant="white" />
             <p className="text-white/70 text-base leading-relaxed max-w-sm font-medium">
               Join our weekly newsletter to get updates on funded artisans and new high-impact needs.
             </p>

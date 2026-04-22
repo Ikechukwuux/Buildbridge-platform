@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { Logo } from "../ui/Logo"
 import { Menu, User, LogOut, ChevronDown, LayoutDashboard, Settings, Sparkles, PlusCircle } from "lucide-react"
 import { MobileNav } from "./MobileNav"
 import { createClient } from "@/lib/supabase/client"
@@ -82,17 +83,7 @@ export function Navbar() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           
           {/* Logo */}
-          <Link href="/" className="flex items-center group cursor-pointer">
-            <div className="relative h-6 w-[150px]">
-              <Image
-                src="/buildbridge-logo-primary.svg"
-                alt="BuildBridge"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-          </Link>
+          <Logo variant="primary" />
 
           {/* Centered Desktop Nav - Hidden on Dashboard */}
           {!isDashboard && (
@@ -131,7 +122,7 @@ export function Navbar() {
                 </Link>
                 
                 <Link 
-                  href={isAuthenticated ? "/create-need" : "/signup"} 
+                  href={isAuthenticated ? "/dashboard/create-need" : "/signup"} 
                   className={`hidden sm:flex h-11 px-7 rounded-full font-extrabold text-sm transition-all items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/10 ${
                     isScrolled ? 'bg-primary text-white' : 'bg-primary text-white'
                   }`}
@@ -224,7 +215,7 @@ function UserMenu({
             </div>
 
             <Link 
-              href="/create-need"
+              href="/dashboard/create-need"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors text-sm font-black group mb-2 shadow-lg shadow-primary/20"
             >
@@ -242,7 +233,7 @@ function UserMenu({
             </Link>
 
             <Link 
-              href="/account"
+              href="/dashboard/account"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/5 text-on-surface-variant hover:text-primary transition-colors text-sm font-bold group"
             >

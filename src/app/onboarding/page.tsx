@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default async function OnboardingPage() {
-  redirect("/create-need")
+  redirect("/dashboard/create-need")
 }

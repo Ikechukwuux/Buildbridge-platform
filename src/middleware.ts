@@ -11,7 +11,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Paths that require an authenticated session.
  * Unauthenticated users hitting these routes are redirected to /login.
  */
-const PROTECTED_PATHS = ["/dashboard", "/admin", "/profile", "/account"];
+const PROTECTED_PATHS = ["/dashboard", "/admin", "/profile"];
 const AUTH_ONLY_PATHS = ["/login", "/signup"];
 
 export default async function middleware(request: NextRequest) {

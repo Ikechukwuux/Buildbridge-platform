@@ -143,6 +143,20 @@ export default function DashboardPage() {
   }
   
   const { totalFunded, totalBackers } = calculateImpactStats()
+  
+  // Calculate profile completion percentage
+  const calculateProfileProgress = () => {
+    if (!profile) return 0
+    let score = 0
+    // Base registration is 20%
+    score += 20
+    if (profile.trade_category) score += 20
+    if (profile.location_state) score += 20
+    if (profile.story) score += 20
+    if (profile.badge_level !== 'level_0_unverified') score += 20
+    return Math.min(score, 100)
+  }
+  const profileProgress = calculateProfileProgress()
 
   if (loading) {
     return (
@@ -173,10 +187,10 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto flex flex-col gap-12">
         
         {/* Guidance Section for new users */}
-        {needs.length === 0 && (
+        {needs.length === 0 && profileProgress < 100 && (
           <GoalGradientCard 
-            progress={20} 
-            onAction={() => setIsCreatingNeed(true)} 
+            progress={profileProgress} 
+            onAction={() => router.push("/profile")} 
           />
         )}
 

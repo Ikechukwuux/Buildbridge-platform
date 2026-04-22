@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Mail, Briefcase, Calendar, MapPin, Camera, Edit2, X, Check, Plus, Image as ImageIcon, Sparkles, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { User, Mail, Briefcase, Calendar, MapPin, Camera, Edit2, X, Check, Plus, Image as ImageIcon, Sparkles, Trash2, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -163,6 +164,7 @@ function EditProfileModal({
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -263,6 +265,18 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-8 space-y-8">
+      {/* Back Button */}
+      <motion.button
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        onClick={() => router.back()}
+        className="flex items-center gap-2 text-on-surface-variant hover:text-primary font-bold transition-colors group px-2"
+      >
+        <div className="p-2 rounded-full bg-surface-variant/20 group-hover:bg-primary group-hover:text-white transition-all">
+          <ArrowLeft className="w-5 h-5" />
+        </div>
+        Back
+      </motion.button>
       {/* Hero Profile Header */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

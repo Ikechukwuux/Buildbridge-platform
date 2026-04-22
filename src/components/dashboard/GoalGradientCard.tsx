@@ -15,8 +15,7 @@ export function GoalGradientCard({ progress, onAction }: GoalGradientCardProps) 
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-white shadow-2xl shadow-primary/20 group cursor-pointer"
-      onClick={onAction}
+      className="relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-white shadow-2xl shadow-primary/20 group"
     >
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
@@ -34,7 +33,7 @@ export function GoalGradientCard({ progress, onAction }: GoalGradientCardProps) 
             Your profile is <span className="italic underline decoration-yellow-400 decoration-4"> {progress}% ready.</span>
           </h2>
           <p className="text-white/80 font-medium text-lg leading-relaxed">
-            Start a funding need to get verified and bridge the gap to your business tools.
+            Complete your profile to build trust and get funded faster by the community.
           </p>
         </div>
 
@@ -67,11 +66,12 @@ export function GoalGradientCard({ progress, onAction }: GoalGradientCardProps) 
             </svg>
             <span className="absolute text-xl font-black">{progress}%</span>
           </div>
-
+          
           <Button 
-            className="w-full md:w-auto h-12 px-8 rounded-2xl bg-white text-primary hover:bg-white/90 font-black shadow-xl"
+            onClick={onAction}
+            className="w-full md:w-auto h-12 px-8 rounded-2xl bg-white text-primary hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] border-none font-black shadow-xl transition-all"
           >
-            Start a Need <ArrowRight className="ml-2 w-4 h-4" />
+            Finish Profile <ArrowRight className="ml-2 w-4 h-4" />
           </Button>
         </div>
       </div>

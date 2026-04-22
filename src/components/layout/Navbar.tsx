@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const isDashboard = pathname?.startsWith("/dashboard");
+  const isDashboard = pathname?.startsWith("/dashboard") || pathname?.startsWith("/profile") || pathname?.startsWith("/account");
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [user, setUser] = React.useState<SupabaseUser | null>(null);
@@ -97,7 +97,7 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* Centered Desktop Nav - Hidden on Dashboard AND when authenticated */}
+          {/* Desktop Nav - Hidden on Dashboard/Profile/Account for Auth users */}
           {!isAuthenticated && !isDashboard && (
             <nav className="hidden md:flex items-center gap-10">
               {[
@@ -110,26 +110,6 @@ export function Navbar() {
                   href={link.href}
                   className={`text-sm font-bold tracking-wide transition-all duration-300 hover:scale-105 cursor-pointer ${
                     isScrolled ? 'text-on-surface-variant hover:text-primary' : 'text-on-surface-variant hover:text-primary'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
-          )}
-
-          {/* Authenticated Desktop Nav - Quick links for logged-in users */}
-          {isAuthenticated && !isDashboard && (
-            <nav className="hidden md:flex items-center gap-8">
-              {[
-                { name: "Dashboard", href: "/dashboard" },
-                { name: "Browse Needs", href: "/browse" },
-              ].map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className={`text-sm font-bold tracking-wide transition-all duration-300 hover:scale-105 cursor-pointer ${
-                    pathname === link.href ? 'text-primary' : 'text-on-surface-variant hover:text-primary'
                   }`}
                 >
                   {link.name}

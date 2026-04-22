@@ -85,7 +85,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
     }
   };
 
-  const currentLGAs = NIGERIA_LOCATIONS.find(s => s.state === formData.state)?.lgas || [];
+  const currentLGAs = formData.state ? (NIGERIA_LOCATIONS[formData.state as keyof typeof NIGERIA_LOCATIONS] || []) : [];
 
   const handleGeotag = () => {
     if ("geolocation" in navigator) {

@@ -45,6 +45,46 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     setLoading(true)
+
+    // Bypass auth in development mode for UI testing
+    if (process.env.NODE_ENV === 'development') {
+      console.warn("Dev mode: bypassing client auth check to allow UI testing.");
+      setUserName("Demo Artisan");
+      setProfile({
+        full_name: "Demo Artisan",
+        badge_level: 'level_3_established',
+        vouch_count: 12,
+        delivered_count: 45,
+        id: "demo-123"
+      });
+      setNeeds([
+        {
+          id: "demo-need-1",
+          item_name: "Industrial Sewing Machine",
+          item_cost: 35000000,
+          funded_amount: 21500000,
+          pledge_count: 5,
+          status: 'active',
+          deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date().toISOString(),
+          photo_url: "/images/hero/tailor.png",
+          story: "I need an overlock machine to take on more uniform contracts for local schools.",
+          profile: {
+            id: "demo-123",
+            name: "Demo Artisan",
+            location_lga: "Surulere",
+            location_state: "Lagos",
+            trade_category: "tailor",
+            badge_level: "level_3_established",
+            vouch_count: 12,
+            photo_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=200",
+          }
+        }
+      ]);
+      setLoading(false);
+      return;
+    }
+
     try {
       // 1. Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser()

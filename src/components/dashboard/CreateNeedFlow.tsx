@@ -3,8 +3,8 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  X, ChevronRight, ChevronLeft, Mic, MicOff, 
+import {
+  X, ChevronRight, ChevronLeft, Mic, MicOff,
   Sparkles, Camera, MapPin, CheckCircle2,
   Loader2, AlertCircle, Info, Target
 } from "lucide-react";
@@ -85,7 +85,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
     }
   };
 
-  const currentLGAs = NIGERIA_LOCATIONS.find(s => s.state === formData.state || s.id === formData.state)?.lgas || [];
+  const currentLGAs = formData.state ? NIGERIA_LOCATIONS[formData.state] || [] : [];
 
   const handleGeotag = () => {
     if ("geolocation" in navigator) {
@@ -109,12 +109,12 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
         .select('id')
         .eq('user_id', user.id)
         .single();
-      
+
       if (!profile) throw new Error("Profile required");
 
       // 1. Upload Photo (Mocked for now, simplified)
       let photo_url = "https://images.unsplash.com/photo-1544027993-37dbfe43552e?q=80&w=600";
-      
+
       // 2. Create Need
       const { error: insertError } = await supabase
         .from('needs')
@@ -142,7 +142,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -151,7 +151,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
       />
 
       {/* Modal */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 40 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 40 }}
@@ -182,7 +182,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
         <div className="flex-1 overflow-y-auto p-8 scrollbar-thin">
           <AnimatePresence mode="wait">
             {phase === "A" && (
-              <motion.div 
+              <motion.div
                 key="A"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -198,22 +198,22 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
                   {/* Progressive Disclosure simulation */}
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-black uppercase tracking-widest opacity-40 ml-4">State</label>
-                    <select 
+                    <select
                       value={formData.state}
-                      onChange={(e) => setFormData({...formData, state: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                       className="h-16 rounded-2xl border-2 border-outline-variant bg-white px-6 font-bold focus:border-primary outline-none appearance-none"
                     >
                       <option value="">Select State</option>
-                      {NIGERIA_LOCATIONS.map(s => <option key={s.id} value={s.id}>{s.state}</option>)}
+                      {Object.entries(NIGERIA_LOCATIONS).map(([state]) => <option key={state} value={state}>{state}</option>)}
                     </select>
                   </div>
 
                   {formData.state && (
                     <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-4">
                       <label className="text-sm font-black uppercase tracking-widest opacity-40 ml-4">LGA</label>
-                      <select 
+                      <select
                         value={formData.lga}
-                        onChange={(e) => setFormData({...formData, lga: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, lga: e.target.value })}
                         className="h-16 rounded-2xl border-2 border-outline-variant bg-white px-6 font-bold focus:border-primary outline-none"
                       >
                         <option value="">Select Local Gov</option>
@@ -225,10 +225,10 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
                   {formData.lga && (
                     <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-4">
                       <label className="text-sm font-black uppercase tracking-widest opacity-40 ml-4">Trade</label>
-                      <Input 
+                      <Input
                         placeholder="e.g. Tailor, Mechanic"
                         value={formData.trade}
-                        onChange={(e) => setFormData({...formData, trade: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, trade: e.target.value })}
                         className="h-16 rounded-2xl border-2 placeholder:opacity-30"
                       />
                     </div>
@@ -237,11 +237,11 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
                   {formData.trade && (
                     <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-4">
                       <label className="text-sm font-black uppercase tracking-widest opacity-40 ml-4">Amount (₦)</label>
-                      <Input 
+                      <Input
                         type="number"
                         placeholder="₦ 50,000"
                         value={formData.amount}
-                        onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                         className="h-16 rounded-2xl border-2 placeholder:opacity-30"
                       />
                     </div>
@@ -255,13 +255,13 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
                       Tell us your story
                     </div>
                     <div className="relative">
-                      <Textarea 
-                         placeholder="Explain why you need this... (or use the mic below)"
-                         value={formData.story_raw}
-                         onChange={(e) => setFormData({...formData, story_raw: e.target.value})}
-                         className="min-h-[150px] rounded-3xl border-2 resize-none pr-16 placeholder:opacity-20"
+                      <Textarea
+                        placeholder="Explain why you need this... (or use the mic below)"
+                        value={formData.story_raw}
+                        onChange={(e) => setFormData({ ...formData, story_raw: e.target.value })}
+                        className="min-h-[150px] rounded-3xl border-2 resize-none pr-16 placeholder:opacity-20"
                       />
-                      <button 
+                      <button
                         onClick={() => voice.isListening ? voice.stopListening() : voice.startListening()}
                         className={cn(
                           "absolute bottom-4 right-4 h-12 w-12 rounded-full flex items-center justify-center transition-all shadow-xl",
@@ -280,7 +280,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
             )}
 
             {phase === "B" && (
-              <motion.div 
+              <motion.div
                 key="B"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -295,27 +295,27 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
                 <div className="grid gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-black uppercase tracking-widest text-primary ml-4">Generated Title</label>
-                    <Input 
+                    <Input
                       value={formData.generated.title}
-                      onChange={(e) => setFormData(prev => ({...prev, generated: {...prev.generated, title: e.target.value}}))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, generated: { ...prev.generated, title: e.target.value } }))}
                       className="h-14 rounded-2xl border-2 font-black text-xl"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-xs font-black uppercase tracking-widest text-primary ml-4">The Impact Statement</label>
-                    <Input 
+                    <Input
                       value={formData.generated.impact}
-                      onChange={(e) => setFormData(prev => ({...prev, generated: {...prev.generated, impact: e.target.value}}))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, generated: { ...prev.generated, impact: e.target.value } }))}
                       className="h-14 rounded-2xl border-2 italic text-primary font-bold"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-xs font-black uppercase tracking-widest text-primary ml-4">Full Narrative</label>
-                    <Textarea 
+                    <Textarea
                       value={formData.generated.story}
-                      onChange={(e) => setFormData(prev => ({...prev, generated: {...prev.generated, story: e.target.value}}))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, generated: { ...prev.generated, story: e.target.value } }))}
                       className="min-h-[200px] rounded-3xl border-2 leading-relaxed"
                     />
                   </div>
@@ -324,7 +324,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
             )}
 
             {phase === "C" && (
-              <motion.div 
+              <motion.div
                 key="C"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -337,37 +337,37 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   <button className="aspect-square rounded-[3rem] border-4 border-dashed border-outline-variant flex flex-col items-center justify-center gap-4 hover:border-primary hover:bg-primary/5 transition-all group">
-                      <div className="h-16 w-16 rounded-full bg-surface-variant/20 flex items-center justify-center text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                        <Camera className="w-8 h-8" />
-                      </div>
-                      <span className="font-black text-on-surface-variant uppercase tracking-widest text-xs">Upload Cover Photo</span>
-                   </button>
+                  <button className="aspect-square rounded-[3rem] border-4 border-dashed border-outline-variant flex flex-col items-center justify-center gap-4 hover:border-primary hover:bg-primary/5 transition-all group">
+                    <div className="h-16 w-16 rounded-full bg-surface-variant/20 flex items-center justify-center text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                      <Camera className="w-8 h-8" />
+                    </div>
+                    <span className="font-black text-on-surface-variant uppercase tracking-widest text-xs">Upload Cover Photo</span>
+                  </button>
 
-                   <div className="space-y-6">
-                      <div className="p-8 bg-surface-variant/20 rounded-[2.5rem] border border-outline-variant flex flex-col gap-4">
-                         <div className="flex items-center gap-3">
-                            <MapPin className="text-primary w-5 h-5" />
-                            <h4 className="font-black text-on-surface">Geotagging</h4>
-                         </div>
-                         <p className="text-sm font-medium text-on-surface-variant">Adding your coordinates proves you are listing from your reported location. <span className="text-primary font-bold"> Artisians with tags get funded 2x faster.</span></p>
-                         <Button 
-                           onClick={handleGeotag}
-                           variant={formData.geotag ? "secondary" : "outline"}
-                           className="rounded-2xl h-12"
-                         >
-                           {formData.geotag ? "Location Verified ✓" : "Verify Location"}
-                         </Button>
+                  <div className="space-y-6">
+                    <div className="p-8 bg-surface-variant/20 rounded-[2.5rem] border border-outline-variant flex flex-col gap-4">
+                      <div className="flex items-center gap-3">
+                        <MapPin className="text-primary w-5 h-5" />
+                        <h4 className="font-black text-on-surface">Geotagging</h4>
                       </div>
+                      <p className="text-sm font-medium text-on-surface-variant">Adding your coordinates proves you are listing from your reported location. <span className="text-primary font-bold"> Artisians with tags get funded 2x faster.</span></p>
+                      <Button
+                        onClick={handleGeotag}
+                        variant={formData.geotag ? "secondary" : "outline"}
+                        className="rounded-2xl h-12"
+                      >
+                        {formData.geotag ? "Location Verified ✓" : "Verify Location"}
+                      </Button>
+                    </div>
 
-                      <div className="flex flex-col gap-2 p-6 bg-yellow-400/10 rounded-3xl border border-yellow-400/20">
-                         <div className="flex items-center gap-2 text-yellow-600 font-black text-sm">
-                            <Info className="w-4 h-4" />
-                            Success Preview
-                         </div>
-                         <p className="text-xs font-medium text-yellow-800">Your need will be displayed on the public wall with an 'Identity Verified' badge if you complete NIN check later.</p>
+                    <div className="flex flex-col gap-2 p-6 bg-yellow-400/10 rounded-3xl border border-yellow-400/20">
+                      <div className="flex items-center gap-2 text-yellow-600 font-black text-sm">
+                        <Info className="w-4 h-4" />
+                        Success Preview
                       </div>
-                   </div>
+                      <p className="text-xs font-medium text-yellow-800">Your need will be displayed on the public wall with an 'Identity Verified' badge if you complete NIN check later.</p>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -377,34 +377,34 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
         {/* Footer */}
         <div className="p-8 border-t border-outline-variant bg-surface-variant/5 flex justify-between items-center">
           {phase !== "A" ? (
-             <Button variant="ghost" onClick={() => phase === "B" ? setPhase("A") : setPhase("B")} className="px-8 font-black">
-                <ChevronLeft className="mr-2 w-4 h-4" /> Back
-             </Button>
+            <Button variant="ghost" onClick={() => phase === "B" ? setPhase("A") : setPhase("B")} className="px-8 font-black">
+              <ChevronLeft className="mr-2 w-4 h-4" /> Back
+            </Button>
           ) : <div />}
 
           <div className="flex gap-4">
-             {phase === "A" ? (
-               <Button 
-                 disabled={!formData.story_raw || isLoading} 
-                 onClick={generateAIContent}
-                 isLoading={isLoading}
-                 className="px-10 rounded-2xl h-14 font-black shadow-xl"
-               >
-                 Review Story <ChevronRight className="ml-2 w-4 h-4" />
-               </Button>
-             ) : phase === "B" ? (
-               <Button onClick={() => setPhase("C")} className="px-10 rounded-2xl h-14 font-black shadow-xl">
-                 Continue to Verification <ChevronRight className="ml-2 w-4 h-4" />
-               </Button>
-             ) : (
-               <Button 
-                 isLoading={isLoading} 
-                 onClick={handleFinish}
-                 className="px-10 rounded-2xl h-14 font-black bg-primary text-white shadow-xl shadow-primary/20"
-               >
-                 Launch my Need! <CheckCircle2 className="ml-2 w-4 h-4" />
-               </Button>
-             )}
+            {phase === "A" ? (
+              <Button
+                disabled={!formData.story_raw || isLoading}
+                onClick={generateAIContent}
+                isLoading={isLoading}
+                className="px-10 rounded-2xl h-14 font-black shadow-xl"
+              >
+                Review Story <ChevronRight className="ml-2 w-4 h-4" />
+              </Button>
+            ) : phase === "B" ? (
+              <Button onClick={() => setPhase("C")} className="px-10 rounded-2xl h-14 font-black shadow-xl">
+                Continue to Verification <ChevronRight className="ml-2 w-4 h-4" />
+              </Button>
+            ) : (
+              <Button
+                isLoading={isLoading}
+                onClick={handleFinish}
+                className="px-10 rounded-2xl h-14 font-black bg-primary text-white shadow-xl shadow-primary/20"
+              >
+                Launch my Need! <CheckCircle2 className="ml-2 w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
 

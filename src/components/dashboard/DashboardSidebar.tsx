@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Logo } from "@/components/ui/Logo";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -89,28 +90,7 @@ function SidebarContent({
     <div className="flex flex-col h-full">
       {/* ── Logo ── */}
       <div className="px-6 pt-8 pb-6 flex items-center justify-between">
-        <Link href="/" onClick={onClose}>
-          <div className="relative h-6 w-[150px]">
-            <Image
-              src="/buildbridge-logo-white.svg"
-              alt="BuildBridge"
-              fill
-              className="object-contain"
-              priority
-              onError={(e) => {
-                // Fallback to text if white logo doesn't exist yet
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-          {/* Text fallback shown alongside (hidden if image loads) */}
-          <span
-            className="text-white font-black text-xl tracking-tight leading-none select-none"
-            aria-hidden="true"
-          >
-            Build<span className="opacity-70">Bridge</span>
-          </span>
-        </Link>
+        <Logo variant="white" onClick={onClose} />
         {/* Mobile close button */}
         {onClose && (
           <button
@@ -198,7 +178,7 @@ function SidebarContent({
 
           <div className="flex items-center gap-1 shrink-0">
             <Link
-              href="/account"
+              href="/dashboard/account"
               onClick={onClose}
               className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
               aria-label="Account settings"
@@ -302,12 +282,10 @@ export function DashboardSidebar() {
           <Menu className="w-5 h-5" />
         </button>
 
-        <Link href="/dashboard" className="text-white font-black text-base tracking-tight">
-          Build<span className="opacity-70">Bridge</span>
-        </Link>
+        <Logo variant="white" />
 
         {/* Avatar shortcut */}
-        <Link href="/account" aria-label="Account">
+        <Link href="/dashboard/account" aria-label="Account">
           <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-black text-xs">
             {displayName.charAt(0).toUpperCase()}
           </div>

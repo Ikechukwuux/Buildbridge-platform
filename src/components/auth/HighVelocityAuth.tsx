@@ -7,8 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { NeedStepFlow } from "./NeedStepFlow";
 import { AccountCreationView } from "./AccountCreationView";
-import { PersonalizationView } from "./PersonalizationView";
-import { adminSyncPhoneUser, syncUserRecord } from "@/app/actions/auth";
+import { registerUserAdmin, syncUserRecord } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Sparkles } from "lucide-react";
@@ -18,7 +17,7 @@ export function HighVelocityAuth() {
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const [step, setStep] = useState<"discovery" | "account" | "personalization">("discovery");
+  const [step, setStep] = useState<"discovery" | "account">("discovery");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -26,7 +25,6 @@ export function HighVelocityAuth() {
   // Form State
   const [discoveryData, setDiscoveryData] = useState<any>(null);
   const [accountData, setAccountData] = useState<any>(null);
-  const [initialName, setInitialName] = useState("");
 
   useEffect(() => {
     setIsMounted(true);
@@ -37,18 +35,7 @@ export function HighVelocityAuth() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (!profile || (!profile.full_name && !profile.name)) {
-          setInitialName(session.user.user_metadata?.full_name || "");
-          setStep("personalization");
-        } else {
-          router.push("/dashboard");
-        }
+        router.push("/dashboard");
       }
     };
     checkSession();
@@ -70,58 +57,29 @@ export function HighVelocityAuth() {
     try {
       setAccountData(data);
       
-      let email = data.identifier;
-      if (!email.includes("@")) {
-        let clean = email.trim();
-        if (clean.startsWith("0") && clean.length === 11) clean = "+234" + clean.slice(1);
-        else if (!clean.startsWith("+")) clean = "+234" + clean;
-        email = `${clean.replace(/[^0-9]/g, '')}@buildbridge.app`;
-      }
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: data.password,
-        options: {
-          data: {
-            full_name: data.name,
-            is_tradesperson: true
-          }
-        }
+      // 1. Use Admin Registration to bypass verification & rate limits
+      const res = await registerUserAdmin({
+        identifier: data.identifier,
+        name: data.name,
+        password: data.password
       });
 
-      if (authError) throw authError;
+      if (!res.success) throw new Error(res.error);
 
-      const user = authData.user;
-      if (!user) throw new Error("Signup failed - no user returned.");
+      // 2. Sign in locally to establish session
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: res.email!,
+        password: data.password
+      });
 
-      // Sync User & Profile immediately
-      const syncRes = await syncUserRecord(user.id, data.name, data.identifier);
-      if (!syncRes.success) throw new Error(syncRes.error);
+      if (loginError) throw loginError;
 
-      // Update Profile with Trade (if we have discovery data)
+      // 3. Create Need if discovery data exists
       if (discoveryData?.category) {
-        const validCategories = [
-          'tailor', 'carpenter', 'welder', 'cobbler', 'food_processor',
-          'market_trader', 'baker', 'mechanic', 'electrician', 'plumber',
-          'hair_stylist', 'blacksmith', 'other'
-        ];
-        const tradeKey = discoveryData.category.toLowerCase();
-        const isEnumMatch = validCategories.includes(tradeKey);
-
-        await supabase
-          .from('profiles')
-          .upsert({
-            user_id: user.id,
-            updated_at: new Date().toISOString(),
-            trade_category: isEnumMatch ? tradeKey : 'other',
-            trade_other_description: isEnumMatch ? null : discoveryData.category
-          }, { onConflict: 'user_id' });
-
-        // Create Need
         const { data: profile } = await supabase
           .from('profiles')
           .select('id')
-          .eq('user_id', user.id)
+          .eq('user_id', res.userId)
           .single();
 
         if (profile) {

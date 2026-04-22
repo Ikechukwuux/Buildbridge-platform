@@ -381,18 +381,6 @@ export default function LoginForm() {
               />
             </div>
 
-<<<<<<< HEAD
-            <Button
-              type="submit"
-              isLoading={isLoading}
-              className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20"
-              disabled={phone.length < 10}
-            >
-              <span>Continue</span>
-              {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
-            </Button>
-          </form>
-=======
              <div className="flex flex-col gap-4">
                <Button 
                  type="submit" 
@@ -413,7 +401,6 @@ export default function LoginForm() {
                </button>
              </div>
            </form>
->>>>>>> 63f6a70b69a711db9ad9d3cc6452b05239b31242
 
           <div className="text-center text-sm font-bold text-on-surface-variant/60 uppercase tracking-widest mt-2 px-2">
             New to BuildBridge?{" "}

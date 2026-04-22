@@ -88,7 +88,7 @@ export function Hero() {
                Start Supporting
              </Link>
              <Link 
-                href="/onboarding"
+                href="/signup"
                 className="w-full sm:w-auto h-16 px-10 rounded-full border-2 border-primary text-primary bg-transparent font-black text-lg transition-all flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/5 hover:bg-primary/5"
              >
                Join as Artisan

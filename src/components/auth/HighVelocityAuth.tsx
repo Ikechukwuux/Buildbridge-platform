@@ -5,10 +5,9 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { AuthGatewayView } from "./AuthGatewayView";
-import { VelocityOtpInput } from "./VelocityOtpInput";
-import { PersonalizationView } from "./PersonalizationView";
-import { adminSyncPhoneUser } from "@/app/actions/auth";
+import { NeedStepFlow } from "./NeedStepFlow";
+import { AccountCreationView } from "./AccountCreationView";
+import { registerUserAdmin, syncUserRecord } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Sparkles } from "lucide-react";
@@ -18,334 +17,124 @@ export function HighVelocityAuth() {
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const [step, setStep] = useState<"gateway" | "otp" | "personalization">("gateway");
+  const [step, setStep] = useState<"discovery" | "account">("discovery");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [phone, setPhone] = useState("");
-  const [formattedPhone, setFormattedPhone] = useState("");
-  const [initialName, setInitialName] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+
+  // Form State
+  const [discoveryData, setDiscoveryData] = useState<any>(null);
+  const [accountData, setAccountData] = useState<any>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Check for existing session or new_user redirect
+  // Check for existing session
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (session) {
-        // If we have a session, we need to check if the profile is complete
-        const { data: profile, error: profileCheckError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        // Use name from profile or auth metadata
-        const nameInProfile = profile?.full_name || profile?.name;
-        const nameInAuth = session.user.user_metadata?.full_name || session.user.user_metadata?.name || "";
-
-        if (!profile || !nameInProfile) {
-          setInitialName(nameInAuth);
-          setStep("personalization");
-        } else {
-          // Already have a profile, go to dashboard
-          router.push("/dashboard");
-        }
+        router.push("/dashboard");
       }
     };
-
     checkSession();
   }, [supabase, router]);
 
-  const handlePhoneSelect = () => {
-    // For this simplified high-velocity flow, we'll prompt for phone on the OTP screen 
-    // or just use a drawer/modal? 
-    // Actually, user wants Screen 1: Google/Phone. 
-    // If phone selected, show phone input.
-    setStep("otp");
+  const handleDiscoveryComplete = (data: any) => {
+    setDiscoveryData(data);
+    setStep("account");
   };
 
-  const handleOtpVerify = async (code: string) => {
+  const handleSkipToAccount = () => {
+    setDiscoveryData(null);
+    setStep("account");
+  };
+
+  const handleAccountSubmit = async (data: any) => {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Verify OTP with our API
-      const res = await fetch("/api/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: formattedPhone, code })
-      });
+      setAccountData(data);
       
-      const data = await res.json();
-      
-      if (!res.ok || !data.success) {
-        setError(data.error || "Invalid code. Try again.");
-        setIsLoading(false);
-        return;
-      }
-
-      // 2. Auth Success - Use admin action to sync/sign-in
-      // (This matches existing architecture for phone auth)
-      const email = `${formattedPhone.replace(/[^0-9]/g, '')}@buildbridge.app`;
-      const password = `buildbridge-${formattedPhone.replace(/[^0-9]/g, '')}`;
-      
-      const syncResult = await adminSyncPhoneUser(formattedPhone, "");
-      if (!syncResult.success) {
-        setError("Failed to initialize account.");
-        setIsLoading(false);
-        return;
-      }
-      
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // 1. Use Admin Registration to bypass verification & rate limits
+      const res = await registerUserAdmin({
+        identifier: data.identifier,
+        name: data.name,
+        password: data.password
       });
 
-      if (signInError) {
-        setError("Authentication failed.");
-        setIsLoading(false);
-        return;
-      }
+      if (!res.success) throw new Error(res.error);
 
-      // 3. Check if user record already exists with a valid name
-      const { data: userData } = await supabase
-        .from('users')
-        .select('name')
-        .eq('id', signInData.user.id)
-        .single();
-
-      if (userData && userData.name && userData.name !== "Tradesperson") {
-        // Account exists and is complete
-        setError("Account already exists. Welcome back!");
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 1500);
-        return;
-      }
-
-      // 4. Move to personalization
-      setStep("personalization");
-    } catch (err) {
-      setError("An unexpected error occurred.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePersonalizationSubmit = async (data: { name: string, trade: string, password: string }) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user found");
-
-      // Update Auth metadata and set the user's chosen password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: data.password,
-        data: { full_name: data.name }
+      // 2. Sign in locally to establish session
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: res.email!,
+        password: data.password
       });
 
-      if (updateError) {
-        console.error("Auth update error:", updateError);
-        // If the password is the same as the old one, it's fine - we can proceed
-        if (updateError.message.toLowerCase().includes("should be different from the old")) {
-          console.log("Password already matches, proceeding to profile setup.");
-        } else {
-          setError("Failed to set password: " + updateError.message);
-          setIsLoading(false);
-          return;
+      if (loginError) throw loginError;
+
+      // 3. Create Need if discovery data exists
+      if (discoveryData?.category) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', res.userId)
+          .single();
+
+        if (profile) {
+          const deadlineDate = new Date();
+          deadlineDate.setDate(deadlineDate.getDate() + 30);
+
+          await supabase.from('needs').insert({
+            profile_id: profile.id,
+            item_name: discoveryData.itemName,
+            item_cost: parseFloat(discoveryData.cost),
+            story: (discoveryData.story || "").substring(0, 150),
+            impact_statement: (discoveryData.impact || "").substring(0, 200),
+            status: 'active',
+            deadline: deadlineDate.toISOString().split('T')[0],
+            photo_url: discoveryData.photoUrl || "/images/placeholders/need-default.png"
+          });
         }
       }
 
-      // DB Enum validation - strictly match 001_schema.sql
-      const validCategories = [
-        'tailor', 'carpenter', 'welder', 'cobbler', 'food_processor',
-        'market_trader', 'baker', 'mechanic', 'electrician', 'plumber',
-        'hair_stylist', 'blacksmith', 'other'
-      ];
-
-      const tradeKey = data.trade.toLowerCase();
-      const isEnumMatch = validCategories.includes(tradeKey);
-      
-      // 2. Update/Ensure the public users record exists
-      const { error: userError } = await supabase
-        .from('users')
-        .upsert({ 
-          id: user.id, 
-          name: data.name,
-          phone: user.phone || formattedPhone || `+234${user.id.replace(/[^0-9]/g, '').slice(0, 10)}` 
-        });
-
-      if (userError) {
-        console.error("User update error:", userError);
-        // Continue anyway if it's just the users table, but log it
-      }
-
-      // 3. Create/Update the profile record
-      const profilePayload: any = {
-        user_id: user.id,
-        updated_at: new Date().toISOString()
-      };
-
-      if (isEnumMatch) {
-         profilePayload.trade_category = tradeKey;
-      } else {
-         profilePayload.trade_category = 'other';
-         profilePayload.trade_other_description = data.trade;
-      }
-
-      // Update/Upsert Profile (onConflict handles pre-created trigger rows)
-      // We use onConflict: 'user_id' because user_id is unique and better for identifying the profile than the PK uuid
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert(profilePayload, { onConflict: 'user_id' });
-
-      if (profileError) {
-        console.error("Profile upsert error:", JSON.stringify(profileError, null, 2));
-        throw new Error(profileError.message || "Failed to update profile.");
-      }
-
-      // Update name in public.users table if it exists and we have permission
-      try {
-        await supabase
-          .from('users')
-          .update({ name: data.name })
-          .eq('id', user.id);
-      } catch (e) {
-        console.warn("Note: public.users table update skipped or failed (expected if using alternative schema)");
-      }
-
-      // SUCCESS! Sign out and redirect to login page
-      // User needs to log in with their new credentials
-      await supabase.auth.signOut();
-
-      // Redirect to login page with pre-filled phone
-      const loginUrl = `/login?phone=${encodeURIComponent(formattedPhone)}`;
-      router.push(loginUrl);
-      
-      // Fallback: if router.push doesn't trigger navigation within 500ms, force it
-      setTimeout(() => {
-        window.location.href = loginUrl;
-      }, 500);
+      // Success! Go to dashboard
+      window.location.href = "/dashboard";
     } catch (err: any) {
-      console.error("Personalization submission failed:", err);
-      setError(err.message || "Failed to save profile. Please try again.");
+      setError(err.message || "Signup failed. Please try again.");
       setIsLoading(false);
     }
   };
 
-  // UI for Phone Input before OTP
-  const [phoneEntry, setPhoneEntry] = useState("");
-
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    // Format phone
-    let clean = phoneEntry.trim();
-    if (clean.startsWith("0") && clean.length === 11) clean = "+234" + clean.slice(1);
-    else if (!clean.startsWith("+")) clean = "+234" + clean;
-
-    try {
-      const res = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: clean })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setFormattedPhone(clean);
-        setPhone(clean);
-        // We are already on "otp" step logically, but we show the input first.
-        // Let's refine the steps: gateway -> phone_entry -> otp -> personalization
-      } else {
-        setError(data.error || "Failed to send code.");
-      }
-    } catch (err) {
-      setError("Network error.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (!isMounted) return <div className="h-96 w-full max-w-lg bg-white/10 animate-pulse rounded-[2.5rem] border border-white/20" />;
+  if (!isMounted) return <div className="h-[600px] w-full max-w-xl bg-white/10 animate-pulse rounded-[2.5rem] border border-white/20" />;
 
   return (
-    <Card hoverLift className="w-full max-w-lg mx-auto p-10 shadow-2xl rounded-[2.5rem] border-primary/10 overflow-hidden relative">
+    <Card hoverLift className="w-full max-w-xl mx-auto p-10 shadow-2xl rounded-[2.5rem] border-primary/10 overflow-hidden relative">
       <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
         <Sparkles className="w-24 h-24 text-primary" />
       </div>
       <AnimatePresence mode="wait">
-        {step === "gateway" && (
-          <AuthGatewayView 
-            key="gateway"
-            onPhoneSelect={() => setStep("otp")} 
-            isLoading={isLoading} 
+        {step === "discovery" && (
+          <NeedStepFlow 
+            key="discovery"
+            onComplete={handleDiscoveryComplete}
+            onSkip={handleSkipToAccount}
           />
         )}
 
-        {step === "otp" && !formattedPhone && (
-           <motion.div
-             key="phone-entry"
-             initial={{ opacity: 0, x: 20 }}
-             animate={{ opacity: 1, x: 0 }}
-             exit={{ opacity: 0, x: -20 }}
-             className="flex flex-col gap-8 w-full"
-           >
-             <button 
-               onClick={() => setStep("gateway")} 
-               className="self-start flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-black uppercase tracking-widest"
-             >
-               ← Back
-             </button>
-             <div className="flex flex-col gap-3 text-center">
-                <h1 className="text-4xl font-black text-on-surface tracking-tight">Enter your <span className="text-primary italic">Phone.</span></h1>
-                <p className="text-on-surface-variant font-medium leading-relaxed">
-                  We'll send you a secure verification code.
-                </p>
-             </div>
-             <form onSubmit={handleSendOtp} className="flex flex-col gap-6">
-                <input 
-                  type="tel" 
-                  value={phoneEntry}
-                  onChange={(e) => setPhoneEntry(e.target.value)}
-                  placeholder="0801 234 5678"
-                  className="h-20 rounded-[2rem] border-2 border-outline-variant focus:border-primary text-2xl font-black px-8 shadow-inner placeholder:opacity-20 text-center"
-                  autoFocus
-                />
-                <Button type="submit" isLoading={isLoading} className="h-16 rounded-full font-black text-lg shadow-xl shadow-primary/20">
-                  Send Verification Code
-                </Button>
-                {error && <p className="text-error font-bold text-center bg-error/5 py-2 rounded-xl border border-error/10">{error}</p>}
-             </form>
-           </motion.div>
-        )}
-
-        {step === "otp" && formattedPhone && (
-          <VelocityOtpInput 
-            key="otp"
-            phone={formattedPhone}
-            onVerify={handleOtpVerify}
-            onBack={() => setFormattedPhone("")}
+        {step === "account" && (
+          <AccountCreationView 
+            key="account"
+            onBack={() => setStep("discovery")}
+            onSubmit={handleAccountSubmit}
             isLoading={isLoading}
-            error={error}
-          />
-        )}
-
-        {step === "personalization" && (
-          <PersonalizationView 
-            key="personalization"
-            initialName={initialName}
-            onSubmit={handlePersonalizationSubmit}
-            isLoading={isLoading}
-            error={error}
           />
         )}
       </AnimatePresence>
+      {error && (
+        <p className="mt-4 text-error font-bold text-center bg-error/5 py-2 rounded-xl border border-error/10 animate-shake">{error}</p>
+      )}
     </Card>
   );
 }

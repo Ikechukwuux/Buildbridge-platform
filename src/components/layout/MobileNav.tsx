@@ -94,6 +94,9 @@ export function MobileNav({ isOpen, onClose, isAuthenticated = false }: MobileNa
           <Link href="/login" className="w-full" onClick={onClose}>
             <Button variant="ghost" className="w-full justify-center text-on-surface">Log In</Button>
           </Link>
+          <Link href="/signup" className="w-full" onClick={onClose}>
+            <Button className="w-full justify-center bg-primary text-white">Get Started</Button>
+          </Link>
         </div>
       )}
     </div>

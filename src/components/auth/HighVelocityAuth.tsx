@@ -104,7 +104,23 @@ export function HighVelocityAuth() {
         return;
       }
 
-      // 3. Move to personalization
+      // 3. Check if user record already exists with a valid name
+      const { data: userData } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', signInData.user.id)
+        .single();
+
+      if (userData && userData.name && userData.name !== "Tradesperson") {
+        // Account exists and is complete
+        setError("Account already exists. Welcome back!");
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1500);
+        return;
+      }
+
+      // 4. Move to personalization
       setStep("personalization");
     } catch (err) {
       setError("An unexpected error occurred.");
@@ -113,17 +129,30 @@ export function HighVelocityAuth() {
     }
   };
 
-  const handlePersonalizationSubmit = async (data: { name: string, trade: string }) => {
+  const handlePersonalizationSubmit = async (data: { name: string, trade: string, password: string }) => {
     setIsLoading(true);
     setError(null);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
-      // Update Auth metadata
-      await supabase.auth.updateUser({
+      // Update Auth metadata and set the user's chosen password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: data.password,
         data: { full_name: data.name }
       });
+
+      if (updateError) {
+        console.error("Auth update error:", updateError);
+        // If the password is the same as the old one, it's fine - we can proceed
+        if (updateError.message.toLowerCase().includes("should be different from the old")) {
+          console.log("Password already matches, proceeding to profile setup.");
+        } else {
+          setError("Failed to set password: " + updateError.message);
+          setIsLoading(false);
+          return;
+        }
+      }
 
       // DB Enum validation - strictly match 001_schema.sql
       const validCategories = [
@@ -134,9 +163,23 @@ export function HighVelocityAuth() {
 
       const isEnumMatch = validCategories.includes(data.trade.toLowerCase());
       
+      // 2. Update/Ensure the public users record exists
+      const { error: userError } = await supabase
+        .from('users')
+        .upsert({ 
+          id: user.id, 
+          name: data.name,
+          phone: user.phone || formattedPhone || `+234${user.id.replace(/[^0-9]/g, '').slice(0, 10)}` 
+        });
+
+      if (userError) {
+        console.error("User update error:", userError);
+        // Continue anyway if it's just the users table, but log it
+      }
+
+      // 3. Create/Update the profile record
       const profilePayload: any = {
         user_id: user.id,
-        full_name: data.name,
         updated_at: new Date().toISOString()
       };
 
@@ -147,19 +190,28 @@ export function HighVelocityAuth() {
          profilePayload.trade_other_description = data.trade;
       }
 
-      // Update/Upsert Profile
+      // Update/Upsert Profile (onConflict handles pre-created trigger rows)
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert(profilePayload);
+        .upsert(profilePayload, { onConflict: 'user_id' });
 
       if (profileError) {
         console.error("Profile upsert error:", profileError);
         throw profileError;
       }
 
-      // SUCCESS! Use window.location for a hard refresh to the dashboard
-      // This ensures middleware and server components recognize the new session/profile status instantly
-      window.location.href = "/dashboard";
+      // SUCCESS! Sign out and redirect to login page
+      // User needs to log in with their new credentials
+      await supabase.auth.signOut();
+
+      // Redirect to login page with pre-filled phone
+      const loginUrl = `/login?phone=${encodeURIComponent(formattedPhone)}`;
+      router.push(loginUrl);
+      
+      // Fallback: if router.push doesn't trigger navigation within 500ms, force it
+      setTimeout(() => {
+        window.location.href = loginUrl;
+      }, 500);
     } catch (err: any) {
       console.error("Personalization submission failed:", err);
       setError(err.message || "Failed to save profile. Please try again.");
@@ -257,6 +309,7 @@ export function HighVelocityAuth() {
             initialName={initialName}
             onSubmit={handlePersonalizationSubmit}
             isLoading={isLoading}
+            error={error}
           />
         )}
       </AnimatePresence>

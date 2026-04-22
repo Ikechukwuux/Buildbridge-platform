@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import CountUp from "react-countup"
 import { Skeleton } from "@/components/ui/Skeleton"
@@ -14,9 +14,17 @@ interface StatsProps {
 }
 
 export function Stats({ stats, isLoading = false }: StatsProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   if (!stats || (stats.totalFunded === 0 && stats.totalTradespeople === 0)) {
     return null;
   }
+
+  if (!isMounted) return null;
 
   return (
     <section className="py-16 md:py-24 bg-white border-y border-outline-variant/30 overflow-hidden">
@@ -43,15 +51,13 @@ export function Stats({ stats, isLoading = false }: StatsProps) {
              <>
                <div className="flex flex-col items-center text-center">
                  <div className="text-5xl md:text-6xl font-black text-primary">
-                    ₦<CountUp
+                    ₦<span><CountUp
                       start={0}
                       end={stats.totalFunded / 100}
                       duration={2.5}
                       separator=","
                       suffix=""
-                      enableScrollSpy
-                      scrollSpyOnce
-                    />
+                    /></span>
                   </div>
                  <div className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mt-3">
                    Total Funded
@@ -61,14 +67,12 @@ export function Stats({ stats, isLoading = false }: StatsProps) {
                <div className="w-24 h-px sm:w-px sm:h-24 bg-outline-variant/50" />
                <div className="flex flex-col items-center text-center">
                  <div className="text-5xl md:text-6xl font-black text-primary">
-                    <CountUp
+                    <span><CountUp
                       start={0}
                       end={stats.totalTradespeople}
                       duration={2.5}
                       separator=","
-                      enableScrollSpy
-                      scrollSpyOnce
-                    />
+                    /></span>
                   </div>
                  <div className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mt-3">
                    Tradespeople Backed

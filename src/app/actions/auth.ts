@@ -45,11 +45,29 @@ export async function adminSyncPhoneUser(phone: string, fullName: string = "Trad
               phone_verified: true,
             }
           })
+
+          // Sync to public.users table
+          await supabaseAdmin.from('users').upsert({
+            id: linkData.user.id,
+            phone: phone,
+            name: linkData.user.user_metadata?.full_name || fullName || "Tradesperson",
+            phone_verified_at: linkData.user.user_metadata?.phone_verified ? undefined : new Date().toISOString()
+          }, { onConflict: 'id' })
         }
         return { success: true, message: "User already exists." }
       }
       console.error("Admin sync error:", error)
       return { success: false, error: error.message }
+    }
+
+    if (user && user.user) {
+      // Sync to public.users table
+      await supabaseAdmin.from('users').upsert({
+        id: user.user.id,
+        phone: phone,
+        name: fullName || "Tradesperson",
+        phone_verified_at: new Date().toISOString()
+      }, { onConflict: 'id' })
     }
 
     return { success: true, message: "Created new user successfully." }

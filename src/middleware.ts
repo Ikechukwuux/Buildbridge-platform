@@ -12,7 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Unauthenticated users hitting these routes are redirected to /login.
  */
 const PROTECTED_PATHS = ["/dashboard", "/admin", "/profile", "/account"];
-const AUTH_ONLY_PATHS = ["/login", "/signup"];
+const AUTH_ONLY_PATHS = ["/login"];
 
 export default async function middleware(request: NextRequest) {
   const { createServerClient } = await import("@supabase/ssr");

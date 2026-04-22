@@ -17,13 +17,15 @@ export default function LoginForm() {
   const supabase = createClient()
 
   // View State
-  const [step, setStep] = useState<"enter" | "otp">("enter")
+  const [step, setStep] = useState<"enter" | "otp" | "password">("enter")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [oauthError, setOauthError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   // Phone State
   const [phone, setPhone] = useState("")
+  const [password, setPassword] = useState("")
   const [formattedPhone, setFormattedPhone] = useState("")
 
   // OTP State
@@ -47,7 +49,12 @@ export default function LoginForm() {
   useEffect(() => {
     const error = searchParams?.get('error')
     const email = searchParams?.get('email')
+    const phoneParam = searchParams?.get('phone')
     
+    if (phoneParam) {
+      setPhone(phoneParam)
+    }
+
     if (error === 'no_account') {
       const message = email 
         ? `No account found with email ${email}. Please sign up first.`
@@ -105,7 +112,7 @@ export default function LoginForm() {
   }
 
   // Sign in existing user with phone
-  const signInUserWithPhone = async (phoneNumber: string): Promise<boolean> => {
+  const signInUserWithPhone = async (phoneNumber: string): Promise<{ success: boolean, error?: string }> => {
     try {
       const email = `${phoneNumber.replace(/[^0-9]/g, '')}@buildbridge.app`
       const password = `buildbridge-${phoneNumber.replace(/[^0-9]/g, '')}`
@@ -113,15 +120,14 @@ export default function LoginForm() {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       
       if (error) {
-        console.error('Sign in failed:', error)
-        return false
+        return { success: false, error: error.message }
       }
       
       const { data: { session } } = await supabase.auth.getSession()
-      return !!session
-    } catch (error) {
+      return { success: !!session }
+    } catch (error: any) {
       console.error('Error in phone user auth:', error)
-      return false
+      return { success: false, error: error.message }
     }
   }
 
@@ -178,6 +184,33 @@ export default function LoginForm() {
     setIsLoading(false)
   }
 
+  // Handle Password Login
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setErrorMsg(null)
+
+    const cleanPhone = formatPhone(phone)
+    const email = `${cleanPhone.replace(/[^0-9]/g, '')}@buildbridge.app`
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        setErrorMsg(error.message || "Invalid password.")
+      } else {
+        router.push("/dashboard")
+      }
+    } catch (error) {
+      setErrorMsg("An unexpected error occurred.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleOtpChange = (index: number, value: string) => {
     if (!/^[0-9]*$/.test(value)) return;
     const newOtp = [...otp]
@@ -232,9 +265,17 @@ export default function LoginForm() {
         setErrorMsg(data.error || "Invalid code. Please try again.")
       } else {
         // OTP verified - sign in Supabase user
-        const authSuccess = await signInUserWithPhone(formattedPhone)
-        if (authSuccess) {
+        const result = await signInUserWithPhone(formattedPhone)
+        if (result.success) {
           router.push("/dashboard")
+        } else if (result.error?.includes("Invalid login credentials")) {
+          // This means they have a custom password!
+          setErrorMsg("Account found, but it is secured with a password. Please login with password.")
+          // Give them a moment to read, then switch to password mode
+          setTimeout(() => {
+            setStep("password") 
+            setErrorMsg(null)
+          }, 3000)
         } else {
           setErrorMsg("Account not found. Please sign up first.")
         }
@@ -337,15 +378,25 @@ export default function LoginForm() {
                />
              </div>
 
-             <Button 
-               type="submit" 
-               isLoading={isLoading} 
-               className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20"
-               disabled={phone.length < 10}
-             >
-               <span>Continue</span>
-               {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
-             </Button>
+             <div className="flex flex-col gap-4">
+               <Button 
+                 type="submit" 
+                 isLoading={isLoading} 
+                 className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20"
+                 disabled={phone.length < 10}
+               >
+                 <span>Continue with OTP</span>
+                 {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
+               </Button>
+
+               <button 
+                 type="button"
+                 onClick={() => setStep("password")}
+                 className="text-xs font-black text-primary hover:underline uppercase tracking-widest text-center"
+               >
+                 Or Login with Password
+               </button>
+             </div>
            </form>
 
            <div className="text-center text-sm font-bold text-on-surface-variant/60 uppercase tracking-widest mt-2 px-2">
@@ -355,6 +406,59 @@ export default function LoginForm() {
              </Link>
            </div>
         </div>
+      ) : step === "password" ? (
+        <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-8 relative z-10">
+          <div className="flex flex-col gap-3 text-center">
+             <h1 className="text-4xl font-black text-on-surface tracking-tight">Login with <span className="text-primary italic">Password.</span></h1>
+             <p className="text-on-surface-variant font-medium">Enter your credentials to continue.</p>
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <Input
+              label="Phone Number"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="0801 234 5678"
+              className="h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all"
+              required
+            />
+
+            <div className="relative">
+              <Input
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className="h-16 rounded-3xl text-lg font-bold border-2 focus:border-primary transition-all pr-12"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-[38px] text-on-surface-variant/50 hover:text-primary transition-colors"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+
+          {errorMsg && <p className="text-sm font-bold text-error text-center bg-error/5 py-2 rounded-xl border border-error/10">{errorMsg}</p>}
+
+          <div className="flex flex-col gap-4">
+            <Button type="submit" isLoading={isLoading} className="h-16 rounded-full text-lg font-black shadow-xl">
+              Login
+            </Button>
+            <button 
+              type="button"
+              onClick={() => setStep("enter")}
+              className="text-xs font-black text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors"
+            >
+              Back to OTP Login
+            </button>
+          </div>
+        </form>
       ) : (
         <form onSubmit={handleVerifyOtp} className="flex flex-col gap-8 relative z-10">
           <div className="flex flex-col gap-4 text-center">

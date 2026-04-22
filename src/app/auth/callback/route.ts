@@ -31,9 +31,19 @@ export async function GET(request: Request) {
         // Check if user has a profile in the database
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, full_name, created_at')
+          .select('id, created_at')
           .eq('user_id', user.id)
           .maybeSingle()
+
+        if (!profile) {
+          // Sync to public.users table if it's a new OAuth user
+          await supabase.from('users').upsert({
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || "User",
+            phone: user.phone || `+234${user.id.replace(/[^0-9]/g, '').slice(0, 10)}`,
+            email: user.email
+          })
+        }
         
         if (profileError) {
           console.error('Error checking profile:', profileError)
@@ -46,7 +56,6 @@ export async function GET(request: Request) {
           hasProfile, 
           flow, 
           profileId: profile?.id,
-          profileName: profile?.full_name,
           profileCreated: profile?.created_at,
           userId: user.id 
         })

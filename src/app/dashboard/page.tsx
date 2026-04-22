@@ -189,21 +189,9 @@ export default function DashboardPage() {
            </div>
            <div className="flex gap-4">
               <button 
-<<<<<<< HEAD
                  onClick={() => window.location.href = '/create-need?mode=create'}
                  className="h-14 px-8 rounded-2xl gap-2 text-title-medium shadow-xl shadow-primary/20 bg-primary text-white flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-=======
-                onClick={() => setIsCreatingNeed(true)}
-                className={cn(
-                  "h-14 px-8 rounded-2xl gap-2 text-title-medium shadow-xl shadow-primary/20 bg-primary text-white flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] transition-all relative overflow-hidden",
-                  needs.length === 0 && "animate-pulse ring-4 ring-primary/20 ring-offset-2 ring-offset-background"
-                )}
-              >
-                 {needs.length === 0 && (
-                   <div className="absolute inset-0 bg-white/20 animate-shine pointer-events-none" />
-                 )}
->>>>>>> c6ffaf3885bb66846b79b1109b53741599e5fddd
                  <Plus className="h-6 w-6" />
                  New Funding Need
               </button>
@@ -281,11 +269,7 @@ export default function DashboardPage() {
                    title="Your first goal starts here"
                    description="Create a need to get tools, equipment, or materials backed by the community."
                    actionLabel="Start a Request"
-<<<<<<< HEAD
                    onAction={() => window.location.href = '/create-need?mode=create'}
-=======
-                   onAction={() => setIsCreatingNeed(true)}
->>>>>>> c6ffaf3885bb66846b79b1109b53741599e5fddd
                 />
               )}
            </div>

@@ -132,6 +132,7 @@ export async function GET(request: NextRequest) {
                 }
                 deadlineDate.setDate(deadlineDate.getDate() + days);
 
+                const rawCost = String(discoveryData.cost || '0');
                 const itemCostKobo = (parseInt(rawCost.replace(/[^0-9]/g, ""), 10) || 0) * 100;
 
                 await supabase.from('needs').insert({

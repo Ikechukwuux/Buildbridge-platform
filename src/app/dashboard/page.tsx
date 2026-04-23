@@ -253,6 +253,7 @@ export default function DashboardPage() {
                     <NeedCard 
                       key={need.id} 
                       need={{...need, profile}} 
+                      isDashboard
                       onClick={() => router.push(`/dashboard/needs/${need.id}`)}
                     />
                   ))}

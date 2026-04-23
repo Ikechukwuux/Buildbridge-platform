@@ -57,7 +57,7 @@ export default function LoginForm() {
       const params = new URLSearchParams(hash.slice(1));
       const error = params.get('error');
       const errorDescription = params.get('error_description');
-      
+
       let decodedError = errorDescription || error;
       if (decodedError) {
         try {
@@ -81,9 +81,8 @@ export default function LoginForm() {
       document.cookie = `auth_flow=login; path=/; max-age=300; SameSite=Lax`;
       document.cookie = `auth_next=/dashboard; path=/; max-age=300; SameSite=Lax`;
 
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-      const redirectTo = `${baseUrl}/auth/callback`
-      
+      const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -91,9 +90,7 @@ export default function LoginForm() {
         }
       })
     } catch (error) {
-      console.error('Google OAuth error:', error)
-      setErrorMsg('Failed to sign in with Google. Please try again.')
-      setIsLoading(false)
+      console.error(error)
     }
   }
 
@@ -106,7 +103,7 @@ export default function LoginForm() {
     // Handle identifier (Email or Phone)
     let email = identifier.trim()
     const isEmail = email.includes("@")
-    
+
     if (!isEmail) {
       // If it looks like a phone number, format it and create the proxy email
       let cleanPhone = email
@@ -160,9 +157,9 @@ export default function LoginForm() {
         )}
 
         <div className="flex flex-col gap-4">
-          <Button 
-            onClick={handleGoogleAuth} 
-            isLoading={isLoading && !identifier} 
+          <Button
+            onClick={handleGoogleAuth}
+            isLoading={isLoading && !identifier}
             className="h-18 rounded-2xl bg-white border-2 border-outline-variant text-on-surface hover:bg-surface-variant justify-center gap-3 font-bold text-lg shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -173,7 +170,7 @@ export default function LoginForm() {
             </svg>
             Continue with Google
           </Button>
-          
+
           <div className="relative flex items-center py-4">
             <div className="flex-grow border-t border-outline-variant/30"></div>
             <span className="flex-shrink-0 mx-4 text-on-surface-variant/40 text-[10px] font-black uppercase tracking-[0.2em]">OR LOGIN WITH PASSWORD</span>
@@ -185,7 +182,7 @@ export default function LoginForm() {
           <div className="flex flex-col gap-4">
             <div className="relative group">
               <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
-              <input 
+              <input
                 type="text"
                 placeholder="Email or Phone Number"
                 value={identifier}
@@ -197,7 +194,7 @@ export default function LoginForm() {
 
             <div className="relative group">
               <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
-              <input 
+              <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}

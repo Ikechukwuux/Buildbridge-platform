@@ -114,6 +114,7 @@ export default function DashboardNeedsPage() {
               >
                 <NeedCard 
                   need={{...need, profile}} 
+                  isDashboard
                   onClick={() => window.location.href = `/dashboard/needs/${need.id}`}
                 />
               </motion.div>

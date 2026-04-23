@@ -13,6 +13,8 @@ import {
   Calendar, 
   Heart, 
   ShieldCheck,
+  ShieldAlert,
+  Share2,
   MoreHorizontal,
   CheckCircle2
 } from "lucide-react"
@@ -26,9 +28,11 @@ interface NeedCardProps {
   need: Need & { profile?: Profile & { name?: string } };
   className?: string;
   onClick?: () => void;
+  /** When true, shows owner-specific actions (Verify Now / Share Need) instead of public "Back now" */
+  isDashboard?: boolean;
 }
 
-export function NeedCard({ need, className, onClick }: NeedCardProps) {
+export function NeedCard({ need, className, onClick, isDashboard = false }: NeedCardProps) {
   const router = useRouter();
 
   const handleCardClick = () => {
@@ -82,11 +86,28 @@ export function NeedCard({ need, className, onClick }: NeedCardProps) {
      // This state is private dashboard only, not shown in browse feed
    }
    
+   // Detect verification status from profile badge_level
+   const isUnverified = !need.profile?.badge_level || need.profile.badge_level === 'level_0_unverified';
+
    // Button text and state
    let buttonText = "Back now";
    let buttonDisabled = false;
    let buttonClassName = "bg-primary text-white shadow-primary/20";
-   if (isFullyFunded) {
+   let buttonIcon: React.ReactNode = null;
+   let buttonHref: string | null = null;
+
+   if (isDashboard && isUnverified && !isFullyFunded && !isCompleted && !isPartiallyFundedDeadline && !isZeroPledgesDeadline) {
+     // Owner dashboard: unverified user
+     buttonText = "Verify Now";
+     buttonClassName = "bg-yellow-500 text-white shadow-yellow-500/20";
+     buttonIcon = <ShieldAlert className="h-3.5 w-3.5" />;
+     buttonHref = "/profile";
+   } else if (isDashboard && !isUnverified && !isFullyFunded && !isCompleted && !isPartiallyFundedDeadline && !isZeroPledgesDeadline) {
+     // Owner dashboard: verified user with active need
+     buttonText = "Share Need";
+     buttonClassName = "bg-primary text-white shadow-primary/20";
+     buttonIcon = <Share2 className="h-3.5 w-3.5" />;
+   } else if (isFullyFunded) {
      buttonText = "View Story";
      buttonClassName = "bg-primary/10 text-primary shadow-none";
    } else if (isPartiallyFundedDeadline || isZeroPledgesDeadline) {
@@ -277,15 +298,26 @@ export function NeedCard({ need, className, onClick }: NeedCardProps) {
              </div>
           </div>
            <Button 
-             className={cn(
-                "rounded-full px-8 font-black text-xs shadow-xl transition-all hover:-translate-y-1",
-                buttonClassName,
-                buttonDisabled && "cursor-not-allowed"
-             )}
-             disabled={buttonDisabled}
-           >
-             {buttonText}
-           </Button>
+              className={cn(
+                 "rounded-full px-8 font-black text-xs shadow-xl transition-all hover:-translate-y-1 flex items-center gap-1.5",
+                 buttonClassName,
+                 buttonDisabled && "cursor-not-allowed"
+              )}
+              disabled={buttonDisabled}
+              onClick={(e: React.MouseEvent) => {
+                if (buttonHref) {
+                  e.stopPropagation();
+                  router.push(buttonHref);
+                } else if (isDashboard && !isUnverified && buttonText === "Share Need") {
+                  e.stopPropagation();
+                  const needUrl = `${window.location.origin}/needs/${need.id}`;
+                  navigator.clipboard.writeText(needUrl);
+                }
+              }}
+            >
+              {buttonIcon}
+              {buttonText}
+            </Button>
         </div>
       </div>
     </Card>

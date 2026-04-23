@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/Input"
 import { Textarea } from "@/components/ui/Textarea"
 import { Avatar } from "@/components/ui/Avatar"
 import { createClient } from "@/lib/supabase/client"
-import { 
-  Scissors, Hammer, ChefHat, Flame, Watch, 
+import {
+  Scissors, Hammer, ChefHat, Flame, Watch,
   Store, Zap, Droplets, Sparkles, Shirt,
   ChevronLeft, ChevronRight, Camera, Mic, MicOff, Loader2,
   Rocket, UserPlus, Phone, Mail, Play, CheckCircle
@@ -51,15 +51,15 @@ export function OnboardingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
-  
+
   const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [authMethod, setAuthMethod] = useState<"phone"|"email"|null>(null)
+  const [authMethod, setAuthMethod] = useState<"phone" | "email" | null>(null)
   const [otpSent, setOtpSent] = useState(false)
   const [otpCode, setOtpCode] = useState("")
   const [isGeneratingStory, setIsGeneratingStory] = useState(false)
-   const [storyMethod, setStoryMethod] = useState<"write"|"ai">("write")
-   const [carouselSlide, setCarouselSlide] = useState(0)
+  const [storyMethod, setStoryMethod] = useState<"write" | "ai">("write")
+  const [carouselSlide, setCarouselSlide] = useState(0)
 
   const voiceInput = useVoiceInput()
 
@@ -87,38 +87,38 @@ export function OnboardingForm() {
       resumedAuth: searchParams?.get('resumedAuth'),
       step: searchParams?.get('step')
     })
-    
+
     const initSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       console.log('Session on init:', session ? 'exists' : 'null', session?.user?.email)
-      
+
       const savedData = localStorage.getItem("onboarding_state")
       if (savedData) {
-        setFormData(prev => ({...prev, ...JSON.parse(savedData)}))
+        setFormData(prev => ({ ...prev, ...JSON.parse(savedData) }))
       }
 
       let targetStep = 0
-      
+
       if (session) {
         // If we came from Google OAuth redirect
         if (searchParams?.get("resumedAuth") === "true") {
           console.log('Resumed auth from Google OAuth, skipping to step 3')
           targetStep = 3
         } else {
-           // Auto skip auth step if logged in
-           console.log('Already logged in, skipping auth step')
-           targetStep = 3
+          // Auto skip auth step if logged in
+          console.log('Already logged in, skipping auth step')
+          targetStep = 3
         }
       } else if (searchParams?.get("step")) {
-         targetStep = parseInt(searchParams.get("step") || "0")
+        targetStep = parseInt(searchParams.get("step") || "0")
       }
-      
+
       console.log('Setting currentStep to:', targetStep)
       setCurrentStep(targetStep)
       setLoading(false)
     }
     initSession()
-    
+
     // Subscribe to auth state changes in case session loads later
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session ? 'session exists' : 'no session')
@@ -128,7 +128,7 @@ export function OnboardingForm() {
         console.log('Auth state change: session detected, skipping to step 3 if needed')
       }
     })
-    
+
     return () => {
       subscription.unsubscribe()
     }
@@ -139,24 +139,24 @@ export function OnboardingForm() {
     const checkProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', session.user.id)
         .maybeSingle()
-      
+
       if (error) {
         console.error('Error checking profile:', error)
         return
       }
-      
+
       if (profile) {
         console.log('User already has profile, redirecting to dashboard')
         router.push('/dashboard')
       }
     }
-    
+
     checkProfile()
   }, [supabase, router])
 
@@ -182,7 +182,7 @@ export function OnboardingForm() {
       const error = params.get('error');
       const errorDescription = params.get('error_description');
       console.error('OAuth error from hash:', { error, errorDescription });
-      
+
       let decodedError = errorDescription || error;
       if (decodedError) {
         // Decode URL-encoded characters (like %253A -> :, %252F -> /)
@@ -192,7 +192,7 @@ export function OnboardingForm() {
           console.warn('Failed to decode error description:', e);
         }
       }
-      
+
       alert(`Google OAuth failed: ${decodedError || 'Unknown error'}`);
       // Clear hash
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -235,8 +235,7 @@ export function OnboardingForm() {
   const handleGoogleAuth = async () => {
     setLoading(true)
     try {
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-      const redirectTo = `${baseUrl}/auth/callback?next=/onboarding&flow=signup`
+      const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/onboarding&flow=signup`
       console.log('Google OAuth redirectTo:', redirectTo)
       await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -245,9 +244,7 @@ export function OnboardingForm() {
         }
       })
     } catch (error) {
-      console.error('Google OAuth error:', error)
-      alert('Failed to sign in with Google. Please check your configuration and try again.')
-      setLoading(false)
+      console.error(error)
     }
   }
 
@@ -325,10 +322,10 @@ export function OnboardingForm() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         photo_file: file,
-        photo_url: URL.createObjectURL(file) 
+        photo_url: URL.createObjectURL(file)
       }))
     }
   }
@@ -337,20 +334,20 @@ export function OnboardingForm() {
 
   const renderStepContent = () => {
     switch (currentStep) {
-       case 0:
+      case 0:
         const isSelfSelection = formData.who_for === "myself"
         const isSomeoneElseSelection = formData.who_for === "someone_else"
-        
+
         if (!formData.who_for) {
           return (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl mx-auto">
               <h1 className="text-display-small sm:text-display-medium font-black text-on-surface mb-4 text-center">
                 Who are you <span className="text-primary italic">fundraising for?</span>
               </h1>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <button 
-                  onClick={() => setFormData({...formData, who_for: "myself"})}
+                <button
+                  onClick={() => setFormData({ ...formData, who_for: "myself" })}
                   className="group flex flex-col items-start justify-start gap-4 bg-surface-variant/20 border-2 border-outline-variant hover:border-primary p-8 rounded-3xl transition-all hover:bg-primary/5 active:scale-95 text-left"
                 >
                   <div className="flex items-center gap-4">
@@ -361,8 +358,8 @@ export function OnboardingForm() {
                   </div>
                   <p className="text-body-medium text-on-surface-variant pl-20">I am a tradesperson creating a need for my own business.</p>
                 </button>
-                <button 
-                  onClick={() => setFormData({...formData, who_for: "someone_else"})}
+                <button
+                  onClick={() => setFormData({ ...formData, who_for: "someone_else" })}
                   className="group flex flex-col items-start justify-start gap-4 bg-surface-variant/20 border-2 border-outline-variant hover:border-primary p-8 rounded-3xl transition-all hover:bg-primary/5 active:scale-95 text-left"
                 >
                   <div className="flex items-center gap-4">
@@ -377,36 +374,36 @@ export function OnboardingForm() {
             </motion.div>
           )
         }
-        
+
         // Who_for is selected, show name input
         return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg mx-auto">
-             <h1 className="text-display-small font-black text-on-surface mb-4 text-center">
+            <h1 className="text-display-small font-black text-on-surface mb-4 text-center">
               {isSelfSelection ? "What's your name?" : "What's the tradesperson's name?"}
             </h1>
             <p className="text-body-large text-on-surface-variant font-medium text-center mb-10">
               {isSelfSelection ? "This will appear on your profile and need cards." : "This will appear on the profile and need cards."}
             </p>
-            
+
             <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-outline-variant/30 flex flex-col gap-6">
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder={isSelfSelection ? "e.g. Ada Okoro" : "e.g. Chinedu Okafor"}
                 className="h-20 text-center text-3xl font-black rounded-3xl border-2 border-outline-variant focus:border-primary placeholder:text-on-surface-variant/30"
                 autoFocus
               />
-              
-              <Button 
-                onClick={nextStep} 
-                disabled={!formData.name.trim()} 
+
+              <Button
+                onClick={nextStep}
+                disabled={!formData.name.trim()}
                 className="h-16 rounded-full text-lg shadow-lg mt-4"
               >
                 Continue
               </Button>
-              
-              <button 
-                onClick={() => setFormData({...formData, who_for: ""})}
+
+              <button
+                onClick={() => setFormData({ ...formData, who_for: "" })}
                 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest hover:text-primary"
               >
                 ← Back to selection
@@ -414,50 +411,50 @@ export function OnboardingForm() {
             </div>
           </motion.div>
         )
-      
-       case 1:
+
+      case 1:
         const amt = parseInt(formData.amount.replace(/[^0-9]/g, "") || "0")
         return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg mx-auto">
-             <h1 className="text-display-small font-black text-on-surface mb-4 text-center">
+            <h1 className="text-display-small font-black text-on-surface mb-4 text-center">
               How much do you <span className="text-primary italic">need to raise?</span>
             </h1>
             <p className="text-body-large text-on-surface-variant font-medium text-center mb-10">
               Enter the exact cost of the item or service you need. Be as precise as you can — specific amounts build more trust with backers.
             </p>
             <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-outline-variant/30 flex flex-col gap-6">
-               <Input 
-                  value={formData.amount}
-                  onChange={(e) => {
-                    const clean = e.target.value.replace(/[^0-9]/g, "")
-                    if (clean) {
-                      const formatted = new Intl.NumberFormat("en-NG").format(parseInt(clean))
-                      setFormData({...formData, amount: formatted})
-                    } else {
-                       setFormData({...formData, amount: ""})
-                    }
-                  }}
-                  placeholder="e.g. ₦35,000"
-                  className="h-20 text-center text-4xl font-black rounded-3xl border-2 border-outline-variant focus:border-primary placeholder:text-on-surface-variant/30"
-               />
-                
-                {amt > 0 && (
-                   <div className="p-4 bg-badge-1/10 rounded-2xl border border-badge-1/20 text-sm font-medium text-badge-1 text-center animate-in fade-in slide-in-from-bottom-2">
-                      {amt <= 20000 
-                         ? "This need qualifies for Level 0 listing. You can raise this amount right away."
-                         : amt <= 50000 
-                         ? "You will need at least 3 community vouches (Level 1) to list this amount."
-                         : amt <= 150000 
-                         ? "You will need Level 2 verification — identity check and 5 community vouches."
-                         : amt <= 500000 
-                         ? "You will need Level 3 — a community leader endorsement and 10 vouches."
-                         : "Needs above ₦500,000 require full Platform Verification (Level 4) by the BuildBridge team."}
-                   </div>
-                )}
+              <Input
+                value={formData.amount}
+                onChange={(e) => {
+                  const clean = e.target.value.replace(/[^0-9]/g, "")
+                  if (clean) {
+                    const formatted = new Intl.NumberFormat("en-NG").format(parseInt(clean))
+                    setFormData({ ...formData, amount: formatted })
+                  } else {
+                    setFormData({ ...formData, amount: "" })
+                  }
+                }}
+                placeholder="e.g. ₦35,000"
+                className="h-20 text-center text-4xl font-black rounded-3xl border-2 border-outline-variant focus:border-primary placeholder:text-on-surface-variant/30"
+              />
 
-                <Button disabled={amt === 0} onClick={nextStep} className="h-16 rounded-full text-lg shadow-lg hover:shadow-xl mt-4">
-                  Continue →
-                </Button>
+              {amt > 0 && (
+                <div className="p-4 bg-badge-1/10 rounded-2xl border border-badge-1/20 text-sm font-medium text-badge-1 text-center animate-in fade-in slide-in-from-bottom-2">
+                  {amt <= 20000
+                    ? "This need qualifies for Level 0 listing. You can raise this amount right away."
+                    : amt <= 50000
+                      ? "You will need at least 3 community vouches (Level 1) to list this amount."
+                      : amt <= 150000
+                        ? "You will need Level 2 verification — identity check and 5 community vouches."
+                        : amt <= 500000
+                          ? "You will need Level 3 — a community leader endorsement and 10 vouches."
+                          : "Needs above ₦500,000 require full Platform Verification (Level 4) by the BuildBridge team."}
+                </div>
+              )}
+
+              <Button disabled={amt === 0} onClick={nextStep} className="h-16 rounded-full text-lg shadow-lg hover:shadow-xl mt-4">
+                Continue →
+              </Button>
             </div>
           </motion.div>
         )
@@ -465,68 +462,68 @@ export function OnboardingForm() {
       case 2: // Auth
         return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md mx-auto text-center">
-             <h1 className="text-display-small font-black text-on-surface mb-4">
-               Create your <br/><span className="text-primary italic">account.</span>
-             </h1>
-             <p className="text-body-large text-on-surface-variant font-medium mb-10">Save your progress and get your need in front of backers.</p>
-            
+            <h1 className="text-display-small font-black text-on-surface mb-4">
+              Create your <br /><span className="text-primary italic">account.</span>
+            </h1>
+            <p className="text-body-large text-on-surface-variant font-medium mb-10">Save your progress and get your need in front of backers.</p>
+
             <div className="flex flex-col gap-4">
               <Button onClick={handleGoogleAuth} className="h-16 rounded-2xl bg-surface border-2 border-outline-variant text-on-surface hover:bg-surface-variant justify-center gap-3 font-bold text-lg shadow-sm">
-                 <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                 Continue with Google
+                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
+                Continue with Google
               </Button>
               <div className="relative flex items-center py-4">
-                 <div className="flex-grow border-t border-outline-variant/50"></div>
-                 <span className="flex-shrink-0 mx-4 text-on-surface-variant text-label-small font-bold uppercase tracking-widest">OR</span>
-                 <div className="flex-grow border-t border-outline-variant/50"></div>
+                <div className="flex-grow border-t border-outline-variant/50"></div>
+                <span className="flex-shrink-0 mx-4 text-on-surface-variant text-label-small font-bold uppercase tracking-widest">OR</span>
+                <div className="flex-grow border-t border-outline-variant/50"></div>
               </div>
-              
+
               {authMethod === null ? (
                 <div className="grid grid-cols-2 gap-4">
-                    <Button onClick={() => setAuthMethod("phone")} variant="secondary" className="h-14 rounded-2xl justify-center gap-2 border-2 border-outline-variant bg-transparent">
-                      <Phone className="h-5 w-5" /> Continue with phone →
-                    </Button>
-                    <Button onClick={() => setAuthMethod("email")} variant="secondary" className="h-14 rounded-2xl justify-center gap-2 border-2 border-outline-variant bg-transparent">
-                      <Mail className="h-5 w-5" /> Continue with email →
-                    </Button>
+                  <Button onClick={() => setAuthMethod("phone")} variant="secondary" className="h-14 rounded-2xl justify-center gap-2 border-2 border-outline-variant bg-transparent">
+                    <Phone className="h-5 w-5" /> Continue with phone →
+                  </Button>
+                  <Button onClick={() => setAuthMethod("email")} variant="secondary" className="h-14 rounded-2xl justify-center gap-2 border-2 border-outline-variant bg-transparent">
+                    <Mail className="h-5 w-5" /> Continue with email →
+                  </Button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-4">
-                   {!otpSent ? (
-                     <>
-                       <Input 
-                          placeholder={authMethod === "phone" ? "080 123 4567" : "Email address"}
-                          value={authMethod === "phone" ? formData.phone : formData.email}
-                          onChange={e => authMethod === "phone" ? setFormData({...formData, phone: e.target.value}) : setFormData({...formData, email: e.target.value})}
-                          className="h-14 rounded-2xl text-center text-lg font-bold"
-                       />
-                       <Button onClick={handleSendOTP} disabled={authMethod === "phone" ? !formData.phone : !formData.email} className="h-14 rounded-2xl">
-                         Send Verification Code
-                       </Button>
-                       <button onClick={() => setAuthMethod(null)} className="text-sm font-bold text-on-surface-variant hover:text-primary mt-2">
-                          Go Back
-                       </button>
-                     </>
-                   ) : (
-                     <>
-                       <p className="text-sm font-medium text-on-surface-variant mb-2">
-                         Enter the code sent to {formData.phone}
-                       </p>
-                       <Input 
-                          placeholder="000000"
-                          value={otpCode}
-                          onChange={e => setOtpCode(e.target.value)}
-                          className="h-14 rounded-2xl text-center text-2xl font-black tracking-widest"
-                          maxLength={6}
-                       />
-                       <Button onClick={handleVerifyOTP} disabled={otpCode.length < 4} className="h-14 rounded-2xl">
-                         Verify & Continue
-                       </Button>
-                       <button onClick={() => setOtpSent(false)} className="text-sm font-bold text-on-surface-variant hover:text-primary mt-2">
-                          Change Phone Number
-                       </button>
-                     </>
-                   )}
+                  {!otpSent ? (
+                    <>
+                      <Input
+                        placeholder={authMethod === "phone" ? "080 123 4567" : "Email address"}
+                        value={authMethod === "phone" ? formData.phone : formData.email}
+                        onChange={e => authMethod === "phone" ? setFormData({ ...formData, phone: e.target.value }) : setFormData({ ...formData, email: e.target.value })}
+                        className="h-14 rounded-2xl text-center text-lg font-bold"
+                      />
+                      <Button onClick={handleSendOTP} disabled={authMethod === "phone" ? !formData.phone : !formData.email} className="h-14 rounded-2xl">
+                        Send Verification Code
+                      </Button>
+                      <button onClick={() => setAuthMethod(null)} className="text-sm font-bold text-on-surface-variant hover:text-primary mt-2">
+                        Go Back
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-on-surface-variant mb-2">
+                        Enter the code sent to {formData.phone}
+                      </p>
+                      <Input
+                        placeholder="000000"
+                        value={otpCode}
+                        onChange={e => setOtpCode(e.target.value)}
+                        className="h-14 rounded-2xl text-center text-2xl font-black tracking-widest"
+                        maxLength={6}
+                      />
+                      <Button onClick={handleVerifyOTP} disabled={otpCode.length < 4} className="h-14 rounded-2xl">
+                        Verify & Continue
+                      </Button>
+                      <button onClick={() => setOtpSent(false)} className="text-sm font-bold text-on-surface-variant hover:text-primary mt-2">
+                        Change Phone Number
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -539,7 +536,7 @@ export function OnboardingForm() {
           {
             emoji: "🛠️",
             title: "Create the need",
-            description: isSelfCarousel 
+            description: isSelfCarousel
               ? "Tell us what is needed and why. Add a photo and a short story. It takes less than 5 minutes."
               : "Tell us what your tradesperson needs and why. Add a photo and a short story. It takes less than 5 minutes."
           },
@@ -563,7 +560,7 @@ export function OnboardingForm() {
                 <div className="text-6xl mb-6">{slides[carouselSlide].emoji}</div>
                 <h3 className="text-title-large font-black text-on-surface mb-4">{slides[carouselSlide].title}</h3>
                 <p className="text-body-large text-on-surface-variant font-medium">{slides[carouselSlide].description}</p>
-                
+
                 {/* Success story card on last slide */}
                 {carouselSlide === 2 && (
                   <div className="mt-8 p-4 bg-surface-variant/30 rounded-2xl border border-outline-variant/30 w-full">
@@ -577,7 +574,7 @@ export function OnboardingForm() {
                   </div>
                 )}
               </div>
-              
+
               {/* Progress dots */}
               <div className="flex items-center justify-center gap-3 mt-6">
                 {slides.map((_, idx) => (
@@ -589,28 +586,28 @@ export function OnboardingForm() {
                   />
                 ))}
               </div>
-              
+
               {/* Navigation buttons */}
               <div className="flex items-center gap-4 mt-6">
-                <Button 
-                  onClick={prevCarouselSlide} 
+                <Button
+                  onClick={prevCarouselSlide}
                   disabled={carouselSlide === 0}
-                  variant="secondary" 
+                  variant="secondary"
                   className="flex-1 h-14 rounded-full"
                 >
                   <ChevronLeft className="h-5 w-5" /> Back
                 </Button>
-                <Button 
-                  onClick={nextCarouselSlide} 
+                <Button
+                  onClick={nextCarouselSlide}
                   className="flex-1 h-14 rounded-full"
                 >
                   {carouselSlide < 2 ? "Next" : "Get started →"}
                 </Button>
               </div>
-              
+
               {/* Skip intro link */}
-              <button 
-                onClick={skipIntro} 
+              <button
+                onClick={skipIntro}
                 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest hover:text-primary mt-4"
               >
                 Skip intro
@@ -619,7 +616,7 @@ export function OnboardingForm() {
           </motion.div>
         )
 
-       case 4: // Trade
+      case 4: // Trade
         const isSelf = formData.who_for === "myself"
         return (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-4xl mx-auto">
@@ -658,14 +655,14 @@ export function OnboardingForm() {
           </motion.div>
         )
 
-       case 5: // Location
+      case 5: // Location
         const isSelfLocation = formData.who_for === "myself"
         return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg mx-auto">
-             <h1 className="text-display-small font-black text-on-surface mb-4 text-center">
-               {isSelfLocation ? "Where are you based?" : "Where is the tradesperson based?"}
-             </h1>
-             <p className="text-body-large text-on-surface-variant font-medium text-center mb-10">This helps backers find tradespeople in their area.</p>
+            <h1 className="text-display-small font-black text-on-surface mb-4 text-center">
+              {isSelfLocation ? "Where are you based?" : "Where is the tradesperson based?"}
+            </h1>
+            <p className="text-body-large text-on-surface-variant font-medium text-center mb-10">This helps backers find tradespeople in their area.</p>
             <div className="bg-white/70 p-8 rounded-[3rem] shadow-xl border border-outline-variant/30 flex flex-col gap-6">
               <select value={formData.location_state} onChange={(e) => setFormData({ ...formData, location_state: e.target.value, location_lga: "" })} className="h-16 w-full rounded-2xl border-2 border-outline-variant bg-white px-6 font-bold text-lg outline-none appearance-none cursor-pointer">
                 <option value="">Select State</option>
@@ -684,37 +681,37 @@ export function OnboardingForm() {
           </motion.div>
         )
 
-       case 6: // Photo
+      case 6: // Photo
         const isSelfPhoto = formData.who_for === "myself"
         return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md mx-auto text-center">
-             <h1 className="text-display-small font-black text-on-surface mb-4">
-               {isSelfPhoto ? "Add a photo of yourself" : "Add a photo of the tradesperson"}
-             </h1>
-             <p className="text-body-large text-on-surface-variant font-medium mb-10">A clear face photo helps backers feel confident about who they are backing.</p>
+            <h1 className="text-display-small font-black text-on-surface mb-4">
+              {isSelfPhoto ? "Add a photo of yourself" : "Add a photo of the tradesperson"}
+            </h1>
+            <p className="text-body-large text-on-surface-variant font-medium mb-10">A clear face photo helps backers feel confident about who they are backing.</p>
             <div className="relative inline-block mb-10">
-               <Avatar src={formData.photo_url} name={formData.name || "Artisan"} className="h-56 w-56 border-8 border-white shadow-2xl relative" />
+              <Avatar src={formData.photo_url} name={formData.name || "Artisan"} className="h-56 w-56 border-8 border-white shadow-2xl relative" />
               <label className="absolute bottom-2 right-2 bg-primary text-white p-4 rounded-full shadow-xl cursor-pointer hover:scale-110 transition-all border-4 border-white">
                 <Camera className="h-6 w-6" />
                 <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
               </label>
             </div>
-             <div className="mb-8 p-4 bg-surface-variant/30 rounded-2xl border border-outline-variant/30">
-               <div className="flex items-center gap-2 text-label-small font-bold text-on-surface-variant mb-2">
-                 <span className="text-badge-1">✅ Good:</span> <span>face clearly visible, good lighting</span>
-               </div>
-               <div className="flex items-center gap-2 text-label-small font-bold text-on-surface-variant">
-                 <span className="text-badge-3">❌ Avoid:</span> <span>group photos, blurry images, logos</span>
-               </div>
-             </div>
-             <div className="flex flex-col gap-4">
-               <Button onClick={nextStep} disabled={!formData.photo_url} className="h-16 rounded-full text-lg w-full">Continue</Button>
-               <button onClick={nextStep} className="text-sm font-bold text-on-surface-variant uppercase tracking-widest hover:text-primary">Skip for now</button>
-             </div>
+            <div className="mb-8 p-4 bg-surface-variant/30 rounded-2xl border border-outline-variant/30">
+              <div className="flex items-center gap-2 text-label-small font-bold text-on-surface-variant mb-2">
+                <span className="text-badge-1">✅ Good:</span> <span>face clearly visible, good lighting</span>
+              </div>
+              <div className="flex items-center gap-2 text-label-small font-bold text-on-surface-variant">
+                <span className="text-badge-3">❌ Avoid:</span> <span>group photos, blurry images, logos</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4">
+              <Button onClick={nextStep} disabled={!formData.photo_url} className="h-16 rounded-full text-lg w-full">Continue</Button>
+              <button onClick={nextStep} className="text-sm font-bold text-on-surface-variant uppercase tracking-widest hover:text-primary">Skip for now</button>
+            </div>
           </motion.div>
         )
 
-       case 7: // Story (Multi-tab)
+      case 7: // Story (Multi-tab)
         const isSelfStory = formData.who_for === "myself"
         return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl mx-auto">
@@ -722,92 +719,92 @@ export function OnboardingForm() {
               {isSelfStory ? "Tell people about your work" : `Tell people about ${formData.name || "the tradesperson"}'s work`}
             </h1>
             <p className="text-body-large text-on-surface-variant font-medium text-center mb-8">This is the first thing backers will read. Write it or let AI help you get started.</p>
-            
+
             <div className="bg-white rounded-[3rem] shadow-2xl border border-outline-variant/30 overflow-hidden">
-               <div className="flex border-b border-outline-variant/30 bg-surface-variant/10">
-                  <button onClick={() => setStoryMethod("write")} className={`flex-1 py-4 text-sm font-black uppercase tracking-widest transition-colors ${storyMethod === "write" ? "border-b-2 border-primary text-primary" : "text-on-surface-variant hover:text-on-surface"}`}>Write</button>
-                  <button onClick={() => setStoryMethod("ai")} className={`flex-1 py-4 text-sm font-black uppercase tracking-widest transition-colors ${storyMethod === "ai" ? "border-b-2 border-primary text-primary" : "text-on-surface-variant hover:text-on-surface"}`}>Generate (AI)</button>
-               </div>
-               
-               <div className="p-8">
-               {storyMethod === "write" ? (
+              <div className="flex border-b border-outline-variant/30 bg-surface-variant/10">
+                <button onClick={() => setStoryMethod("write")} className={`flex-1 py-4 text-sm font-black uppercase tracking-widest transition-colors ${storyMethod === "write" ? "border-b-2 border-primary text-primary" : "text-on-surface-variant hover:text-on-surface"}`}>Write</button>
+                <button onClick={() => setStoryMethod("ai")} className={`flex-1 py-4 text-sm font-black uppercase tracking-widest transition-colors ${storyMethod === "ai" ? "border-b-2 border-primary text-primary" : "text-on-surface-variant hover:text-on-surface"}`}>Generate (AI)</button>
+              </div>
+
+              <div className="p-8">
+                {storyMethod === "write" ? (
                   <div className="flex flex-col gap-4">
-                     <p className="text-sm font-medium text-on-surface-variant mb-2">Speak from the heart. Tell backers why this equipment matters.</p>
-                     <div className="relative">
-                         <Textarea 
-                            placeholder="I have been a baker for 5 years..."
-                            value={voiceInput.isListening ? `${storyBaseRef.current} ${voiceInput.transcript}`.trim() : formData.story}
-                            onChange={(e) => !voiceInput.isListening && setFormData({...formData, story: e.target.value})}
-                            className="h-48 rounded-3xl border-2 border-outline-variant p-6 p-b-14 text-lg w-full"
-                         />
-                         {voiceInput.isSupported && (
-                            <button 
-                              onClick={() => {
-                                if (voiceInput.isListening) {
-                                  voiceInput.stopListening();
-                                } else {
-                                  storyBaseRef.current = formData.story;
-                                  voiceInput.startListening();
-                                }
-                              }}
-                              className={`absolute bottom-4 right-4 p-3 rounded-full flex items-center justify-center transition-all shadow-md ${voiceInput.isListening ? 'bg-error text-white animate-pulse' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}
-                            >
-                              {voiceInput.isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                            </button>
-                         )}
-                     </div>
+                    <p className="text-sm font-medium text-on-surface-variant mb-2">Speak from the heart. Tell backers why this equipment matters.</p>
+                    <div className="relative">
+                      <Textarea
+                        placeholder="I have been a baker for 5 years..."
+                        value={voiceInput.isListening ? `${storyBaseRef.current} ${voiceInput.transcript}`.trim() : formData.story}
+                        onChange={(e) => !voiceInput.isListening && setFormData({ ...formData, story: e.target.value })}
+                        className="h-48 rounded-3xl border-2 border-outline-variant p-6 p-b-14 text-lg w-full"
+                      />
+                      {voiceInput.isSupported && (
+                        <button
+                          onClick={() => {
+                            if (voiceInput.isListening) {
+                              voiceInput.stopListening();
+                            } else {
+                              storyBaseRef.current = formData.story;
+                              voiceInput.startListening();
+                            }
+                          }}
+                          className={`absolute bottom-4 right-4 p-3 rounded-full flex items-center justify-center transition-all shadow-md ${voiceInput.isListening ? 'bg-error text-white animate-pulse' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}
+                        >
+                          {voiceInput.isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                        </button>
+                      )}
+                    </div>
                   </div>
-               ) : (
+                ) : (
                   <div className="flex flex-col gap-6">
-                     <p className="text-sm font-medium text-on-surface-variant mb-2">Answer 3 simple questions and our AI will craft a beautiful story for you.</p>
-                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-black uppercase tracking-widest">How many years of experience?</label>
-                        <Input value={formData.ai_prompts.experience} onChange={e => setFormData({...formData, ai_prompts: {...formData.ai_prompts, experience: e.target.value}})} placeholder="e.g. 5 years" className="h-14 rounded-2xl"/>
-                     </div>
-                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-black uppercase tracking-widest">What do you make/do?</label>
-                        <Input value={formData.ai_prompts.product} onChange={e => setFormData({...formData, ai_prompts: {...formData.ai_prompts, product: e.target.value}})} placeholder="e.g. Wedding cakes and pastries" className="h-14 rounded-2xl"/>
-                     </div>
-                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-black uppercase tracking-widest">Who do you serve in your community?</label>
-                        <Input value={formData.ai_prompts.community} onChange={e => setFormData({...formData, ai_prompts: {...formData.ai_prompts, community: e.target.value}})} placeholder="e.g. Local schools and families" className="h-14 rounded-2xl"/>
-                     </div>
-                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-black uppercase tracking-widest">What equipment do you need?</label>
-                        <Input value={formData.ai_prompts.equipment} onChange={e => setFormData({...formData, ai_prompts: {...formData.ai_prompts, equipment: e.target.value}})} placeholder="e.g. Industrial Sewing Machine" className="h-14 rounded-2xl"/>
-                     </div>
-                     <Button 
-                        onClick={generateAIStory} 
-                        disabled={!formData.ai_prompts.experience || !formData.ai_prompts.product || !formData.ai_prompts.community || !formData.ai_prompts.equipment}
-                        isLoading={isGeneratingStory}
-                        className="h-16 rounded-2xl mt-4 font-black"
-                     >
-                        <Sparkles className="mr-2 h-5 w-5"/> Generate My Story
-                     </Button>
+                    <p className="text-sm font-medium text-on-surface-variant mb-2">Answer 3 simple questions and our AI will craft a beautiful story for you.</p>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-black uppercase tracking-widest">How many years of experience?</label>
+                      <Input value={formData.ai_prompts.experience} onChange={e => setFormData({ ...formData, ai_prompts: { ...formData.ai_prompts, experience: e.target.value } })} placeholder="e.g. 5 years" className="h-14 rounded-2xl" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-black uppercase tracking-widest">What do you make/do?</label>
+                      <Input value={formData.ai_prompts.product} onChange={e => setFormData({ ...formData, ai_prompts: { ...formData.ai_prompts, product: e.target.value } })} placeholder="e.g. Wedding cakes and pastries" className="h-14 rounded-2xl" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-black uppercase tracking-widest">Who do you serve in your community?</label>
+                      <Input value={formData.ai_prompts.community} onChange={e => setFormData({ ...formData, ai_prompts: { ...formData.ai_prompts, community: e.target.value } })} placeholder="e.g. Local schools and families" className="h-14 rounded-2xl" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-black uppercase tracking-widest">What equipment do you need?</label>
+                      <Input value={formData.ai_prompts.equipment} onChange={e => setFormData({ ...formData, ai_prompts: { ...formData.ai_prompts, equipment: e.target.value } })} placeholder="e.g. Industrial Sewing Machine" className="h-14 rounded-2xl" />
+                    </div>
+                    <Button
+                      onClick={generateAIStory}
+                      disabled={!formData.ai_prompts.experience || !formData.ai_prompts.product || !formData.ai_prompts.community || !formData.ai_prompts.equipment}
+                      isLoading={isGeneratingStory}
+                      className="h-16 rounded-2xl mt-4 font-black"
+                    >
+                      <Sparkles className="mr-2 h-5 w-5" /> Generate My Story
+                    </Button>
                   </div>
-               )}
-               </div>
+                )}
+              </div>
             </div>
-             {(storyMethod === "write" || formData.story) && (
-               <Button onClick={nextStep} disabled={!formData.story} className="h-16 rounded-full text-lg w-full mt-6 shadow-xl">
-                 Review Profile
-               </Button>
-             )}
+            {(storyMethod === "write" || formData.story) && (
+              <Button onClick={nextStep} disabled={!formData.story} className="h-16 rounded-full text-lg w-full mt-6 shadow-xl">
+                Review Profile
+              </Button>
+            )}
           </motion.div>
         )
 
-       case 8: // Preview
+      case 8: // Preview
         const isSelfPreview = formData.who_for === "myself"
         const trade = TRADE_CATEGORIES.find(t => t.id === formData.trade_category)
         const tradeLabel = trade ? trade.label : (formData.custom_trade || "Unknown Trade")
         const TradeIcon = trade ? trade.icon : UserPlus
         const tradeColor = trade ? trade.color : "text-gray-500"
-        
+
         // Format amount with thousands separators
-        const formattedAmount = formData.amount 
+        const formattedAmount = formData.amount
           ? new Intl.NumberFormat("en-NG").format(parseInt(formData.amount.replace(/[^0-9]/g, "") || "0"))
           : "0"
-        
+
         // Format state name (snake_case to Title Case)
         const formatStateName = (state: string) => {
           if (!state) return ""
@@ -818,82 +815,82 @@ export function OnboardingForm() {
             .join(" ")
         }
         const formattedState = formData.location_state ? formatStateName(formData.location_state) : ""
-        
+
         return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-xl mx-auto">
             <h1 className="text-display-small font-black text-on-surface mb-4 text-center">Here's what backers will see</h1>
             <p className="text-body-large text-on-surface-variant font-medium text-center mb-8">This is the public profile. Everything can be updated later.</p>
-            
+
             <div className="bg-white rounded-[3rem] shadow-2xl border border-outline-variant/30 p-8 flex flex-col gap-8">
-               {/* Profile Header */}
-               <div className="flex items-center gap-6 border-b border-outline-variant/30 pb-8">
-                  <Avatar src={formData.photo_url} name={formData.name || "Artisan"} className="h-24 w-24 rounded-3xl border-4 border-white shadow-lg" />
-                  <div className="flex-1">
-                     <h2 className="text-3xl font-black mb-1">{formData.name || "Artisan"}</h2>
-                     <div className="flex items-center gap-2 mb-2">
-                        <TradeIcon className={`h-5 w-5 ${tradeColor}`} />
-                        <span className="font-bold text-on-surface">{tradeLabel}</span>
-                     </div>
-                     <p className="text-on-surface-variant font-medium">
-                        {formData.location_lga && formattedState 
-                          ? `${formData.location_lga}, ${formattedState}` 
-                          : "Location not set"}
-                     </p>
+              {/* Profile Header */}
+              <div className="flex items-center gap-6 border-b border-outline-variant/30 pb-8">
+                <Avatar src={formData.photo_url} name={formData.name || "Artisan"} className="h-24 w-24 rounded-3xl border-4 border-white shadow-lg" />
+                <div className="flex-1">
+                  <h2 className="text-3xl font-black mb-1">{formData.name || "Artisan"}</h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    <TradeIcon className={`h-5 w-5 ${tradeColor}`} />
+                    <span className="font-bold text-on-surface">{tradeLabel}</span>
                   </div>
-               </div>
-               
-               {/* Verification & Vouch Status */}
-               <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-badge-1/10 border border-badge-1/20 rounded-2xl">
-                     <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">🟡</span>
-                        <h3 className="font-black text-badge-1">Level 0 — Verified</h3>
-                     </div>
-                     <p className="text-label-small text-on-surface-variant">Phone / Email verified</p>
+                  <p className="text-on-surface-variant font-medium">
+                    {formData.location_lga && formattedState
+                      ? `${formData.location_lga}, ${formattedState}`
+                      : "Location not set"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Verification & Vouch Status */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-badge-1/10 border border-badge-1/20 rounded-2xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🟡</span>
+                    <h3 className="font-black text-badge-1">Level 0 — Verified</h3>
                   </div>
-                  <div className="p-4 bg-surface-variant/20 border border-outline-variant/30 rounded-2xl">
-                     <h3 className="font-black text-on-surface mb-2">Vouches</h3>
-                     <p className="text-label-small text-on-surface-variant">0 vouches so far</p>
-                  </div>
-               </div>
-               
-               {/* Attribution Note (if Someone Else) */}
-               {!isSelfPreview && formData.name && (
-                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl">
-                    <p className="text-label-small text-on-surface">
-                       <span className="font-bold">Note:</span> This need was created by you on behalf of {formData.name}.
-                    </p>
-                 </div>
-               )}
-               
-               {/* Fundraising Goal */}
-               <div>
-                  <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-2">Fundraising Goal</h3>
-                  <p className="text-4xl font-black">₦{formattedAmount}</p>
-               </div>
-               
-               {/* Personal Story */}
-               <div>
-                  <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-2">The Story</h3>
-                  <div className="p-4 bg-surface-variant/10 rounded-2xl border border-outline-variant/30">
-                     <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
-                        {formData.story || "No story added yet."}
-                     </p>
-                  </div>
-               </div>
+                  <p className="text-label-small text-on-surface-variant">Phone / Email verified</p>
+                </div>
+                <div className="p-4 bg-surface-variant/20 border border-outline-variant/30 rounded-2xl">
+                  <h3 className="font-black text-on-surface mb-2">Vouches</h3>
+                  <p className="text-label-small text-on-surface-variant">0 vouches so far</p>
+                </div>
+              </div>
+
+              {/* Attribution Note (if Someone Else) */}
+              {!isSelfPreview && formData.name && (
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl">
+                  <p className="text-label-small text-on-surface">
+                    <span className="font-bold">Note:</span> This need was created by you on behalf of {formData.name}.
+                  </p>
+                </div>
+              )}
+
+              {/* Fundraising Goal */}
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-2">Fundraising Goal</h3>
+                <p className="text-4xl font-black">₦{formattedAmount}</p>
+              </div>
+
+              {/* Personal Story */}
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-2">The Story</h3>
+                <div className="p-4 bg-surface-variant/10 rounded-2xl border border-outline-variant/30">
+                  <p className="text-on-surface leading-relaxed whitespace-pre-wrap">
+                    {formData.story || "No story added yet."}
+                  </p>
+                </div>
+              </div>
             </div>
-            
+
             {/* Actions */}
             <div className="flex flex-col gap-4 mt-8">
-               <Button onClick={nextStep} className="h-16 rounded-full text-lg w-full shadow-xl">
-                  Looks good — continue →
-               </Button>
-               <button 
-                  onClick={() => setCurrentStep(7)} // Go back to story screen to edit
-                  className="text-sm font-bold text-on-surface-variant hover:text-primary text-center"
-               >
-                  Edit something
-               </button>
+              <Button onClick={nextStep} className="h-16 rounded-full text-lg w-full shadow-xl">
+                Looks good — continue →
+              </Button>
+              <button
+                onClick={() => setCurrentStep(7)} // Go back to story screen to edit
+                className="text-sm font-bold text-on-surface-variant hover:text-primary text-center"
+              >
+                Edit something
+              </button>
             </div>
           </motion.div>
         )
@@ -901,107 +898,107 @@ export function OnboardingForm() {
       case 9: // Terms
         return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-xl mx-auto text-center">
-             <h1 className="text-display-small font-black text-on-surface mb-8 text-center">The <span className="text-primary italic">Covenant.</span></h1>
-             <div className="bg-white p-8 rounded-[3rem] shadow-2xl border border-outline-variant/30 flex flex-col gap-6 text-left">
-                {[
-                  "I commit to total transparency in my equipment requests.",
-                  "I will provide photographic proof of every machine purchased.",
-                  "I acknowledge that trust is my most valuable capital."
-                ].map((term, i) => (
-                  <div key={i} className="flex gap-4">
-                     <CheckCircle className="h-6 w-6 text-primary flex-shrink-0" />
-                     <p className="font-bold text-on-surface">{term}</p>
-                  </div>
-                ))}
-                
-                <label className="flex items-center gap-4 bg-primary/5 p-6 rounded-2xl border-2 border-primary/20 cursor-pointer mt-4">
-                   <input type="checkbox" checked={formData.agreed_to_terms} onChange={e => setFormData({...formData, agreed_to_terms: e.target.checked})} className="h-6 w-6 rounded border-primary text-primary focus:ring-primary"/>
-                   <span className="font-black text-sm uppercase tracking-widest">I Accept and Commit</span>
-                </label>
-             </div>
-             <Button onClick={() => { localStorage.removeItem("onboarding_state"); nextStep() }} disabled={!formData.agreed_to_terms} className="h-16 rounded-full text-lg w-full mt-8 shadow-xl bg-primary"><Rocket className="mr-2 h-5 w-5"/> Launch My Goal</Button>
+            <h1 className="text-display-small font-black text-on-surface mb-8 text-center">The <span className="text-primary italic">Covenant.</span></h1>
+            <div className="bg-white p-8 rounded-[3rem] shadow-2xl border border-outline-variant/30 flex flex-col gap-6 text-left">
+              {[
+                "I commit to total transparency in my equipment requests.",
+                "I will provide photographic proof of every machine purchased.",
+                "I acknowledge that trust is my most valuable capital."
+              ].map((term, i) => (
+                <div key={i} className="flex gap-4">
+                  <CheckCircle className="h-6 w-6 text-primary flex-shrink-0" />
+                  <p className="font-bold text-on-surface">{term}</p>
+                </div>
+              ))}
+
+              <label className="flex items-center gap-4 bg-primary/5 p-6 rounded-2xl border-2 border-primary/20 cursor-pointer mt-4">
+                <input type="checkbox" checked={formData.agreed_to_terms} onChange={e => setFormData({ ...formData, agreed_to_terms: e.target.checked })} className="h-6 w-6 rounded border-primary text-primary focus:ring-primary" />
+                <span className="font-black text-sm uppercase tracking-widest">I Accept and Commit</span>
+              </label>
+            </div>
+            <Button onClick={() => { localStorage.removeItem("onboarding_state"); nextStep() }} disabled={!formData.agreed_to_terms} className="h-16 rounded-full text-lg w-full mt-8 shadow-xl bg-primary"><Rocket className="mr-2 h-5 w-5" /> Launch My Goal</Button>
           </motion.div>
         )
-      
-       case 10: // Success
+
+      case 10: // Success
         return (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-2xl mx-auto text-center">
-             <div className="h-28 w-28 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-green-500/30">
-               <CheckCircle className="h-14 w-14 text-white" />
-             </div>
-             <h1 className="text-display-medium font-black text-on-surface mb-4">The profile is live! 🎉</h1>
-             <p className="text-body-large text-on-surface-variant font-medium mb-10">You are now a BuildBridge member.</p>
-             
-             {/* Verification Badge */}
-             <div className="mb-10 p-6 bg-badge-1/10 border border-badge-1/20 rounded-3xl">
-               <div className="flex items-center justify-center gap-3 mb-4">
-                 <span className="text-2xl">🟡</span>
-                 <h3 className="text-title-large font-black text-badge-1">Level 0 — Verified</h3>
-               </div>
-               <p className="text-body-medium text-on-surface-variant">Backers can see that this account is confirmed.</p>
-             </div>
-             
-             {/* Verification Journey */}
-             <div className="mb-10">
-               <h4 className="text-headline-small font-black text-on-surface mb-6">Verification Journey</h4>
-               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                 <div className="p-4 border border-outline-variant/30 rounded-2xl bg-surface">
-                   <div className="text-label-small font-bold uppercase text-badge-1 mb-2">Level 1</div>
-                   <div className="text-title-medium font-black text-on-surface mb-2">Community Member</div>
-                   <ul className="text-label-small text-on-surface-variant list-disc list-inside space-y-1">
-                     <li>3 vouches</li>
-                     <li>₦50,000 cap</li>
-                   </ul>
-                 </div>
-                 <div className="p-4 border border-outline-variant/30 rounded-2xl bg-surface">
-                   <div className="text-label-small font-bold uppercase text-badge-2 mb-2">Level 2</div>
-                   <div className="title-medium font-black text-on-surface mb-2">Trusted Tradesperson</div>
-                   <ul className="text-label-small text-on-surface-variant list-disc list-inside space-y-1">
-                     <li>5 vouches</li>
-                     <li>Geotagged workspace</li>
-                     <li>₦150,000 cap</li>
-                   </ul>
-                 </div>
-                 <div className="p-4 border border-outline-variant/30 rounded-2xl bg-surface">
-                   <div className="text-label-small font-bold uppercase text-badge-3 mb-2">Level 3</div>
-                   <div className="title-medium font-black text-on-surface mb-2">Established</div>
-                   <ul className="text-label-small text-on-surface-variant list-disc list-inside space-y-1">
-                     <li>10 vouches</li>
-                     <li>Community leader endorsement</li>
-                     <li>₦500,000 cap</li>
-                   </ul>
-                 </div>
-                 <div className="p-4 border border-outline-variant/30 rounded-2xl bg-surface">
-                   <div className="text-label-small font-bold uppercase text-badge-4 mb-2">Level 4</div>
-                   <div className="title-medium font-black text-on-surface mb-2">Platform Verified</div>
-                   <ul className="text-label-small text-on-surface-variant list-disc list-inside space-y-1">
-                     <li>Full review by BuildBridge team</li>
-                     <li>No funding cap</li>
-                   </ul>
-                 </div>
-               </div>
-             </div>
-             
-             {/* Callout Card */}
-             <div className="mb-10 p-6 bg-primary/5 border border-primary/20 rounded-3xl">
-               <div className="flex items-start gap-4">
-                 <span className="text-2xl">💡</span>
-                 <div>
-                   <h4 className="text-headline-small font-black text-on-surface mb-2">Get vouches to unlock higher levels</h4>
-                   <p className="text-body-medium text-on-surface-variant">Ask 3 people who know this work to vouch for them — a neighbour, a customer, or a fellow trader. Vouching takes less than 2 minutes on their phone.</p>
-                 </div>
-               </div>
-             </div>
-             
-             {/* Actions */}
-             <div className="flex flex-col sm:flex-row gap-4">
-               <Button onClick={() => router.push("/dashboard/create-need")} className="h-16 rounded-full text-lg flex-1">
-                 Create your first need →
-               </Button>
-               <Button variant="secondary" className="h-16 rounded-full text-lg flex-1">
-                 Get vouches first
-               </Button>
-             </div>
+            <div className="h-28 w-28 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-green-500/30">
+              <CheckCircle className="h-14 w-14 text-white" />
+            </div>
+            <h1 className="text-display-medium font-black text-on-surface mb-4">The profile is live! 🎉</h1>
+            <p className="text-body-large text-on-surface-variant font-medium mb-10">You are now a BuildBridge member.</p>
+
+            {/* Verification Badge */}
+            <div className="mb-10 p-6 bg-badge-1/10 border border-badge-1/20 rounded-3xl">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <span className="text-2xl">🟡</span>
+                <h3 className="text-title-large font-black text-badge-1">Level 0 — Verified</h3>
+              </div>
+              <p className="text-body-medium text-on-surface-variant">Backers can see that this account is confirmed.</p>
+            </div>
+
+            {/* Verification Journey */}
+            <div className="mb-10">
+              <h4 className="text-headline-small font-black text-on-surface mb-6">Verification Journey</h4>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="p-4 border border-outline-variant/30 rounded-2xl bg-surface">
+                  <div className="text-label-small font-bold uppercase text-badge-1 mb-2">Level 1</div>
+                  <div className="text-title-medium font-black text-on-surface mb-2">Community Member</div>
+                  <ul className="text-label-small text-on-surface-variant list-disc list-inside space-y-1">
+                    <li>3 vouches</li>
+                    <li>₦50,000 cap</li>
+                  </ul>
+                </div>
+                <div className="p-4 border border-outline-variant/30 rounded-2xl bg-surface">
+                  <div className="text-label-small font-bold uppercase text-badge-2 mb-2">Level 2</div>
+                  <div className="title-medium font-black text-on-surface mb-2">Trusted Tradesperson</div>
+                  <ul className="text-label-small text-on-surface-variant list-disc list-inside space-y-1">
+                    <li>5 vouches</li>
+                    <li>Geotagged workspace</li>
+                    <li>₦150,000 cap</li>
+                  </ul>
+                </div>
+                <div className="p-4 border border-outline-variant/30 rounded-2xl bg-surface">
+                  <div className="text-label-small font-bold uppercase text-badge-3 mb-2">Level 3</div>
+                  <div className="title-medium font-black text-on-surface mb-2">Established</div>
+                  <ul className="text-label-small text-on-surface-variant list-disc list-inside space-y-1">
+                    <li>10 vouches</li>
+                    <li>Community leader endorsement</li>
+                    <li>₦500,000 cap</li>
+                  </ul>
+                </div>
+                <div className="p-4 border border-outline-variant/30 rounded-2xl bg-surface">
+                  <div className="text-label-small font-bold uppercase text-badge-4 mb-2">Level 4</div>
+                  <div className="title-medium font-black text-on-surface mb-2">Platform Verified</div>
+                  <ul className="text-label-small text-on-surface-variant list-disc list-inside space-y-1">
+                    <li>Full review by BuildBridge team</li>
+                    <li>No funding cap</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Callout Card */}
+            <div className="mb-10 p-6 bg-primary/5 border border-primary/20 rounded-3xl">
+              <div className="flex items-start gap-4">
+                <span className="text-2xl">💡</span>
+                <div>
+                  <h4 className="text-headline-small font-black text-on-surface mb-2">Get vouches to unlock higher levels</h4>
+                  <p className="text-body-medium text-on-surface-variant">Ask 3 people who know this work to vouch for them — a neighbour, a customer, or a fellow trader. Vouching takes less than 2 minutes on their phone.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button onClick={() => router.push("/dashboard/create-need")} className="h-16 rounded-full text-lg flex-1">
+                Create your first need →
+              </Button>
+              <Button variant="secondary" className="h-16 rounded-full text-lg flex-1">
+                Get vouches first
+              </Button>
+            </div>
           </motion.div>
         )
     }
@@ -1009,41 +1006,41 @@ export function OnboardingForm() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center relative overflow-hidden bg-surface py-20 px-4">
-       <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-       
-       <div className="w-full max-w-7xl relative z-10">
-         {/* Progress Bar Header */}
-         {currentStep < 10 && (
-           <div className="flex flex-col gap-4 mb-16 mx-auto max-w-md">
-             <div className="flex items-center justify-between">
-                {currentStep > 0 && (
-                  <button onClick={prevStep} className="flex items-center gap-1 text-sm font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
-                     <ChevronLeft className="h-4 w-4" /> Back
-                  </button>
-                )}
-                 <span className="text-xs font-black uppercase tracking-widest text-primary flex-grow text-right">
-                   Step {currentStep + 1} of 11
-                 </span>
-             </div>
-             <div className="h-2 w-full bg-surface-variant/50 rounded-full overflow-hidden">
-               <motion.div 
-                 className="h-full bg-primary"
-                 initial={{ width: 0 }}
-                  animate={{ width: `${((currentStep + 1) / 11) * 100}%` }}
-               />
-             </div>
-           </div>
-         )}
+      <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
 
-         {/* Main Content */}
-         <div className="min-h-[500px] flex items-center justify-center">
-            <AnimatePresence mode="wait">
-               <React.Fragment key={currentStep}>
-                  {renderStepContent()}
-               </React.Fragment>
-            </AnimatePresence>
-         </div>
-       </div>
+      <div className="w-full max-w-7xl relative z-10">
+        {/* Progress Bar Header */}
+        {currentStep < 10 && (
+          <div className="flex flex-col gap-4 mb-16 mx-auto max-w-md">
+            <div className="flex items-center justify-between">
+              {currentStep > 0 && (
+                <button onClick={prevStep} className="flex items-center gap-1 text-sm font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </button>
+              )}
+              <span className="text-xs font-black uppercase tracking-widest text-primary flex-grow text-right">
+                Step {currentStep + 1} of 11
+              </span>
+            </div>
+            <div className="h-2 w-full bg-surface-variant/50 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-primary"
+                initial={{ width: 0 }}
+                animate={{ width: `${((currentStep + 1) / 11) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="min-h-[500px] flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <React.Fragment key={currentStep}>
+              {renderStepContent()}
+            </React.Fragment>
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }

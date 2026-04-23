@@ -151,9 +151,8 @@ export default function SignupForm() {
       // Set cookies for the callback route to read
       document.cookie = `auth_flow=signup; path=/; max-age=300; SameSite=Lax`;
       document.cookie = `auth_next=${redirectPath || '/dashboard'}; path=/; max-age=300; SameSite=Lax`;
-      
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-      const redirectTo = `${baseUrl}/auth/callback`
+
+      const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/onboarding&flow=signup`
       console.log('Google OAuth redirectTo:', redirectTo)
       await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -162,9 +161,7 @@ export default function SignupForm() {
         }
       })
     } catch (error) {
-      console.error('Google OAuth error:', error)
-      setErrorMsg('Failed to sign in with Google. Please check your configuration and try again.')
-      setIsLoading(false)
+      console.error(error)
     }
   }
 

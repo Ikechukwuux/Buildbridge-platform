@@ -26,6 +26,7 @@ import {
   Trophy
 } from "lucide-react"
 import { useVoiceInput } from "@/hooks/useVoiceInput"
+import { useAIGenerator } from "@/hooks/useAIGenerator"
 import { cn } from "@/lib/utils"
 
 interface CreateNeedFormProps {
@@ -57,6 +58,7 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const voiceInput = useVoiceInput()
+  const { isGenerating, generateImpactStatement } = useAIGenerator()
 
   const steps = [
     "Item",

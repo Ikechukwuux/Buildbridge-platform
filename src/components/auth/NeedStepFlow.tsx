@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { 
   Hammer, ShoppingBag, Target, ArrowRight, ArrowLeft, 
-  MapPin, Sparkles, Camera, Clock, Users, CheckCircle2 
+  MapPin, Sparkles, Camera, Clock, Users, CheckCircle2, Loader2 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NIGERIA_LOCATIONS } from "@/lib/data/nigeria";
 import { createClient } from "@/lib/supabase/client";
+import { useAIGenerator } from "@/hooks/useAIGenerator";
 
 interface NeedStepFlowProps {
   onComplete: (data: any) => void;
@@ -24,6 +25,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
   const [step, setStep] = useState(1);
   const totalSteps = 6;
   const [isUploading, setIsUploading] = useState(false);
+  const { isGenerating, generateImpactStatement } = useAIGenerator();
 
   const [formData, setFormData] = useState({
     category: "",
@@ -324,6 +326,31 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                         onChange={(e) => updateData({ impact: e.target.value })}
                         className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-12 text-base font-bold outline-none"
                       />
+                    </div>
+                    <div className="mt-2 text-right">
+                       <button 
+                          type="button"
+                          disabled={isGenerating || !formData.category || !formData.itemName || !formData.story}
+                          onClick={async () => {
+                            const trade = formData.category === 'Other' ? formData.otherCategory : formData.category;
+                            const result = await generateImpactStatement(trade, formData.itemName, formData.story);
+                            if (result) {
+                              updateData({ impact: result });
+                            }
+                          }}
+                          className={cn(
+                            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                            isGenerating 
+                              ? "bg-slate-100 border border-slate-200 text-slate-400 opacity-70 cursor-not-allowed" 
+                              : "bg-primary/10 text-primary hover:bg-primary/20"
+                          )}
+                        >
+                          {isGenerating ? (
+                            <><Loader2 className="h-3 w-3 animate-spin" /> Generating...</>
+                          ) : (
+                            <>✨ Generate with AI</>
+                          )}
+                        </button>
                     </div>
                   </div>
                 </div>

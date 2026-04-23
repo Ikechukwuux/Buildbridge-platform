@@ -28,6 +28,24 @@ import {
 import { useVoiceInput } from "@/hooks/useVoiceInput"
 import { useAIGenerator } from "@/hooks/useAIGenerator"
 import { cn } from "@/lib/utils"
+import dynamic from "next/dynamic"
+
+// Dynamically import Lottie to avoid SSR issues
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false })
+import confettiAnimation from "../../../public/animations/confetti.json"
+
+function ConfettiAnimation() {
+  return (
+    <div className="w-[600px] h-[600px] max-w-[100vw]">
+      <Lottie
+        animationData={confettiAnimation}
+        loop={false}
+        autoplay={true}
+        style={{ width: "100%", height: "100%" }}
+      />
+    </div>
+  )
+}
 
 interface CreateNeedFormProps {
   tradeCategory: string;
@@ -474,8 +492,8 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
                                })
                              });
                              const data = await res.json();
-                             if (data.impact) {
-                               setImpactOptions(data.impact);
+                              if (data.statements) {
+                                setImpactOptions(data.statements);
                              } else {
                                alert(data.error || "Failed to generate impact.");
                              }
@@ -625,25 +643,58 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
 
       case 7: // Success Page
         return (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center gap-8 py-10">
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <Trophy className="w-12 h-12 text-primary" />
-            </div>
-            
-            <div className="flex flex-col gap-3">
-              <h1 className="text-display-small font-black text-primary">Need Submitted!</h1>
-              <p className="text-body-large text-on-surface-variant font-medium max-w-md">
-                Your request is now in review. We will verify the pricing and details, and it should go live within 24 hours.
-              </p>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center gap-8 py-10 relative">
+            {/* Confetti Lottie overlay */}
+            <div className="absolute inset-0 pointer-events-none -top-20 flex items-start justify-center overflow-hidden z-0">
+              <ConfettiAnimation />
             </div>
 
-            <div className="w-full max-w-sm mt-4">
-              <Button onClick={() => {
-                router.refresh()
-                router.push("/dashboard?new_need=success")
-              }} className="w-full py-6 text-title-medium">
-                Go to Dashboard
-              </Button>
+            <div className="relative z-10 flex flex-col items-center gap-8">
+              <motion.div 
+                initial={{ scale: 0 }} 
+                animate={{ scale: 1 }} 
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                className="w-28 h-28 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center shadow-xl shadow-primary/10"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.5 }}
+                >
+                  <CheckCircle2 className="w-14 h-14 text-primary" />
+                </motion.div>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="flex flex-col gap-4"
+              >
+                <h1 className="text-display-small font-black text-primary">Congratulations! 🎉</h1>
+                <p className="text-body-large text-on-surface-variant font-medium max-w-md leading-relaxed">
+                  You have created your need successfully and it will be reviewed within the next <strong className="text-on-surface">24–72 hours</strong>.
+                </p>
+                <div className="mt-2 p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+                  <p className="text-body-small text-on-surface-variant font-medium">
+                    Your need will appear on your dashboard as <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-black uppercase tracking-wider">Pending Approval</span> until it has been reviewed.
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+                className="w-full max-w-sm mt-4"
+              >
+                <Button onClick={() => {
+                  router.refresh()
+                  router.push("/dashboard?new_need=success")
+                }} className="w-full py-6 text-title-medium">
+                  Go to Dashboard
+                </Button>
+              </motion.div>
             </div>
           </motion.div>
         )

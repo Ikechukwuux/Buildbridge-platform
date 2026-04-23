@@ -89,7 +89,13 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json();
-    const rawContent = data.choices[0].message.content.trim();
+    let rawContent = data.choices[0].message.content.trim();
+
+    // Strip markdown code fences if the AI wrapped the response (e.g. ```json [...] ```)
+    const fenceMatch = rawContent.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/);
+    if (fenceMatch) {
+      rawContent = fenceMatch[1].trim();
+    }
 
     if (count > 1) {
       // Parse JSON array from response

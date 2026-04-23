@@ -157,6 +157,12 @@ export function NeedCard({ need, className, onClick }: NeedCardProps) {
             Project Completed
           </div>
         )}
+        {need.status === 'pending_review' && (
+          <div className="absolute top-4 right-4 flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest bg-amber-500 text-white shadow-xl">
+            <Calendar className="h-3 w-3" />
+            Pending Approval
+          </div>
+        )}
 
         {/* Amount Tooltip-like Badge */}
         <div className="absolute bottom-4 right-4 rounded-2xl px-4 py-2 text-sm font-black bg-yellow-400 text-black shadow-xl">

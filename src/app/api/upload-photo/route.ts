@@ -41,14 +41,11 @@ export async function POST(req: NextRequest) {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
     const filePath = `covers/${fileName}`
 
-    // Convert file to buffer
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
     // Upload to Supabase Storage (using service role key to bypass RLS)
+    // Pass the native File object directly — Supabase JS supports it natively
     const { data, error: uploadError } = await supabaseAdmin.storage
       .from("needs")
-      .upload(filePath, buffer, {
+      .upload(filePath, file, {
         contentType: file.type,
         upsert: false,
       })

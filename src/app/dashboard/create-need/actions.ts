@@ -2,7 +2,6 @@
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
 
 export async function createNeedAction(formData: FormData) {
   const supabase = await createClient()
@@ -53,12 +52,11 @@ export async function createNeedAction(formData: FormData) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const arrayBuffer = await photoFile.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
+  // Pass the native File object directly — Supabase JS supports it natively
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from("needs")
-    .upload(filePath, buffer, {
+    .upload(filePath, photoFile, {
       contentType: photoFile.type,
       upsert: false,
     })
@@ -97,6 +95,11 @@ export async function createNeedAction(formData: FormData) {
     throw new Error(dbError.message)
   }
 
-  revalidatePath("/dashboard")
+  // NOTE: Do NOT call revalidatePath("/dashboard") here.
+  // It forces Next.js to remount the create-need layout, resetting
+  // client-side currentStep state back to 0 and preventing the
+  // congratulatory success step from being displayed.
+  // Instead, the "Go to Dashboard" button on the success step
+  // triggers router.refresh() to pick up the new data.
   return { success: true }
 }

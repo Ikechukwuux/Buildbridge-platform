@@ -30,7 +30,7 @@ export function AccountCreationView({ onBack, onSubmit, onGoogleAuth, isLoading 
   const phoneRegex = /^0\d{10}$|^\d{10}$/; // 11 digits starting with 0, or 10 digits
 
   const isAllowedDomain = (email: string) => {
-    if (email.toLowerCase() === "kolowolesegun@demo.com") return true;
+    if (email.toLowerCase() === "kolawolesegun@demo.com") return true;
     const domain = email.split('@')[1]?.toLowerCase();
     const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
     return allowedDomains.includes(domain);

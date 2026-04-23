@@ -62,60 +62,7 @@ export default function DashboardPage() {
       const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Artisan"
       setUserName(fullName)
 
-      // Demo User Override
-      if (user.email === 'kolowolesegun@demo.com') {
-        const demoProfile = {
-          id: 'demo-profile-1',
-          user_id: user.id,
-          full_name: 'Kolawole Segun',
-          trade_category: 'tailor',
-          location_state: 'Lagos',
-          location_lga: 'Mushin',
-          badge_level: 'level_2_trusted_tradesperson',
-          vouch_count: 12,
-          delivered_count: 1,
-          photo_url: null
-        }
-        
-        const demoNeeds = [
-          {
-            id: 'demo-need-1',
-            profile_id: 'demo-profile-1',
-            item_name: 'Beading Machine',
-            item_cost: 40000000, // 400k in kobo
-            funded_amount: 16000000, // 160k in kobo (40%)
-            photo_url: '/images/demo-machine-1.jpg',
-            story: 'I need a beading machine to expand my tailoring business and take on more complex traditional wear orders.',
-            impact_statement: 'A beading machine will allow me to hire two apprentices and double my monthly production capacity.',
-            deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'active',
-            pledge_count: 6,
-            created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-            profile: demoProfile
-          },
-          {
-            id: 'demo-need-2',
-            profile_id: 'demo-profile-1',
-            item_name: 'Industrial Sewing Machine',
-            item_cost: 35000000, // 350k in kobo
-            funded_amount: 35000000, // 100%
-            photo_url: '/images/demo-machine-2.jpg',
-            story: 'My old sewing machine breaks down constantly. An industrial machine will help me deliver school uniforms on time.',
-            impact_statement: 'With a reliable machine, I can fulfill the uniform contract for the local primary school, securing steady income.',
-            deadline: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'completed',
-            pledge_count: 18,
-            created_at: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
-            profile: demoProfile
-          }
-        ]
-
-        setProfile(demoProfile)
-        setNeeds(demoNeeds)
-        setLoading(false)
-        return
-      }
-
+      // Real data fetching applies to all users including demo
       // 2. Get profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')

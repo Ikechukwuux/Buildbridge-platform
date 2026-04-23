@@ -29,18 +29,28 @@ export function AccountCreationView({ onBack, onSubmit, onGoogleAuth, isLoading 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const phoneRegex = /^0\d{10}$|^\d{10}$/; // 11 digits starting with 0, or 10 digits
 
+  const isAllowedDomain = (email: string) => {
+    if (email.toLowerCase() === "kolowolesegun@demo.com") return true;
+    const domain = email.split('@')[1]?.toLowerCase();
+    const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+    return allowedDomains.includes(domain);
+  };
+
   const identifierError = useMemo(() => {
     if (!identifier) return "";
-    if (isEmail && !emailRegex.test(identifier)) {
-      return "Please enter a valid email address.";
-    }
-    if (isPhone) {
+    if (isEmail) {
+      if (!emailRegex.test(identifier)) {
+        return "Please enter a valid email address.";
+      }
+      if (!isAllowedDomain(identifier)) {
+        return "Please use a common email provider (e.g. Gmail) or phone number.";
+      }
+    } else if (isPhone) {
       const cleaned = identifier.replace(/[\s-+()]/g, '');
       if (!phoneRegex.test(cleaned)) {
         return "Enter 11 digits starting with 0, or 10 digits.";
       }
-    }
-    if (!isEmail && !isPhone && identifier.length > 0) {
+    } else if (identifier.length > 0) {
       return "Enter a valid email or phone number.";
     }
     return "";
@@ -108,6 +118,7 @@ export function AccountCreationView({ onBack, onSubmit, onGoogleAuth, isLoading 
               className="w-full h-18 rounded-2xl border-2 border-outline-variant focus:border-primary px-16 font-bold text-lg outline-none transition-all"
               required
             />
+            <p className="text-[11px] font-bold text-on-surface-variant/60 ml-6 uppercase tracking-wider">This can be a nickname if you prefer privacy.</p>
           </div>
 
           <div className="flex flex-col gap-1">

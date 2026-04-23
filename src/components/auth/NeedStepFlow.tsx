@@ -36,7 +36,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
     story: "",
     impact: "",
     condition: "",
-    timeline: "within_1_month",
+    timeline: "30",
     photoUrl: "",
     vouch: ""
   });
@@ -54,21 +54,16 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
 
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `needs/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('needs')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('needs')
-        .getPublicUrl(filePath);
-
-      updateData({ photoUrl: publicUrl });
+      const formData = new FormData();
+      formData.append('photo', file);
+      const res = await fetch('/api/upload-photo', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      
+      updateData({ photoUrl: data.url });
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Failed to upload image. Please try again.');
@@ -273,7 +268,44 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
               <StepWrapper title="Your Story & Impact" subtitle="Why is this important and how will it change things?">
                 <div className="flex flex-col gap-6">
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">Your Story</h3>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex justify-between items-center">
+                      Your Story
+                      {formData.story.length > 10 && (
+                        <button
+                          type="button"
+                          disabled={isUploading}
+                          onClick={async () => {
+                            setIsUploading(true);
+                            try {
+                              const res = await fetch("/api/generate-story", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  experience: "Artisan",
+                                  product: formData.category,
+                                  community: formData.lga + ", " + formData.state,
+                                  equipment: formData.story,
+                                  isSelf: true
+                                })
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                updateData({ story: data.story });
+                              } else {
+                                alert(data.error || "Failed to enhance story");
+                              }
+                            } catch (err) {
+                              alert("AI Service unavailable.");
+                            } finally {
+                              setIsUploading(false);
+                            }
+                          }}
+                          className="text-xs font-black bg-primary/10 text-primary px-3 py-1 rounded-full hover:bg-primary/20 transition-colors flex items-center gap-1"
+                        >
+                          <Sparkles className="w-3 h-3" /> Enhance with AI
+                        </button>
+                      )}
+                    </h3>
                     <Textarea 
                       placeholder="Share your journey and how this will help you grow..."
                       value={formData.story}
@@ -306,9 +338,11 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">Urgency</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {[
-                        { id: 'within_1_month', label: '1 Month' },
-                        { id: 'within_3_months', label: '3 Months' },
-                        { id: 'whenever_possible', label: 'Whenever' },
+                        { id: '7', label: '1 Week' },
+                        { id: '14', label: '2 Weeks' },
+                        { id: '30', label: '1 Month' },
+                        { id: '60', label: '2 Months' },
+                        { id: '90', label: '3 Months' },
                       ].map(t => (
                         <button
                           key={t.id}

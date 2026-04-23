@@ -59,6 +59,9 @@ export function HighVelocityAuth() {
       // Set cookies for callback to read
       document.cookie = `auth_flow=signup; path=/; max-age=300; SameSite=Lax`;
       document.cookie = `auth_next=/dashboard; path=/; max-age=300; SameSite=Lax`;
+      if (discoveryData) {
+        document.cookie = `discovery_data=${encodeURIComponent(JSON.stringify(discoveryData))}; path=/; max-age=300; SameSite=Lax`;
+      }
 
       await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -105,14 +108,22 @@ export function HighVelocityAuth() {
 
         if (profile) {
           const deadlineDate = new Date();
-          deadlineDate.setDate(deadlineDate.getDate() + 30);
+          let days = 30;
+          if (discoveryData.timeline) {
+            days = parseInt(discoveryData.timeline, 10);
+            if (isNaN(days)) days = 30;
+          }
+          deadlineDate.setDate(deadlineDate.getDate() + days);
+
+          const rawCost = String(discoveryData.cost || '0');
+          const itemCost = parseInt(rawCost.replace(/[^0-9]/g, ""), 10) || 0;
 
           await supabase.from('needs').insert({
             profile_id: profile.id,
             item_name: discoveryData.itemName,
-            item_cost: parseFloat(discoveryData.cost),
-            story: (discoveryData.story || "").substring(0, 150),
-            impact_statement: (discoveryData.impact || "").substring(0, 200),
+            item_cost: itemCost,
+            story: discoveryData.story || "",
+            impact_statement: discoveryData.impact || "",
             status: 'active',
             deadline: deadlineDate.toISOString().split('T')[0],
             photo_url: discoveryData.photoUrl || "/images/placeholders/need-default.png"

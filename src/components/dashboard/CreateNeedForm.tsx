@@ -21,7 +21,9 @@ import {
   Info,
   Mic,
   MicOff,
-  Loader2
+  Loader2,
+  Sparkles,
+  Trophy
 } from "lucide-react"
 import { useVoiceInput } from "@/hooks/useVoiceInput"
 import { cn } from "@/lib/utils"
@@ -34,6 +36,9 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [isEnhancingStory, setIsEnhancingStory] = useState(false)
+  const [isGeneratingImpact, setIsGeneratingImpact] = useState(false)
+  const [impactOptions, setImpactOptions] = useState<string[]>([])
   
   // Form State
   const [formData, setFormData] = useState({
@@ -60,7 +65,8 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
     "Story",
     "Impact",
     "Timeline",
-    "Confirm"
+    "Confirm",
+    "Success"
   ]
 
   // Steps handling
@@ -132,8 +138,7 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
       const result = await createNeedAction(data)
       
       if (result.success) {
-        router.refresh() // Clear router cache
-        router.push("/dashboard?new_need=success")
+        setCurrentStep(7) // Go to Success Step
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to create need.")
@@ -299,11 +304,52 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
         return (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-6">
                 <div className="text-center">
-                    <h2 className="text-headline-medium text-primary font-bold mb-2">Why do you need this?</h2>
+                    <h2 className="text-headline-medium text-primary font-bold mb-2 flex justify-center items-center gap-2">
+                        Why do you need this?
+                    </h2>
                     <p className="text-body-large text-on-surface-variant">Explain how this specific item helps you work better.</p>
                 </div>
 
                 <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-label-small uppercase tracking-widest font-bold text-on-surface-variant">Your Story</span>
+                      {formData.story.length > 10 && (
+                        <button
+                          type="button"
+                          disabled={isEnhancingStory}
+                          onClick={async () => {
+                            setIsEnhancingStory(true);
+                            try {
+                              const res = await fetch("/api/generate-story", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  experience: tradeCategory || "Artisan",
+                                  product: formData.item_name === "custom" ? formData.custom_item : formData.item_name,
+                                  community: "my community",
+                                  equipment: formData.story,
+                                  isSelf: true
+                                })
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                setFormData({ ...formData, story: data.story });
+                              } else {
+                                alert(data.error || "Failed to enhance story");
+                              }
+                            } catch (err) {
+                              alert("AI Service unavailable.");
+                            } finally {
+                              setIsEnhancingStory(false);
+                            }
+                          }}
+                          className="text-xs font-black bg-primary/10 text-primary px-3 py-1 rounded-full hover:bg-primary/20 transition-colors flex items-center gap-1"
+                        >
+                          {isEnhancingStory ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                          Enhance with AI
+                        </button>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-2">
                         {["This tool will allow me to...", "Currently, I have to...", "With this, I can hire..."].map(starter => (
                             <button 
@@ -405,7 +451,65 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
                           </button>
                       </div>
                     )}
-                    {/* TODO: Integrate DeepSeek AI for impact generation/polishing here */}
+                    
+                    <div className="mt-4 border-t border-outline-variant pt-4">
+                      <button
+                        onClick={async () => {
+                           if (!formData.story) {
+                             alert("Please write your story first to generate impact statements.");
+                             return;
+                           }
+                           setIsGeneratingImpact(true);
+                           try {
+                             const res = await fetch("/api/impact-statement", {
+                               method: "POST",
+                               headers: { "Content-Type": "application/json" },
+                               body: JSON.stringify({
+                                 trade: tradeCategory || "Artisan",
+                                 item_name: formData.item_name === "custom" ? formData.custom_item : formData.item_name,
+                                 story: formData.story,
+                                 count: 3
+                               })
+                             });
+                             const data = await res.json();
+                             if (data.impact) {
+                               setImpactOptions(data.impact);
+                             } else {
+                               alert(data.error || "Failed to generate impact.");
+                             }
+                           } catch (err) {
+                             alert("AI Service unavailable.");
+                           } finally {
+                             setIsGeneratingImpact(false);
+                           }
+                        }}
+                        disabled={isGeneratingImpact}
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-primary/10 text-primary font-bold rounded-xl hover:bg-primary/20 transition-colors"
+                      >
+                        {isGeneratingImpact ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                        Generate Options with AI
+                      </button>
+
+                      {impactOptions.length > 0 && (
+                        <div className="mt-4 flex flex-col gap-2">
+                          <p className="text-label-small uppercase tracking-widest text-on-surface-variant font-bold">Select an option:</p>
+                          {impactOptions.map((opt, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setFormData({ ...formData, impact_statement: opt })}
+                              className={cn(
+                                "text-left p-3 rounded-xl border text-body-small transition-all",
+                                formData.impact_statement === opt 
+                                  ? "border-primary bg-primary/5 text-primary font-bold" 
+                                  : "border-outline-variant text-on-surface hover:border-primary/50"
+                              )}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                 </Card>
 
                 <Button onClick={nextStep} disabled={!formData.impact_statement && !(voiceInput.isListening && currentStep === 4)} className="w-full mt-4">
@@ -423,24 +527,28 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
                 </div>
 
                 <div className="flex flex-col gap-6 text-center">
-                    <div className="flex items-center justify-center gap-4 text-display-medium font-black text-primary">
-                        <Calendar className="h-10 w-10" />
-                        <span>{formData.deadline_days} Days</span>
-                    </div>
-                    
-                    <input 
-                        type="range"
-                        min="7"
-                        max="30"
-                        step="1"
-                        value={formData.deadline_days}
-                        onChange={(e) => setFormData({ ...formData, deadline_days: parseInt(e.target.value) })}
-                        className="w-full h-3 bg-surface-variant rounded-full appearance-none cursor-pointer accent-primary"
-                    />
-                    
-                    <div className="grid grid-cols-2 text-label-large text-on-surface-variant font-bold">
-                        <span className="text-left">7 Days</span>
-                        <span className="text-right">30 Days</span>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-1">Select Timeline</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {[
+                        { id: 7, label: '1 Week' },
+                        { id: 14, label: '2 Weeks' },
+                        { id: 30, label: '1 Month' },
+                        { id: 60, label: '2 Months' },
+                        { id: 90, label: '3 Months' },
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => setFormData({ ...formData, deadline_days: t.id })}
+                          className={cn(
+                            "px-4 py-4 rounded-xl border-2 font-bold text-sm transition-all",
+                            formData.deadline_days === t.id
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-outline-variant text-on-surface-variant hover:border-primary/50"
+                          )}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
                     </div>
                 </div>
 
@@ -513,6 +621,31 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
             </motion.div>
         )
 
+      case 7: // Success Page
+        return (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center gap-8 py-10">
+            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Trophy className="w-12 h-12 text-primary" />
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              <h1 className="text-display-small font-black text-primary">Need Submitted!</h1>
+              <p className="text-body-large text-on-surface-variant font-medium max-w-md">
+                Your request is now in review. We will verify the pricing and details, and it should go live within 24 hours.
+              </p>
+            </div>
+
+            <div className="w-full max-w-sm mt-4">
+              <Button onClick={() => {
+                router.refresh()
+                router.push("/dashboard?new_need=success")
+              }} className="w-full py-6 text-title-medium">
+                Go to Dashboard
+              </Button>
+            </div>
+          </motion.div>
+        )
+
       default:
         return null
     }
@@ -521,23 +654,27 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
         <div className="mb-8 flex items-center gap-4">
-            {currentStep > 0 && (
+            {currentStep > 0 && currentStep < 7 && (
                 <button onClick={prevStep} className="p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors">
                     <ChevronLeft className="h-6 w-6" />
                 </button>
             )}
             <div className="flex-grow">
-                <div className="flex justify-between text-label-small text-on-surface-variant mb-2 font-bold uppercase tracking-widest">
-                    <span>{steps[currentStep]}</span>
-                    <span>Step {currentStep + 1} of {steps.length}</span>
-                </div>
-                <div className="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
-                    <motion.div 
-                        className="h-full bg-primary"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                    />
-                </div>
+                {currentStep < 7 && (
+                  <>
+                    <div className="flex justify-between text-label-small text-on-surface-variant mb-2 font-bold uppercase tracking-widest">
+                        <span>{steps[currentStep]}</span>
+                        <span>Step {currentStep + 1} of {steps.length - 1}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
+                        <motion.div 
+                            className="h-full bg-primary"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${((currentStep + 1) / (steps.length - 1)) * 100}%` }}
+                        />
+                    </div>
+                  </>
+                )}
             </div>
         </div>
 

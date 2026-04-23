@@ -46,14 +46,6 @@ export async function adminSyncPhoneUser(phone: string, fullName: string = "Trad
             }
           })
 
-          // Sync to public.users table
-          await supabaseAdmin.from('users').upsert({
-            id: linkData.user.id,
-            phone: phone,
-            name: linkData.user.user_metadata?.full_name || fullName || "Tradesperson",
-            phone_verified_at: linkData.user.user_metadata?.phone_verified ? undefined : new Date().toISOString()
-          }, { onConflict: 'id' })
-
           // Also sync to public.profiles table
           await supabaseAdmin.from('profiles').upsert({
             user_id: linkData.user.id,
@@ -68,14 +60,6 @@ export async function adminSyncPhoneUser(phone: string, fullName: string = "Trad
     }
 
     if (user && user.user) {
-      // Sync to public.users table
-      await supabaseAdmin.from('users').upsert({
-        id: user.user.id,
-        phone: phone,
-        name: fullName || "Tradesperson",
-        phone_verified_at: new Date().toISOString()
-      }, { onConflict: 'id' })
-
       // Also sync to public.profiles table
       await supabaseAdmin.from('profiles').upsert({
         user_id: user.user.id,
@@ -106,21 +90,10 @@ export async function syncUserRecord(userId: string, name: string, identifier: s
   try {
     const isEmail = identifier.includes("@");
     
-    // 1. Ensure public.users record exists (FK target)
-    const { error: userError } = await supabaseAdmin.from('users').upsert({
-      id: userId,
-      name: name || "Artisan",
-      phone: isEmail ? `email-${userId.slice(0, 8)}` : identifier, // Fallback for NOT NULL phone
-      email: isEmail ? identifier : `${identifier.replace(/[^0-9]/g, '')}@buildbridge.app`,
-      phone_verified_at: new Date().toISOString(), // Fixes constraint "phone_verified_when_registered"
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
-
-    if (userError) throw userError;
-
-    // 2. Ensure public.profiles record exists
+    // 1. Ensure public.profiles record exists
     const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
       user_id: userId,
+      full_name: name || "Artisan",
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
 
@@ -177,25 +150,11 @@ export async function registerUserAdmin(data: { identifier: string, name: string
     const userId = authData.user.id;
 
     // 2. Sync to public tables
-    const { error: syncError } = await supabaseAdmin.from('users').upsert({
-      id: userId,
-      name: data.name,
-      phone: isEmail ? `email-${userId.slice(0, 8)}` : data.identifier,
-      email: email,
-      phone_verified_at: new Date().toISOString(),
-      email_verified_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-
-    if (syncError) {
-      console.error("User record sync failed in registerUserAdmin:", syncError);
-      return { success: false, error: `Database sync failed: ${syncError.message}` };
-    }
-
     const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
       user_id: userId,
+      full_name: data.name,
       updated_at: new Date().toISOString()
-    });
+    }, { onConflict: 'user_id' });
 
     if (profileError) {
       console.error("Profile record sync failed in registerUserAdmin:", profileError);

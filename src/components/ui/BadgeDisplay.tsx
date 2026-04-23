@@ -61,7 +61,7 @@ export function BadgeDisplay() {
       </motion.div>
 
       {/* Badge Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="flex flex-wrap justify-center gap-6">
         {levels.map((item, index) => (
           <motion.div
             key={item.level}
@@ -69,6 +69,7 @@ export function BadgeDisplay() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1, duration: 0.4 }}
+            className="flex-1 min-w-[280px] lg:min-w-[300px] max-w-[450px]"
           >
             <Card className="p-5 flex flex-col gap-4 bg-white border-outline-variant/30 hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 group shadow-sm h-full rounded-[1.5rem]">
                <div className="flex items-center justify-between">

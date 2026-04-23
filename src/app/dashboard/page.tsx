@@ -173,7 +173,7 @@ export default function DashboardPage() {
          </div>
          <div className="flex gap-4">
             <button 
-               onClick={() => window.location.href = '/create-need?mode=create'}
+               onClick={() => router.push('/dashboard/create-need')}
                className="h-14 px-8 rounded-[1.5rem] gap-2 text-title-medium shadow-xl shadow-primary/20 bg-primary text-white flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] transition-all font-black"
             >
                <Plus className="h-6 w-6" />
@@ -263,10 +263,12 @@ export default function DashboardPage() {
                  title="Your first goal starts here"
                  description="Create a need to get tools, equipment, or materials backed by the community."
                  actionLabel="Start a Request"
-                 onAction={() => window.location.href = '/create-need?mode=create'}
+                 onAction={() => router.push('/dashboard/create-need')}
               />
             )}
           </div>
+
+
 
           {/* Badge Display Area */}
           <div className="pt-8 border-t border-outline-variant">
@@ -277,7 +279,6 @@ export default function DashboardPage() {
 
         {/* ── RIGHT BENTO COLUMN (col-span-4) ── */}
         <div className="lg:col-span-4 flex flex-col gap-8 lg:sticky lg:top-24 h-fit">
-          
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 gap-4">
              <div className="p-6 rounded-[2rem] bg-surface border border-outline-variant/30 flex flex-col justify-center items-start gap-2 shadow-sm hover:shadow-md transition-all group">

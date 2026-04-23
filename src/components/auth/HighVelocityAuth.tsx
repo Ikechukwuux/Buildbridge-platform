@@ -51,6 +51,27 @@ export function HighVelocityAuth() {
     setStep("account");
   };
 
+  const handleGoogleAuth = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      // Set cookies for callback to read
+      document.cookie = `auth_flow=signup; path=/; max-age=300; SameSite=Lax`;
+      document.cookie = `auth_next=/dashboard; path=/; max-age=300; SameSite=Lax`;
+
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${baseUrl}/auth/callback`
+        }
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in with Google.');
+      setIsLoading(false);
+    }
+  };
+
   const handleAccountSubmit = async (data: any) => {
     setIsLoading(true);
     setError(null);
@@ -128,6 +149,7 @@ export function HighVelocityAuth() {
             key="account"
             onBack={() => setStep("discovery")}
             onSubmit={handleAccountSubmit}
+            onGoogleAuth={handleGoogleAuth}
             isLoading={isLoading}
           />
         )}

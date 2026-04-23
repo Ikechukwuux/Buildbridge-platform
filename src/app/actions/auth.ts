@@ -53,6 +53,13 @@ export async function adminSyncPhoneUser(phone: string, fullName: string = "Trad
             name: linkData.user.user_metadata?.full_name || fullName || "Tradesperson",
             phone_verified_at: linkData.user.user_metadata?.phone_verified ? undefined : new Date().toISOString()
           }, { onConflict: 'id' })
+
+          // Also sync to public.profiles table
+          await supabaseAdmin.from('profiles').upsert({
+            user_id: linkData.user.id,
+            full_name: linkData.user.user_metadata?.full_name || fullName || "Tradesperson",
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' })
         }
         return { success: true, message: "User already exists." }
       }
@@ -68,6 +75,13 @@ export async function adminSyncPhoneUser(phone: string, fullName: string = "Trad
         name: fullName || "Tradesperson",
         phone_verified_at: new Date().toISOString()
       }, { onConflict: 'id' })
+
+      // Also sync to public.profiles table
+      await supabaseAdmin.from('profiles').upsert({
+        user_id: user.user.id,
+        full_name: fullName || "Tradesperson",
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' })
     }
 
     return { success: true, message: "Created new user successfully." }

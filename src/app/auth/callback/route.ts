@@ -12,6 +12,15 @@ export async function GET(request: NextRequest) {
   const flowCookie = request.cookies.get('auth_flow')?.value
   const flow = flowCookie ?? searchParams.get('flow')
 
+  // Helper to create redirect with cleared auth cookies
+  const createRedirect = (url: string) => {
+    const response = NextResponse.redirect(url)
+    // Clear auth cookies to prevent stale state
+    response.cookies.set('auth_flow', '', { path: '/', maxAge: 0 })
+    response.cookies.set('auth_next', '', { path: '/', maxAge: 0 })
+    return response
+  }
+
   console.log('Auth callback received:', { code, next, flow, origin, fullUrl: request.url, fromCookie: !!flowCookie })
 
   if (code) {
@@ -78,7 +87,7 @@ export async function GET(request: NextRequest) {
           // Has profile - redirect to next (dashboard)
           const redirectUrl = `${origin}${next}`
           console.log('Login flow - has profile, redirecting to:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+          return createRedirect(redirectUrl)
         } 
         else if (flow === 'signup') {
           // Signup flow
@@ -86,7 +95,7 @@ export async function GET(request: NextRequest) {
             // Already has profile - redirect to dashboard with message
             const redirectUrl = `${origin}/dashboard?message=already_signed_up`
             console.log('Signup flow - already has profile, redirecting to:', redirectUrl)
-            return NextResponse.redirect(redirectUrl)
+            return createRedirect(redirectUrl)
           }
           // New user - create profile from onboarding data stored in localStorage, then redirect to dashboard
           const redirectUrl = `${origin}/dashboard?new_user=true`
@@ -108,20 +117,20 @@ export async function GET(request: NextRequest) {
             console.log('Profile created/updated for new user:', user.id)
           }
           
-          return NextResponse.redirect(redirectUrl)
+          return createRedirect(redirectUrl)
         }
         else if (flow === 'high-velocity') {
           // High-velocity flow: always go back to signup to finish personalization if needed
           // The HighVelocityAuth component will handle the redirect to dashboard once profile is saved
           const redirectUrl = `${origin}/signup`
           console.log('High-velocity flow - redirecting to personalization:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+          return createRedirect(redirectUrl)
         }
         else {
           // No flow specified (backward compatibility) - use old behavior
           const redirectUrl = `${origin}${next}?resumedAuth=true`
           console.log('No flow specified, redirecting to:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+          return createRedirect(redirectUrl)
         }
       } else {
         console.error("Auth callback error:", error)

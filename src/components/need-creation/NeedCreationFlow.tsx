@@ -864,7 +864,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
       const needData = {
         profile_id: finalProfileId,
         item_name: formData.needTitle || formData.aiPrompts.equipment || "Equipment",
-        item_cost: parseFloat(formData.goalAmount),
+        item_cost: parseFloat(formData.goalAmount) * 100,
         photo_url: photoUrl,
         story: formData.story,
         impact_statement: formData.impactStatement,

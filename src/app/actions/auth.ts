@@ -177,7 +177,7 @@ export async function registerUserAdmin(data: { identifier: string, name: string
     const userId = authData.user.id;
 
     // 2. Sync to public tables
-    await supabaseAdmin.from('users').upsert({
+    const { error: syncError } = await supabaseAdmin.from('users').upsert({
       id: userId,
       name: data.name,
       phone: isEmail ? `email-${userId.slice(0, 8)}` : data.identifier,
@@ -187,10 +187,19 @@ export async function registerUserAdmin(data: { identifier: string, name: string
       updated_at: new Date().toISOString()
     });
 
-    await supabaseAdmin.from('profiles').upsert({
+    if (syncError) {
+      console.error("User record sync failed in registerUserAdmin:", syncError);
+      return { success: false, error: `Database sync failed: ${syncError.message}` };
+    }
+
+    const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
       user_id: userId,
       updated_at: new Date().toISOString()
     });
+
+    if (profileError) {
+      console.error("Profile record sync failed in registerUserAdmin:", profileError);
+    }
 
     return { success: true, email, userId };
   } catch (error: any) {

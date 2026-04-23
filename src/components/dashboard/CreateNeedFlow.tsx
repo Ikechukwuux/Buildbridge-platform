@@ -121,7 +121,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
         .insert({
           profile_id: profile.id,
           item_name: formData.generated.title,
-          item_cost: parseInt(formData.amount),
+          item_cost: parseInt(formData.amount) * 100,
           story: formData.generated.story,
           impact_statement: formData.generated.impact,
           photo_url: photo_url,

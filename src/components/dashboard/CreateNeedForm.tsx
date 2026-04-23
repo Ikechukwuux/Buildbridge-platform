@@ -24,6 +24,7 @@ import {
   Loader2
 } from "lucide-react"
 import { useVoiceInput } from "@/hooks/useVoiceInput"
+import { useAIGenerator } from "@/hooks/useAIGenerator"
 import { cn } from "@/lib/utils"
 
 interface CreateNeedFormProps {
@@ -52,6 +53,7 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const voiceInput = useVoiceInput()
+  const { isGenerating, generateImpactStatement } = useAIGenerator()
 
   const steps = [
     "Item",
@@ -383,29 +385,35 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
                         }}
                     />
                     
-                    {voiceInput.isSupported && (
-                      <div className="mt-2 text-right">
-                         <button 
-                            onClick={() => {
-                              if (voiceInput.isListening) {
-                                voiceInput.stopListening();
-                                setFormData(prev => ({ ...prev, impact_statement: `${prev.impact_statement} ${voiceInput.transcript}`.trim() }));
-                              } else {
-                                voiceInput.startListening();
-                              }
-                            }}
-                            className={cn(
-                              "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-label-small font-bold transition-all",
-                              voiceInput.isListening 
-                                ? "bg-error text-white animate-pulse shadow-md" 
-                                : "bg-surface border border-outline-variant text-on-surface hover:bg-surface-variant hover:text-primary"
-                            )}
-                          >
-                            {voiceInput.isListening ? <><MicOff className="h-4 w-4" /> Stop Dictation</> : <><Mic className="h-4 w-4" /> Tap to Speak</>}
-                          </button>
-                      </div>
-                    )}
-                    {/* TODO: Integrate DeepSeek AI for impact generation/polishing here */}
+                    {/* AI Generator Button */}
+                    <div className="mt-2 text-right">
+                       <button 
+                          type="button"
+                          disabled={isGenerating || !formData.item_name || !formData.story}
+                          onClick={async () => {
+                            const result = await generateImpactStatement(
+                              tradeCategory, 
+                              formData.item_name === "Other" ? formData.custom_item : formData.item_name, 
+                              formData.story
+                            );
+                            if (result) {
+                              setFormData(prev => ({ ...prev, impact_statement: result }));
+                            }
+                          }}
+                          className={cn(
+                            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-label-small font-bold transition-all",
+                            isGenerating 
+                              ? "bg-surface border border-outline-variant text-on-surface-variant opacity-70 cursor-not-allowed" 
+                              : "bg-primary/10 text-primary hover:bg-primary/20"
+                          )}
+                        >
+                          {isGenerating ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>
+                          ) : (
+                            <>✨ Generate with AI</>
+                          )}
+                        </button>
+                    </div>
                 </Card>
 
                 <Button onClick={nextStep} disabled={!formData.impact_statement && !(voiceInput.isListening && currentStep === 4)} className="w-full mt-4">

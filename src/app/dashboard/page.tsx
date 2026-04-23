@@ -62,6 +62,7 @@ export default function DashboardPage() {
       const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Artisan"
       setUserName(fullName)
 
+      // Real data fetching applies to all users including demo
       // 2. Get profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')

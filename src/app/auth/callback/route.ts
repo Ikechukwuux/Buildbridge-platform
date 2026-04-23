@@ -12,6 +12,16 @@ export async function GET(request: NextRequest) {
   const flowCookie = request.cookies.get('auth_flow')?.value
   const flow = flowCookie ?? searchParams.get('flow')
 
+  // Helper to create redirect with cleared auth cookies
+  const createRedirect = (url: string) => {
+    const response = NextResponse.redirect(url)
+    // Clear auth cookies to prevent stale state
+    response.cookies.set('auth_flow', '', { path: '/', maxAge: 0 })
+    response.cookies.set('auth_next', '', { path: '/', maxAge: 0 })
+    response.cookies.set('discovery_data', '', { path: '/', maxAge: 0 })
+    return response
+  }
+
   console.log('Auth callback received:', { code, next, flow, origin, fullUrl: request.url, fromCookie: !!flowCookie })
 
   if (code) {
@@ -78,7 +88,7 @@ export async function GET(request: NextRequest) {
           // Has profile - redirect to next (dashboard)
           const redirectUrl = `${origin}${next}`
           console.log('Login flow - has profile, redirecting to:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+          return createRedirect(redirectUrl)
         } 
         else if (flow === 'signup') {
           // Signup flow
@@ -86,7 +96,7 @@ export async function GET(request: NextRequest) {
             // Already has profile - redirect to dashboard with message
             const redirectUrl = `${origin}/dashboard?message=already_signed_up`
             console.log('Signup flow - already has profile, redirecting to:', redirectUrl)
-            return NextResponse.redirect(redirectUrl)
+            return createRedirect(redirectUrl)
           }
           // New user - create profile from onboarding data stored in localStorage, then redirect to dashboard
           const redirectUrl = `${origin}/dashboard?new_user=true`
@@ -94,34 +104,68 @@ export async function GET(request: NextRequest) {
           
           // Create a basic profile for the user so they're set up
           const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Artisan'
-          const { error: profileCreateError } = await supabase
+          const { data: newProfile, error: profileCreateError } = await supabase
             .from('profiles')
             .upsert({
               user_id: user.id,
               full_name: fullName,
             }, { onConflict: 'user_id' })
+            .select()
+            .single()
           
           if (profileCreateError) {
             console.error('Failed to create profile during signup callback:', profileCreateError)
             // Continue anyway - profile can be created later
           } else {
             console.log('Profile created/updated for new user:', user.id)
+            
+            // Handle discovery data from onboarding
+            const discoveryCookie = request.cookies.get('discovery_data')?.value
+            if (discoveryCookie && newProfile) {
+              try {
+                const discoveryData = JSON.parse(decodeURIComponent(discoveryCookie));
+                const deadlineDate = new Date();
+                let days = 30;
+                if (discoveryData.timeline) {
+                  days = parseInt(discoveryData.timeline, 10);
+                  if (isNaN(days)) days = 30;
+                }
+                deadlineDate.setDate(deadlineDate.getDate() + days);
+
+                const rawCost = String(discoveryData.cost || '0');
+                const itemCost = parseInt(rawCost.replace(/[^0-9]/g, ""), 10) || 0;
+
+                await supabase.from('needs').insert({
+                  profile_id: newProfile.id,
+                  item_name: discoveryData.itemName,
+                  item_cost: itemCost,
+                  story: discoveryData.story || "",
+                  impact_statement: discoveryData.impact || "",
+                  status: 'active',
+                  deadline: deadlineDate.toISOString().split('T')[0],
+                  photo_url: discoveryData.photoUrl || "/images/placeholders/need-default.png"
+                });
+                console.log('Successfully created need from discovery data');
+              } catch (err) {
+                console.error("Failed to parse or insert discovery data", err);
+              }
+            }
           }
           
-          return NextResponse.redirect(redirectUrl)
+          return createRedirect(redirectUrl)
         }
         else if (flow === 'high-velocity') {
           // High-velocity flow: always go back to signup to finish personalization if needed
           // The HighVelocityAuth component will handle the redirect to dashboard once profile is saved
           const redirectUrl = `${origin}/signup`
           console.log('High-velocity flow - redirecting to personalization:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+          return createRedirect(redirectUrl)
         }
         else {
           // No flow specified (backward compatibility) - use old behavior
           const redirectUrl = `${origin}${next}?resumedAuth=true`
           console.log('No flow specified, redirecting to:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+          return createRedirect(redirectUrl)
         }
       } else {
         console.error("Auth callback error:", error)

@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { createClient } from "@/lib/supabase/server"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { ProgressBar } from "@/components/ui/ProgressBar"
@@ -59,7 +60,38 @@ export async function generateMetadata({ params }: NeedPageProps): Promise<Metad
 }
 
 export default async function NeedDetailPage({ params }: NeedPageProps) {
-  const need = MOCK_NEED
+  const supabase = await createClient()
+  
+  let need = MOCK_NEED
+  
+  try {
+    const { data: dbNeed, error } = await supabase
+      .from('needs')
+      .select(`
+        *,
+        profile:profiles(*)
+      `)
+      .eq('id', params.id)
+      .single()
+      
+    if (dbNeed && !error) {
+      // Map the DB structure to match the expected format for the UI
+      need = {
+        ...dbNeed,
+        profile: {
+          name: dbNeed.profile?.full_name || "Artisan",
+          location_lga: dbNeed.profile?.location_lga || "Local",
+          location_state: dbNeed.profile?.location_state || "Nigeria",
+          trade_category: dbNeed.profile?.trade_category || "trade",
+          badge_level: dbNeed.profile?.badge_level || "level_1_community_member",
+          vouch_count: dbNeed.profile?.vouch_count || 0,
+          photo_url: dbNeed.profile?.photo_url || "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=200"
+        }
+      } as any;
+    }
+  } catch (err) {
+    console.error("Failed to fetch need details:", err)
+  }
 
   const formattedGoal = new Intl.NumberFormat("en-NG", {
     style: "currency",

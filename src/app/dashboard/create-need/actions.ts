@@ -1,5 +1,6 @@
 "use server"
 
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
@@ -45,15 +46,26 @@ export async function createNeedAction(formData: FormData) {
   // 4. Upload photo to 'needs' bucket
   const fileExt = photoFile.name.split('.').pop()
   const fileName = `${user.id}-${Date.now()}.${fileExt}`
-  const filePath = `needs/${fileName}`
+  const filePath = `covers/${fileName}`
 
-  const { error: uploadError } = await supabase.storage
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const arrayBuffer = await photoFile.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  const { error: uploadError } = await supabaseAdmin.storage
     .from("needs")
-    .upload(filePath, photoFile)
+    .upload(filePath, buffer, {
+      contentType: photoFile.type,
+      upsert: false,
+    })
 
-  if (uploadError) throw new Error("Failed to upload photo")
+  if (uploadError) throw new Error(`Failed to upload photo: ${uploadError.message}`)
 
-  const { data: { publicUrl } } = supabase.storage
+  const { data: { publicUrl } } = supabaseAdmin.storage
     .from("needs")
     .getPublicUrl(filePath)
 
@@ -71,8 +83,8 @@ export async function createNeedAction(formData: FormData) {
       photo_url: publicUrl,
       photo_geotag_lat: lat,
       photo_geotag_lng: lng,
-      story: story.slice(0, 150), // Enforce DB char limit
-      impact_statement: impact.slice(0, 200), // Enforce DB char limit
+      story: story,
+      impact_statement: impact,
       deadline: deadlineDate.toISOString().split('T')[0], // DATE format
       status: "pending_review",
       impact_statement_source: "manual",

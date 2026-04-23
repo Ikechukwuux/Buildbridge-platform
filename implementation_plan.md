@@ -1,83 +1,74 @@
-# Implementation Plan: Sign-Up (v2) & Backer Flows
+# BuildBridge Implementation Plan: Fixing the Core Flow
 
-This plan outlines the steps required to align the application with the `Sign-Up.md` and `Backer-Flow.md` specifications. It involves significant UX restructuring to prioritize intent over identity, frictionless guest backing, and seamless trust signals.
+## Goal Description
+The previous implementations were mistakenly applied to `NeedCreationFlow.tsx`, which is deprecated/dead code. The platform currently uses two distinct flows for Need creation:
+1. **Onboarding Flow:** `HighVelocityAuth.tsx` + `NeedStepFlow.tsx` + `AccountCreationView.tsx`
+2. **Dashboard Create Flow:** `CreateNeedForm.tsx` + `actions.ts`
+
+This plan addresses all 9 user issues by migrating the fixed logic (AI features, photo upload, timeline, Google Auth state, and data truncation) to these active files.
 
 ## User Review Required
+> [!WARNING]
+> This plan targets the correct files (`HighVelocityAuth`, `NeedStepFlow`, `CreateNeedForm`). I will remove the old `NeedCreationFlow.tsx` to prevent future confusion. Please confirm if you want me to proceed with these changes.
 
-> [!IMPORTANT]
-> **To make Google Auth work, you must complete these manual steps in the Google Cloud and Supabase Consoles:**
-> 1. Go to the [Google Cloud Console](https://console.cloud.google.com/) and create a new project (if you don't have one).
-> 2. Configure the **OAuth consent screen**.
-> 3. Create **OAuth 2.0 Client IDs** (Web application).
->    - Add your Supabase project's callback URL to "Authorized redirect URIs": `https://<YOUR-SUPABASE-PROJECT-ID>.supabase.co/auth/v1/callback`
-> 4. Copy your **Client ID** and **Client Secret**.
-> 5. Go to your **Supabase Dashboard** -> Authentication -> Providers -> Google.
->    - Enable it, paste the Client ID and Secret.
->    - Turn on "Skip nonce check" if prompted for testing.
-> 6. Add your local dev URL (e.g., `http://localhost:3000/auth/callback`) to Supabase Auth -> URL Configuration -> Redirect URLs.
+## Open Questions
+- **Email Verification:** To prevent "random emails" from signing up (Issue #8), we can either enforce email confirmation in Supabase (which requires users to click a link in their email), or we can add strict regex/domain validation on the frontend. Which do you prefer? For this plan, I'll add strict frontend validation.
 
 ## Proposed Changes
 
-### 1. Tradesperson Sign-Up Flow (OnboardingForm.tsx)
+### 1. Google Auth State Loss (Issue #1)
+During onboarding, if a user fills out their Need and clicks "Sign up with Google", the `discoveryData` is lost because it's not saved before the redirect.
+#### [MODIFY] `src/components/auth/HighVelocityAuth.tsx`
+- Before calling `signInWithOAuth`, serialize `discoveryData` and save it to a cookie (`discovery_data`).
+#### [MODIFY] `src/app/auth/callback/route.ts`
+- Read the `discovery_data` cookie. If it exists, parse it and insert the Need into the database for the newly authenticated user, then clear the cookie.
 
-The current `OnboardingForm` starts directly with "Identity / Name" and pushes Auth to the end (`/signup`). We will restructure this completely.
+### 2. AI Enhance Feature (Issue #2)
+#### [MODIFY] `src/components/auth/NeedStepFlow.tsx`
+- Add the "✨ AI Enhance" button to the Story step.
+- Call the `/api/generate-story` endpoint to enhance the user's raw input.
+#### [MODIFY] `src/components/dashboard/CreateNeedForm.tsx`
+- Replace the "TODO: Integrate DeepSeek AI" comment with the actual API call to `/api/impact-statement` to generate 3 impact options.
+- Add AI enhance to the Story step.
 
-#### [MODIFY] src/components/onboarding/OnboardingForm.tsx
-- **Redesign Step Logic:** Overhaul `STEPS` to match the 11-screen spec:
-  1. **Who for?** (Myself / Someone else) - *New*
-  2. **Amount** (Goal amount + dynamic verification guidance) - *New*
-  3. **Account Creation** (Inline Phone / Email / Google). Redirects to Google OAuth, or shows inline OTP/Email fields. - *Moved from `/signup`*
-  4. **How it Works** (3-screen carousel). - *New*
-  5. **Trade Category** (Icon grid). - *Update existing*
-  6. **Location** (State/LGA). - *Keep existing*
-  7. **Photo** (Upload). - *Keep existing*
-  8. **Story** (Write / Record / AI-Generate). - *Add new AI Generation tab.*
-  9. **Profile Preview**. - *New*
-  10. **Terms**. - *Update existing*
-  11. **Profile Created (Level 0)**. - *New*
-- **Persist State:** Use `localStorage` aggressively to ensure if a user bounces out for Google Auth, they return precisely to Step 4 with their Amount and "Who for" selections intact.
+### 3. Timeline Formatting (Issue #3)
+#### [MODIFY] `src/components/auth/NeedStepFlow.tsx` & `HighVelocityAuth.tsx`
+- Update the timeline options to map exactly to days (e.g., 7, 14, 30, 60, 90).
+- Ensure `HighVelocityAuth.tsx` calculates the exact deadline date based on the chosen timeline, rather than hardcoding 30 days.
 
-#### [NEW] src/app/api/generate-story/route.ts
-- Create a new API route to securely wrap an LLM call for the AI Story Generation tab (Screen 8).
-- *Question for you:* Do we have an OpenAI or Anthropic API key, or should I mock the AI generation step with a delayed hardcoded response for the demo?
+### 4. Photo Upload Failures (Issue #6 & 4)
+#### [MODIFY] `src/components/auth/NeedStepFlow.tsx`
+- The current `handleFileUpload` tries to upload directly to Supabase storage. This fails because the user is unauthenticated during onboarding.
+- Update it to send a `FormData` POST request to the secure `/api/upload-photo` endpoint.
+#### [MODIFY] `src/app/dashboard/create-need/actions.ts`
+- The server action currently relies on the user's session to upload to storage. Update it to use the `SUPABASE_SERVICE_ROLE_KEY` to completely bypass any RLS issues, ensuring "Submit for Review" works every time.
 
-#### [NEW] src/app/auth/callback/route.ts
-- Required for Google Auth redirect. Captures the OAuth code from the URL and exchanges it for a Supabase session.
+### 5. Congratulatory Page (Issue #5)
+#### [MODIFY] `src/components/dashboard/CreateNeedForm.tsx`
+- Instead of immediately calling `router.push("/dashboard")`, render a celebratory Step 7 (using `framer-motion`) with a "View on Dashboard" button.
 
----
+### 6. Nickname Allowed Label (Issue #7)
+#### [MODIFY] `src/components/auth/AccountCreationView.tsx`
+- Update the Full Name input label to include: "This can be a nickname".
 
-### 2. Backer Flow (Guest Checkout & Tipping)
+### 7. Email Validation (Issue #8)
+#### [MODIFY] `src/components/auth/AccountCreationView.tsx`
+- Add strict email regex validation to ensure only properly formatted emails can proceed.
 
-The current flow forces the user to log in before backing, and calculates processing/platform fees by subtracting them from the pledge.
-
-#### [MODIFY] src/components/pledge/PledgeFlow.tsx
-- **Remove Auth Wall:** Delete the `if (!user)` check that redirects to `/login`.
-- **Change Fee Architecture:**
-  - *Current:* Pledge = ₦5000. Tradesperson gets ₦5000 - 5% platform - 1.5% processing.
-  - *New:* Pledge = ₦5000. Tradesperson gets ₦5000. Platform fee is 0%. Add an optional **Tip Slider** (0% to 30%, default 10%) that adds to the *Backer's* total cost.
-- **Add "Zero Tip" Card:** Implement the gentle nudge card if the tipper selects 0%.
-- **Add Backer Preferences:** Add the 3 checkboxes (Anonymous, Newsletter, Contact tradesperson) to the checkout confirm screen.
-
-#### [MODIFY] src/app/needs/[id]/page.tsx
-- Reorganize the Need Details Page layout to exactly match the spec:
-  - Add the AI Impact Statement as a styled pull quote under the progress bar.
-  - Add Trust Signals Block (Escrow disclosure, geotagged photo hint).
-  - Add the "Recent Backers" section.
-
-#### [MODIFY] src/components/auth/SignupForm.tsx
-- *Optional:* Since `OnboardingForm` will now handle inline Account Creation (Screen 3), `SignupForm.tsx` can either be heavily scaled down or removed completely to prevent flow duplication.
-
-## Open Questions
-
-> [!WARNING]
-> 1. **AI Generation:** For the "Generate with AI" tab, do you want me to use a real API (like OpenAI), or build a mock/simulated AI response for demo purposes? Use the deepseek API in .env
-> 2. **Authentication Switch:** By moving Google and real Email/Password auth into the flow, do you want us to formally disable `DemoAuthContext.tsx` and switch entirely to realistic Supabase Auth for this flow? (Note: Phone OTP will still require Twilio as configured previously). Yes
-> 3. **Stripe/Paystack:** The spec mentions Stripe for international backers. Shall we stick to just Paystack for this MVP implementation, or do you need a Stripe UI as well? Use Paystack for the MVP for now.
+### 8. Need Data Corruption & Truncation (Issue #9)
+#### [MODIFY] `src/components/auth/HighVelocityAuth.tsx`
+- **Cost Parsing:** Fix the bug where `parseFloat(discoveryData.cost)` returns `NaN` because the cost string includes "₦" or commas. Parse it correctly.
+- **Truncation:** Remove the `.substring(0, 150)` and `.substring(0, 200)` limits on the `story` and `impact_statement` fields so the full text is saved.
+#### [MODIFY] `src/app/dashboard/create-need/actions.ts`
+- Remove the `.slice(0, 150)` truncation for the dashboard create flow as well.
 
 ## Verification Plan
 
-### Automated/Manual Verification
-- Run local dev server.
-- Test "Myself" vs "Someone Else" persistence through Google Auth redirect.
-- Test the new Tip Slider logic (Total Charged = Pledge + Tip) and ensure 100% of Pledge is directed to the tradesperson.
-- Test Guest checkout (Backer) -> confirm the auth wall no longer redirects to `/login`.
+### Automated Tests
+- Build verification via `npm run build`.
+
+### Manual Verification
+- Walk through the entire Onboarding flow with a new user. 
+- Upload a photo while unauthenticated to verify the `/api/upload-photo` bypass works.
+- Click "Sign up with Google" and verify the Need is created correctly upon redirect.
+- Ensure the AI features load seamlessly.

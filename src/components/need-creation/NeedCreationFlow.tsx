@@ -7,10 +7,11 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { NIGERIA_LOCATIONS } from "@/lib/data/nigeria"
-import { ChevronLeft, ChevronRight, Camera, Mic, Loader2, ShieldCheck, CheckCircle, X, Copy, Share2, ExternalLink } from "lucide-react"
+import { ChevronLeft, ChevronRight, Camera, Mic, Loader2, ShieldCheck, CheckCircle, X, Copy, Share2, ExternalLink, ArrowRight } from "lucide-react"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
-import { adminSyncPhoneUser } from "@/app/actions/auth"
+import { adminSyncPhoneUser, syncUserRecord } from "@/app/actions/auth"
 
 // ─── STEP DEFINITIONS ───────────────────────────────────────────────────────
 
@@ -92,6 +93,9 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
     
     // Goal amount (create)
     goalAmount: "",
+    
+    // Timeline (create)
+    timelineDays: 30,
     
     // Auth (onboarding)
     authMethod: "", // "google" or "phone"
@@ -566,6 +570,11 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
       } else {
         const authSuccess = await createOrSignInUserWithPhone(cleanPhone)
         if (authSuccess) {
+          // Ensure profile row exists
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            await syncUserRecord(user.id, formData.fullName, cleanPhone)
+          }
           setIsAuthenticated(true)
           // Auth state change listener will redirect to dashboard
         } else {
@@ -586,12 +595,14 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
     setAuthError('')
     try {
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-      const redirectTo = `${baseUrl}/auth/callback?next=/dashboard&flow=signup`
-      console.log('Google OAuth redirectTo:', redirectTo)
+      // Set cookies for callback route to read
+      document.cookie = `auth_flow=signup; path=/; max-age=300; SameSite=Lax`
+      document.cookie = `auth_next=/dashboard; path=/; max-age=300; SameSite=Lax`
+      
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo
+          redirectTo: `${baseUrl}/auth/callback`
         }
       })
     } catch (error) {
@@ -633,7 +644,39 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
     }
   }
   
+  // Handle AI Enhance for existing story
+  const [isEnhancingStory, setIsEnhancingStory] = useState(false)
+  
+  const handleEnhanceStory = async () => {
+    if (!formData.story.trim() || formData.story.split(/\s+/).filter(w => w).length < 10) return
+    setIsEnhancingStory(true)
+    try {
+      const res = await fetch("/api/generate-story", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enhanceExisting: true,
+          existingStory: formData.story
+        })
+      })
+      
+      const data = await res.json()
+      
+      if (data.success) {
+        setFormData(prev => ({ ...prev, story: data.story }))
+      } else {
+        console.error("Failed to enhance story:", data.error)
+      }
+    } catch (error) {
+      console.error("Failed to enhance story:", error)
+    } finally {
+      setIsEnhancingStory(false)
+    }
+  }
+  
   // Handle AI impact statement generation
+  const [impactSuggestions, setImpactSuggestions] = useState<string[]>([])
+  
   const handleGenerateImpactStatement = async () => {
     setIsGeneratingImpact(true)
     try {
@@ -649,12 +692,19 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
       const res = await fetch("/api/impact-statement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trade, item_name: item, story })
+        body: JSON.stringify({ trade, item_name: item, story, count: 3 })
       })
       
       const data = await res.json()
       
-      if (data.statement) {
+      if (data.statements && data.statements.length > 0) {
+        setImpactSuggestions(data.statements)
+        // Auto-select first if no impact statement yet
+        if (!formData.impactStatement) {
+          setFormData(prev => ({ ...prev, impactStatement: data.statements[0] }))
+        }
+      } else if (data.statement) {
+        setImpactSuggestions([data.statement])
         setFormData(prev => ({ ...prev, impactStatement: data.statement }))
       } else {
         console.error("Failed to generate impact statement:", data.error)
@@ -667,37 +717,47 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
   }
   
   // Handle photo upload
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  
   const handlePhotoUpload = async (file: File) => {
-    setIsLoading(true)
+    setIsUploadingPhoto(true)
+    setSubmitError('')
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-      const filePath = `needs/${fileName}`
-      
-      const { data, error } = await supabase.storage
-        .from('needs')
-        .upload(filePath, file)
-      
-      if (error) {
-        console.error("Photo upload error:", error.message)
-        setSubmitError("Failed to upload photo: " + error.message)
+      // Validate client-side first
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        setSubmitError('Only JPEG, PNG, and WebP images are allowed.')
         return
       }
-      
-      const { data: urlData } = supabase.storage
-        .from('needs')
-        .getPublicUrl(filePath)
-      
-      setFormData(prev => ({
-        ...prev,
-        photoFile: file,
-        photoUrl: urlData.publicUrl
-      }))
+      if (file.size > 5 * 1024 * 1024) {
+        setSubmitError('Image must be smaller than 5MB.')
+        return
+      }
+
+      const formDataPayload = new FormData()
+      formDataPayload.append('photo', file)
+
+      const res = await fetch('/api/upload-photo', {
+        method: 'POST',
+        body: formDataPayload,
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        setFormData(prev => ({
+          ...prev,
+          photoFile: file,
+          photoUrl: data.url
+        }))
+      } else {
+        setSubmitError(data.error || 'Failed to upload photo.')
+      }
     } catch (error: any) {
       console.error("Photo upload failed:", error)
-      setSubmitError("Failed to upload photo. Please try again.")
+      setSubmitError("Failed to upload photo. Please check your connection and try again.")
     } finally {
-      setIsLoading(false)
+      setIsUploadingPhoto(false)
     }
   }
 
@@ -806,9 +866,9 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
         item_name: formData.needTitle || formData.aiPrompts.equipment || "Equipment",
         item_cost: parseFloat(formData.goalAmount),
         photo_url: photoUrl,
-        story: formData.story.slice(0, 150),
-        impact_statement: formData.impactStatement.slice(0, 200),
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        story: formData.story,
+        impact_statement: formData.impactStatement,
+        deadline: new Date(Date.now() + formData.timelineDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: 'pending_review',
         published_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
@@ -949,7 +1009,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
             onChange={(e) => {
               setFormData(prev => ({ ...prev, state: e.target.value, lga: "" }))
             }}
-            className="w-full p-4 rounded-2xl border border-outline-variant bg-surface text-on-surface"
+            className="w-full px-5 h-14 rounded-2xl border border-outline-variant bg-surface text-on-surface font-bold"
           >
             <option value="">Select state</option>
             {NIGERIAN_STATES.map(state => (
@@ -964,7 +1024,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
             value={formData.lga}
             onChange={(e) => setFormData(prev => ({ ...prev, lga: e.target.value }))}
             disabled={!formData.state}
-            className="w-full p-4 rounded-2xl border border-outline-variant bg-surface text-on-surface disabled:opacity-50"
+            className="w-full px-5 h-14 rounded-2xl border border-outline-variant bg-surface text-on-surface font-bold disabled:opacity-50"
           >
             <option value="">
               {formData.state ? "Select LGA" : "Select your state first"}
@@ -1100,6 +1160,40 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
         )}
       </div>
       
+      {/* Timeline selector */}
+      <div className="space-y-4 pt-8 border-t border-outline-variant/30">
+        <h2 className="text-headline-medium font-black text-on-surface">
+          How long should this need run?
+        </h2>
+        <p className="text-body-large text-on-surface-variant">
+          Choose how long backers can pledge to your need.
+        </p>
+        
+        <div className="flex flex-wrap gap-3">
+          {[
+            { days: 7, label: "Quick sprint" },
+            { days: 14, label: "Two weeks" },
+            { days: 30, label: "Standard" },
+            { days: 60, label: "Extended" },
+            { days: 90, label: "Long-term" },
+          ].map(option => (
+            <button
+              key={option.days}
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, timelineDays: option.days }))}
+              className={cn(
+                "px-5 py-3 rounded-full border-2 text-label-large font-bold transition-all",
+                formData.timelineDays === option.days
+                  ? "bg-primary border-primary text-white"
+                  : "bg-transparent border-outline-variant text-on-surface hover:border-primary/50"
+              )}
+            >
+              {option.days}d — {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      
       <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl">
         <p className="text-body-large text-on-surface">
           💡 Unlike other platforms, BuildBridge does not deduct a platform fee from what the tradesperson receives. What backers pledge is exactly what they get — no need to inflate your goal. You keep every Naira pledged, even if you don't reach your full target.
@@ -1165,6 +1259,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
         <div className="space-y-4">
           <div className="space-y-3">
             <label className="text-label-large font-bold text-on-surface">Full Name</label>
+            <p className="text-label-small text-on-surface-variant">This can be a nickname — you can update it later.</p>
             <Input
               value={formData.fullName}
               onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
@@ -1509,6 +1604,25 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
               Click the mic icon to speak naturally — tell us about the trade and what it means to the community.
             </p>
           </div>
+          
+          {/* AI Enhance button */}
+          {formData.story.split(/\s+/).filter(w => w).length >= 10 && (
+            <button
+              type="button"
+              onClick={handleEnhanceStory}
+              disabled={isEnhancingStory}
+              className="w-full py-3 rounded-2xl border-2 border-primary/30 text-primary font-bold hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isEnhancingStory ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Enhancing...
+                </>
+              ) : (
+                "✨ AI Enhance my story"
+              )}
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -1591,13 +1705,44 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
     <div className="space-y-8">
       <div className="space-y-4">
         <p className="text-body-large text-on-surface-variant">
-          BuildBridge generates a short impact statement from your story. It appears on your need card and in every share image.
+          BuildBridge generates impact statements from your story. Choose the one that best represents the impact of your need.
         </p>
         
         {isGeneratingImpact ? (
           <div className="p-8 bg-surface-variant/30 rounded-3xl text-center">
             <Loader2 className="h-12 w-12 mx-auto mb-4 text-primary animate-spin" />
-            <p className="text-headline-small font-black text-on-surface">Writing your impact statement...</p>
+            <p className="text-headline-small font-black text-on-surface">Writing your impact statements...</p>
+          </div>
+        ) : impactSuggestions.length > 0 ? (
+          <div className="space-y-3">
+            <p className="text-label-large font-bold text-on-surface">Choose one:</p>
+            {impactSuggestions.map((suggestion, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, impactStatement: suggestion }))}
+                className={cn(
+                  "w-full p-5 rounded-2xl border-2 text-left transition-all",
+                  formData.impactStatement === suggestion
+                    ? "border-primary bg-primary/5"
+                    : "border-outline-variant/30 hover:border-primary/50"
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={cn(
+                    "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5",
+                    formData.impactStatement === suggestion
+                      ? "border-primary bg-primary"
+                      : "border-outline-variant"
+                  )}>
+                    {formData.impactStatement === suggestion && (
+                      <CheckCircle className="h-4 w-4 text-white" />
+                    )}
+                  </div>
+                  <p className="text-body-large text-on-surface font-medium">{suggestion}</p>
+                </div>
+              </button>
+            ))}
           </div>
         ) : formData.impactStatement ? (
           <div className="p-8 bg-surface-variant/30 rounded-3xl">
@@ -1612,13 +1757,6 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
         
         <div className="flex gap-4 justify-center flex-wrap">
           <button 
-            onClick={handleContinue}
-            disabled={!formData.impactStatement}
-            className="px-6 py-3 rounded-full bg-primary text-white font-bold disabled:opacity-50"
-          >
-            Use this statement
-          </button>
-          <button 
             onClick={() => {
               setRegenerateCount(prev => prev + 1)
               handleGenerateImpactStatement()
@@ -1626,7 +1764,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
             disabled={isGeneratingImpact || regenerateCount >= 2}
             className="px-6 py-3 rounded-full border-2 border-primary text-primary font-bold disabled:opacity-50"
           >
-            {regenerateCount >= 2 ? "No regenerations left" : `Regenerate (${2 - regenerateCount} remaining)`}
+            {regenerateCount >= 2 ? "No regenerations left" : `🔄 Generate new suggestions (${2 - regenerateCount} left)`}
           </button>
           <button 
             onClick={() => {
@@ -1800,6 +1938,48 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
             className="text-primary font-bold hover:underline"
           >Edit →</button>
         </div>
+        
+        {/* Story */}
+        <div className="flex justify-between items-start p-6 bg-surface-variant/30 rounded-2xl">
+          <div className="flex-1 mr-4">
+            <p className="text-label-small font-bold text-on-surface-variant mb-1">Story</p>
+            <p className="text-body-large font-bold text-on-surface line-clamp-2">{formData.story}</p>
+          </div>
+          <button 
+            type="button"
+            onClick={() => {
+              const idx = steps.findIndex(s => s.id === "the_story")
+              if (idx >= 0) setCurrentStep(idx)
+            }}
+            className="text-primary font-bold hover:underline flex-shrink-0"
+          >Edit →</button>
+        </div>
+        
+        {/* Timeline */}
+        <div className="flex justify-between items-start p-6 bg-surface-variant/30 rounded-2xl">
+          <div>
+            <p className="text-label-small font-bold text-on-surface-variant mb-1">Timeline</p>
+            <p className="text-body-large font-bold text-on-surface">{formData.timelineDays} days</p>
+          </div>
+          <button 
+            type="button"
+            onClick={() => {
+              const idx = steps.findIndex(s => s.id === "goal_amount")
+              if (idx >= 0) setCurrentStep(idx)
+            }}
+            className="text-primary font-bold hover:underline"
+          >Edit →</button>
+        </div>
+        
+        {/* Who For */}
+        <div className="flex justify-between items-start p-6 bg-surface-variant/30 rounded-2xl">
+          <div>
+            <p className="text-label-small font-bold text-on-surface-variant mb-1">Fundraising for</p>
+            <p className="text-body-large font-bold text-on-surface">
+              {formData.whoFor === "myself" ? "Myself" : "Someone else"}
+            </p>
+          </div>
+        </div>
       </div>
       
       <div className="p-6 bg-surface-variant/30 rounded-2xl">
@@ -1925,12 +2105,24 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
         </div>
       </div>
       
-      {/* Tip */}
-      <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl">
-        <p className="text-body-medium text-on-surface font-medium">
-          🕐 The first 48 hours matter most. Your need is featured in the BuildBridge browse feed for its first 48 hours after approval. If no pledge is received within 24 hours of going live, we'll automatically send you more ready-made messages to keep the momentum going.
+      {/* Action to Dashboard */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="pt-8 flex flex-col items-center justify-center space-y-4"
+      >
+        <div className="h-[1px] w-full bg-outline-variant/30 mb-4" />
+        <p className="text-body-large font-medium text-on-surface-variant text-center max-w-md">
+          Your need is now in review and will be visible on the platform within 24 hours.
         </p>
-      </div>
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="w-full md:w-auto px-8 py-4 rounded-full bg-surface-variant/30 hover:bg-primary/10 text-primary font-black transition-all flex items-center justify-center gap-2 border border-primary/20 hover:border-primary shadow-sm"
+        >
+          View on Dashboard <ArrowRight className="h-5 w-5" />
+        </button>
+      </motion.div>
     </div>
   )
   

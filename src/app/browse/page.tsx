@@ -251,10 +251,10 @@ export default function BrowsePage() {
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col gap-6 max-w-3xl">
+          <div className="flex flex-col items-center text-center gap-6 max-w-4xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest w-fit"
               style={{ background: 'var(--color-primary-container)', color: 'var(--color-on-primary-container)' }}
@@ -280,7 +280,7 @@ export default function BrowsePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg md:text-xl font-medium max-w-2xl leading-relaxed"
+              className="text-lg md:text-xl font-medium max-w-3xl leading-relaxed"
               style={{ color: 'var(--color-on-surface-variant)' }}
             >
               Back verified tradespeople building their futures. Every pledge is held in escrow and only deployed once goals are reached.

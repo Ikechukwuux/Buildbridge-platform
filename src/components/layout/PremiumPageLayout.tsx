@@ -32,18 +32,7 @@ export function PremiumPageLayout({
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col gap-8">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <Link href="/">
-                <Button variant="ghost" className="flex items-center gap-2 text-primary -ml-4 hover:bg-primary/5">
-                  <ArrowLeft size={18} />
-                  Back to Hub
-                </Button>
-              </Link>
-            </motion.div>
+
 
             <div className="flex flex-col items-center text-center gap-6 max-w-4xl mx-auto">
               <motion.div

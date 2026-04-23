@@ -27,14 +27,7 @@ export const InfoLayout: React.FC<InfoLayoutProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="flex justify-start mb-6">
-              <Link href="/">
-                <Button variant="ghost" className="flex items-center gap-2 text-primary -ml-4">
-                  <ArrowLeft size={18} />
-                  Back to Hub
-                </Button>
-              </Link>
-            </div>
+
 
             <div className="flex flex-col items-center text-center">
               <h1 className="text-display-large text-gradient font-bold tracking-tight mb-4">

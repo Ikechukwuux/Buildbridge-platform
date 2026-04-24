@@ -13,7 +13,8 @@ import {
   Scissors, Hammer, ChefHat, Flame, Watch,
   Store, Zap, Droplets, Sparkles, Shirt,
   ChevronLeft, ChevronRight, Camera, Mic, MicOff, Loader2,
-  Rocket, UserPlus, Phone, Mail, Play, CheckCircle
+  Rocket, UserPlus, Phone, Mail, Play, CheckCircle,
+  Wrench, Users2, Banknote, ImageIcon
 } from "lucide-react"
 import { useVoiceInput } from "@/hooks/useVoiceInput"
 
@@ -534,19 +535,19 @@ export function OnboardingForm() {
         const isSelfCarousel = formData.who_for === "myself"
         const slides = [
           {
-            emoji: "🛠️",
+            icon: Wrench,
             title: "Create the need",
             description: isSelfCarousel
               ? "Tell us what is needed and why. Add a photo and a short story. It takes less than 5 minutes."
               : "Tell us what your tradesperson needs and why. Add a photo and a short story. It takes less than 5 minutes."
           },
           {
-            emoji: "🤝",
+            icon: Users2,
             title: "The community steps in",
             description: "Neighbours, market friends, family abroad — anyone can back a need directly from their phone."
           },
           {
-            emoji: "💸",
+            icon: Banknote,
             title: "The money goes straight to the tradesperson",
             description: "Every Naira pledged goes directly to them — even if the full target isn't reached."
           }
@@ -557,7 +558,9 @@ export function OnboardingForm() {
             <div className="bg-white p-8 rounded-[3rem] shadow-2xl border border-outline-variant/30 flex flex-col gap-8 min-h-[400px]">
               {/* Slide Content */}
               <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="text-6xl mb-6">{slides[carouselSlide].emoji}</div>
+                <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  {React.createElement(slides[carouselSlide].icon, { className: "h-10 w-10 text-primary" })}
+                </div>
                 <h3 className="text-title-large font-black text-on-surface mb-4">{slides[carouselSlide].title}</h3>
                 <p className="text-body-large text-on-surface-variant font-medium">{slides[carouselSlide].description}</p>
 
@@ -565,7 +568,9 @@ export function OnboardingForm() {
                 {carouselSlide === 2 && (
                   <div className="mt-8 p-4 bg-surface-variant/30 rounded-2xl border border-outline-variant/30 w-full">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">📸</span>
+                    <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                      <ImageIcon className="h-5 w-5 text-primary" />
+                    </div>
                       <div className="text-left">
                         <p className="font-bold text-on-surface">See how Ada funded her oven repair in 3 days</p>
                         <button className="text-primary font-bold text-sm hover:underline">View story →</button>

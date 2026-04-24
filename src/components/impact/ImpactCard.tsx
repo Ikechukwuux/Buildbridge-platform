@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Share2, ExternalLink, Quote, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { type ImpactWallSubmission, type Profile } from "@/types"
-import { cn } from "@/lib/utils"
+import { cn, handleShare } from "@/lib/utils"
 
 interface ImpactCardProps {
   submission: ImpactWallSubmission & { profile: Profile }
@@ -80,7 +80,14 @@ export function ImpactCard({ submission }: ImpactCardProps) {
            </div>
            
            <div className="flex gap-2">
-              <button className="h-9 w-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-primary hover:border-primary transition-all">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleShare(`Impact Story: ${profileName}`, `Read ${profileName}'s impact story on BuildBridge!`, `/impact/${submission.id}`);
+                }}
+                className="h-9 w-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-primary hover:border-primary transition-all"
+              >
                  <Share2 className="h-4 w-4" />
               </button>
               <Link 

@@ -1,4 +1,5 @@
-import * as React from "react"
+﻿import * as React from "react"
+import { useRouter } from "next/navigation"
 import { Badge, type BadgeLevelType } from "@/components/ui/Badge"
 import { Card } from "@/components/ui/Card"
 import { ProgressBar } from "@/components/ui/ProgressBar"
@@ -14,6 +15,7 @@ interface TrustTrackerProps {
 }
 
 export function TrustTracker({ currentLevel, vouches, deliveries, onVerifyClick, onVouchRequest }: TrustTrackerProps) {
+  const router = useRouter()
   
   const getNextMilestone = () => {
     switch (currentLevel) {
@@ -106,11 +108,16 @@ export function TrustTracker({ currentLevel, vouches, deliveries, onVerifyClick,
                  <Lock className="h-3.5 w-3.5" />
                  {next.cta}
               </Button>
+            ) : next?.cta === "Edit Profile" ? (
+               <Button onClick={() => router.push('/profile')} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
+                 {next.cta}
+                 <ArrowRight className="h-3.5 w-3.5" />
+               </Button>
             ) : (
                <Button onClick={onVouchRequest} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
                  {next?.cta}
                  <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
+               </Button>
             )}
             <Button variant="ghost" className="w-full h-8 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 hover:text-primary transition-colors">
                Trust Logic Specs

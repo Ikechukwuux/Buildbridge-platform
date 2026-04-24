@@ -16,12 +16,14 @@ import { createClient } from "@/lib/supabase/client";
 import { NIGERIA_LOCATIONS } from "@/lib/data/nigeria";
 import { cn } from "@/lib/utils";
 
+import confetti from "canvas-confetti";
+
 interface CreateNeedFlowProps {
   onClose: () => void;
 }
 
 export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
-  const [phase, setPhase] = useState<"A" | "B" | "C">("A");
+  const [phase, setPhase] = useState<"A" | "B" | "C" | "D">("A");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
@@ -127,11 +129,11 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
           photo_url: photo_url,
           photo_geotag_lat: formData.geotag?.lat,
           photo_geotag_lng: formData.geotag?.lng,
-          status: 'active'
+          status: 'pending_review'
         });
 
       if (insertError) throw insertError;
-      onClose();
+      setPhase("D");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -170,6 +172,7 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
                 <div className={cn("h-1 w-8 rounded-full transition-colors", phase === "A" ? "bg-primary" : "bg-primary/20")} />
                 <div className={cn("h-1 w-8 rounded-full transition-colors", phase === "B" ? "bg-primary" : "bg-primary/20")} />
                 <div className={cn("h-1 w-8 rounded-full transition-colors", phase === "C" ? "bg-primary" : "bg-primary/20")} />
+                <div className={cn("h-1 w-8 rounded-full transition-colors", phase === "D" ? "bg-primary" : "bg-primary/20")} />
               </div>
             </div>
           </div>
@@ -371,12 +374,43 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
                 </div>
               </motion.div>
             )}
+
+            {phase === "D" && (
+              <motion.div
+                key="D"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                onAnimationComplete={() => {
+                  const duration = 2 * 1000;
+                  const animationEnd = Date.now() + duration;
+                  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+                  const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+                  const interval: any = setInterval(function() {
+                    const timeLeft = animationEnd - Date.now();
+                    if (timeLeft <= 0) return clearInterval(interval);
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+                  }, 250);
+                }}
+                className="flex flex-col items-center justify-center py-12 text-center space-y-6"
+              >
+                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
+                  <CheckCircle2 className="w-12 h-12" />
+                </div>
+                <h3 className="text-3xl font-black text-on-surface">Need Submitted! 🎉</h3>
+                <p className="text-on-surface-variant font-medium max-w-md">
+                  Your need has been successfully created. It is currently <span className="text-amber-600 font-bold">Pending Approval</span> and will appear on your dashboard. Once approved, backers can start pledging!
+                </p>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
         {/* Footer */}
         <div className="p-8 border-t border-outline-variant bg-surface-variant/5 flex justify-between items-center">
-          {phase !== "A" ? (
+          {phase !== "A" && phase !== "D" ? (
             <Button variant="ghost" onClick={() => phase === "B" ? setPhase("A") : setPhase("B")} className="px-8 font-black">
               <ChevronLeft className="mr-2 w-4 h-4" /> Back
             </Button>
@@ -396,13 +430,17 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
               <Button onClick={() => setPhase("C")} className="px-10 rounded-2xl h-14 font-black shadow-xl">
                 Continue to Verification <ChevronRight className="ml-2 w-4 h-4" />
               </Button>
-            ) : (
+            ) : phase === "C" ? (
               <Button
                 isLoading={isLoading}
                 onClick={handleFinish}
                 className="px-10 rounded-2xl h-14 font-black bg-primary text-white shadow-xl shadow-primary/20"
               >
                 Launch my Need! <CheckCircle2 className="ml-2 w-4 h-4" />
+              </Button>
+            ) : (
+              <Button onClick={onClose} className="px-10 rounded-2xl h-14 font-black bg-primary text-white shadow-xl shadow-primary/20">
+                Go to Dashboard <ChevronRight className="ml-2 w-4 h-4" />
               </Button>
             )}
           </div>

@@ -18,7 +18,7 @@ import {
   MoreHorizontal,
   CheckCircle2
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, handleShare } from "@/lib/utils"
 import { type Need, type Profile } from "@/types"
 import { TRADE_ICONS_MAP } from "@/lib/constants"
 
@@ -186,7 +186,7 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
         )}
 
         {/* Amount Tooltip-like Badge */}
-        <div className="absolute bottom-4 right-4 rounded-2xl px-4 py-2 text-sm font-black bg-yellow-400 text-black shadow-xl">
+        <div className="absolute bottom-4 right-4 rounded-2xl px-4 py-2 text-sm font-black bg-yellow-400 text-[#121212] shadow-xl">
           {formattedCost}
         </div>
       </div>
@@ -205,12 +205,12 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
             </div>
           </div>
           <div className="flex flex-col min-w-0">
-            <h3 className="text-base font-black truncate text-on-surface leading-none mb-1">
+            <h3 className="text-lg font-black truncate text-on-surface leading-none mb-1">
               {need.profile?.name || "Verified Artisan"}
             </h3>
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3 w-3 text-primary" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant truncate">
+              <span className="text-xs font-black uppercase tracking-widest text-on-surface-variant truncate">
                 {need.profile?.location_lga}, {need.profile?.location_state}
               </span>
             </div>
@@ -219,10 +219,10 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
 
         {/* Need Story */}
         <div className="flex flex-col gap-2">
-           <h4 className="text-xl font-black leading-[1.1] text-on-surface group-hover:text-primary transition-colors">
+           <h4 className="text-2xl font-black leading-[1.1] text-on-surface group-hover:text-primary transition-colors">
              {need.item_name}
            </h4>
-           <p className="text-sm line-clamp-2 leading-relaxed font-medium text-on-surface-variant">
+           <p className="text-base line-clamp-2 leading-relaxed font-medium text-on-surface-variant">
              {need.story}
            </p>
         </div>
@@ -231,24 +231,24 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
         <div className="flex flex-col gap-4 mt-auto">
           <div className="flex justify-between items-end">
              <div className="flex flex-col">
-               <span className="text-[10px] uppercase font-black tracking-widest text-primary mb-1">
+               <span className="text-xs uppercase font-black tracking-widest text-primary mb-1">
                   Funded Progress
                </span>
                <div className="flex items-baseline gap-1">
-                 <span className="text-2xl font-black text-on-surface">
+                 <span className="text-3xl font-black text-on-surface">
                     {Math.min(100, Math.floor(percentage))}%
                  </span>
-                 <span className="text-xs font-bold text-on-surface-variant">
+                 <span className="text-sm font-bold text-on-surface-variant">
                    raised
                  </span>
                </div>
              </div>
              
              <div className="text-right">
-                <span className="text-[10px] uppercase font-black tracking-widest text-on-surface-variant mb-1 block">
+                <span className="text-xs uppercase font-black tracking-widest text-on-surface-variant mb-1 block">
                    Days Left
                 </span>
-                <span className="text-sm font-black text-on-surface bg-on-surface-variant/10 px-3 py-1 rounded-full">
+                <span className="text-base font-black text-on-surface bg-on-surface-variant/10 px-3 py-1 rounded-full">
                     {isDeadlinePassed ? "Ended" : daysRemaining}
                 </span>
              </div>
@@ -271,7 +271,7 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
              />
            </div>
 
-          <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-on-surface-variant/60">
+          <div className="flex justify-between text-xs font-black uppercase tracking-widest text-on-surface-variant/60">
              <span>₦{new Intl.NumberFormat().format(need.funded_amount / 100)} raised</span>
              <span>Goal: {formattedCost}</span>
           </div>
@@ -294,12 +294,12 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
                     isVouched ? "fill-error scale-110" : "fill-none"
                   )} 
                 />
-                <span className="text-xs font-black text-on-surface">{localVouchCount}</span>
+                <span className="text-sm font-black text-on-surface">{localVouchCount}</span>
              </div>
           </div>
            <Button 
               className={cn(
-                 "rounded-full px-8 font-black text-xs shadow-xl transition-all hover:-translate-y-1 flex items-center gap-1.5",
+                 "rounded-full px-8 font-black text-sm shadow-xl transition-all hover:-translate-y-1 flex items-center gap-1.5",
                  buttonClassName,
                  buttonDisabled && "cursor-not-allowed"
               )}
@@ -311,7 +311,7 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
                 } else if (isDashboard && !isUnverified && buttonText === "Share Need") {
                   e.stopPropagation();
                   const needUrl = `${window.location.origin}/needs/${need.id}`;
-                  navigator.clipboard.writeText(needUrl);
+                  handleShare(`Help ${need.profile?.name || "Verified Artisan"} get a ${need.item_name}`, `Support ${need.profile?.name || "this artisan"}'s need on BuildBridge!`, needUrl);
                 }
               }}
             >

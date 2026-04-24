@@ -85,7 +85,7 @@ export function ImpactTeaser() {
                       </div>
                       <span className="text-white font-bold text-sm tracking-wide uppercase">Read Full Story</span>
                    </div>
-                   <div className="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center text-black shadow-xl shadow-yellow-400/20">
+                   <div className="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center text-[#121212] shadow-xl shadow-yellow-400/20">
                       <ArrowRight className="h-6 w-6" />
                    </div>
                 </div>

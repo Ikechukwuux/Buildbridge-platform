@@ -545,7 +545,7 @@ export default function ProfilePage() {
             <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[2.5rem] bg-white text-primary flex items-center justify-center text-5xl font-black border-8 border-primary shadow-2xl">
               {initial.toUpperCase()}
             </div>
-            <button className="absolute bottom-2 right-2 p-2 bg-yellow-400 text-black rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all">
+            <button className="absolute bottom-2 right-2 p-2 bg-yellow-400 text-[#121212] rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all">
               <Camera className="w-5 h-5" />
             </button>
           </div>

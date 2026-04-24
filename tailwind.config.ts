@@ -9,6 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        black: "#121212",
         primary: "var(--color-material-theme-sys-light-primary)",
         "on-primary": "var(--color-material-theme-sys-light-on-primary)",
         "primary-container": "var(--color-material-theme-sys-light-primary-container)",

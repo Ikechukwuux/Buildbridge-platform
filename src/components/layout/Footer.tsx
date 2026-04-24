@@ -105,7 +105,7 @@ export function Footer() {
                   />
                   <button 
                     type="submit"
-                    className="absolute right-1.5 top-1.5 h-11 px-6 rounded-full bg-yellow-400 text-black font-black text-xs uppercase tracking-widest hover:bg-yellow-300 active:scale-[0.98] transition-all shadow-lg whitespace-nowrap"
+                    className="absolute right-1.5 top-1.5 h-11 px-6 rounded-full bg-yellow-400 text-[#121212] font-black text-xs uppercase tracking-widest hover:bg-yellow-300 active:scale-[0.98] transition-all shadow-lg whitespace-nowrap"
                   >
                     Sign Up
                   </button>

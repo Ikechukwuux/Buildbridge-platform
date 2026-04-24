@@ -7,6 +7,7 @@ import confetti from "canvas-confetti"
 import { Button } from "@/components/ui/Button"
 import { CheckCircle2, Heart, Share2, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { handleShare } from "@/lib/utils"
 
 interface PledgeSuccessProps {
   amount: number
@@ -85,7 +86,15 @@ export function PledgeSuccess({ amount, tradespersonName, needId }: PledgeSucces
       </div>
 
       <div className="flex flex-col gap-4 w-full pt-4">
-        <Button onClick={() => {}} className="w-full gap-2 h-14 text-headline-small shadow-sm" variant="secondary">
+        <Button 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleShare(`I just backed ${tradespersonName}!`, `Support ${tradespersonName}'s need on BuildBridge and help build pockets of trust!`, `/needs/${needId}`);
+          }} 
+          className="w-full gap-2 h-14 text-headline-small shadow-sm" 
+          variant="secondary"
+        >
           <Share2 className="h-5 w-5" />
           Share the Impact
         </Button>

@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ArrowLeft, MapPin, Calendar, Users, Clock, Sparkles, Share2, ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { type ImpactStory } from "@/lib/impact-stories"
+import { handleShare } from "@/lib/utils"
 
 interface StoryDetailProps {
   story: ImpactStory
@@ -51,7 +52,7 @@ export function StoryDetail({ story }: StoryDetailProps) {
               transition={{ duration: 0.6 }}
               className="flex flex-col gap-4"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-400 text-black text-[10px] font-black uppercase tracking-widest w-fit">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-400 text-[#121212] text-[10px] font-black uppercase tracking-widest w-fit">
                 <Sparkles className="h-3 w-3" />
                 Impact Story
               </div>
@@ -95,7 +96,15 @@ export function StoryDetail({ story }: StoryDetailProps) {
                 </div>
               </div>
             </div>
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-outline-variant/30 text-sm font-bold hover:border-primary/30 hover:bg-primary/5 transition-all" style={{ color: 'var(--color-on-surface-variant)' }}>
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleShare(story.title, `Read about ${story.profile.name}'s impact on BuildBridge!`, window.location.href);
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-outline-variant/30 text-sm font-bold hover:border-primary/30 hover:bg-primary/5 transition-all" 
+              style={{ color: 'var(--color-on-surface-variant)' }}
+            >
               <Share2 className="h-4 w-4" />
               Share Story
             </button>

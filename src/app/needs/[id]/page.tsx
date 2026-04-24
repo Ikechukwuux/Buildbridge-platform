@@ -8,11 +8,11 @@ import {
   Calendar, 
   ShieldCheck, 
   Info,
-  ChevronLeft,
-  Share2
+  ChevronLeft
 } from "lucide-react"
 import Link from "next/link"
 import { PledgeFlow } from "@/components/pledge/PledgeFlow"
+import { ShareButton } from "@/components/ui/ShareButton"
 
 interface NeedPageProps {
   params: { id: string }
@@ -123,10 +123,12 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
               <ChevronLeft className="h-5 w-5" />
               Back to Browse
            </Link>
-           <Button variant="ghost" size="sm" className="rounded-full">
-              <Share2 className="h-5 w-5 mr-2" />
-              Share
-           </Button>
+           <ShareButton 
+              title={`Help ${need.profile.name} get a ${need.item_name}`}
+              text={`Support ${need.profile.name}'s need on BuildBridge!`}
+              url={`/needs/${need.id}`}
+              className="rounded-full"
+           />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">

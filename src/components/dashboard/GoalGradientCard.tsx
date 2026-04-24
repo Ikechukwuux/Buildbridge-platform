@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -11,6 +12,7 @@ interface GoalGradientCardProps {
 }
 
 export function GoalGradientCard({ progress, onAction }: GoalGradientCardProps) {
+  const router = useRouter();
   return (
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
@@ -68,7 +70,7 @@ export function GoalGradientCard({ progress, onAction }: GoalGradientCardProps) 
           </div>
           
           <Button 
-            onClick={onAction}
+            onClick={() => router.push('/profile')}
             className="w-full md:w-auto h-12 px-8 rounded-[1.5rem] bg-white text-primary hover:bg-white/90 font-black shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
           >
             Finish Profile <ArrowRight className="ml-2 w-4 h-4" />

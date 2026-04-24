@@ -26,7 +26,7 @@ import {
   ImageOff
 } from "lucide-react"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn, handleShare } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 
 export default function NeedDetailPage() {
@@ -282,7 +282,14 @@ export default function NeedDetailPage() {
                        </Button>
 
                        <div className="flex items-center justify-between pt-4 border-t border-outline-variant/30">
-                          <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">
+                          <button 
+                             onClick={(e) => {
+                               e.preventDefault();
+                               e.stopPropagation();
+                               handleShare(`Help ${artisanName} get a ${need.item_name}`, `Support ${artisanName}'s need on BuildBridge!`, `${window.location.origin}/needs/${need.id}`);
+                             }}
+                             className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors"
+                          >
                              <Share2 className="h-4 w-4" />
                              Share Progress
                           </button>

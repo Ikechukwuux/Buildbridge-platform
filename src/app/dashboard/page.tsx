@@ -17,7 +17,9 @@ import {
   ShieldCheck,
   ChevronRight,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Trash2,
+  PencilLine
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -42,6 +44,20 @@ function DashboardContent() {
   const [showCopied, setShowCopied] = useState(false)
   const [userName, setUserName] = useState("Artisan")
   const [isCreatingNeed, setIsCreatingNeed] = useState(false)
+  const [needToDelete, setNeedToDelete] = useState<string | null>(null)
+
+  const handleDeleteConfirm = async (id: string) => {
+    try {
+      const { error } = await supabase.from('needs').delete().eq('id', id);
+      if (!error) {
+        setNeeds(prev => prev.filter(n => n.id !== id));
+      }
+    } catch (error) {
+      console.error("Error deleting need:", error);
+    } finally {
+      setNeedToDelete(null);
+    }
+  }
 
   const fetchDashboardData = async () => {
     setLoading(true)
@@ -235,7 +251,7 @@ function DashboardContent() {
           {/* Active Needs Section */}
           <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-display-small font-black text-on-surface tracking-tight">Active Needs</h2>
+              <h2 className="text-display-small font-black text-on-surface tracking-tight">Your Needs</h2>
               <Link href="/dashboard/needs" className="text-label-large font-bold text-primary flex items-center gap-1 hover:underline">
                 View All <ChevronRight className="h-4 w-4" />
               </Link>
@@ -275,6 +291,8 @@ function DashboardContent() {
                       need={{...need, profile}} 
                       isDashboard
                       onClick={() => router.push(`/dashboard/needs/${need.id}`)}
+                      onDelete={() => setNeedToDelete(need.id)}
+                      onEdit={() => router.push(`/dashboard/needs/${need.id}/edit`)}
                     />
                   ))}
                 </div>
@@ -307,8 +325,8 @@ function DashboardContent() {
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                    <TrendingUp className="h-5 w-5" />
                 </div>
-                <span className="text-3xl font-black text-on-surface tracking-tight">{needs.filter(n => n.status === 'active').length}</span>
-                <span className="text-[10px] uppercase font-black tracking-widest text-on-surface-variant/50">Active Needs</span>
+                <span className="text-3xl font-black text-on-surface tracking-tight">{needs.filter(n => n.status === 'active' || n.status === 'pending_review').length}</span>
+                <span className="text-[10px] uppercase font-black tracking-widest text-on-surface-variant/50">Total Needs</span>
              </div>
              <div className="p-6 rounded-[2rem] bg-surface border border-outline-variant/30 flex flex-col justify-center items-start gap-2 shadow-sm hover:shadow-md transition-all group">
                 <div className="w-10 h-10 rounded-2xl bg-badge-3/10 text-badge-3 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -444,6 +462,28 @@ function DashboardContent() {
               fetchDashboardData();
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {needToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setNeedToDelete(null)} />
+             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-surface rounded-3xl p-8 max-w-sm w-full text-center flex flex-col gap-6 shadow-2xl">
+                <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto">
+                   <Trash2 className="w-8 h-8" />
+                </div>
+                <div className="flex flex-col gap-2">
+                   <h3 className="text-xl font-black text-on-surface">Delete this Need?</h3>
+                   <p className="text-sm text-on-surface-variant">This action cannot be undone. Are you sure you want to permanently remove this need?</p>
+                </div>
+                <div className="flex gap-3 mt-2">
+                   <Button variant="outline" className="flex-1 rounded-[1.5rem]" onClick={() => setNeedToDelete(null)}>Cancel</Button>
+                   <Button className="flex-1 bg-error text-white hover:bg-error/90 border-none shadow-error/20 rounded-[1.5rem]" onClick={() => handleDeleteConfirm(needToDelete)}>Delete</Button>
+                </div>
+             </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

@@ -16,7 +16,9 @@ import {
   ShieldAlert,
   Share2,
   MoreHorizontal,
-  CheckCircle2
+  CheckCircle2,
+  Trash2,
+  PencilLine
 } from "lucide-react"
 import { cn, handleShare } from "@/lib/utils"
 import { type Need, type Profile } from "@/types"
@@ -25,14 +27,16 @@ import { TRADE_ICONS_MAP } from "@/lib/constants"
 import Link from "next/link"
 
 interface NeedCardProps {
-  need: Need & { profile?: Profile & { name?: string } };
+  need: Need & { profile?: Profile & { name?: string; full_name?: string } };
   className?: string;
   onClick?: () => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
   /** When true, shows owner-specific actions (Verify Now / Share Need) instead of public "Back now" */
   isDashboard?: boolean;
 }
 
-export function NeedCard({ need, className, onClick, isDashboard = false }: NeedCardProps) {
+export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboard = false }: NeedCardProps) {
   const router = useRouter();
 
   const handleCardClick = () => {
@@ -196,8 +200,8 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
             <img 
-              src={need.profile?.photo_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e9ddff' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-size='40' font-weight='bold' fill='%236750A4'%3E${(need.profile?.name || 'A').charAt(0)}%3C/text%3E%3C/svg%3E`} 
-              alt={need.profile?.name || "Tradesperson"} 
+              src={need.profile?.photo_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e9ddff' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-size='40' font-weight='bold' fill='%236750A4'%3E${(need.profile?.full_name || need.profile?.name || 'A').charAt(0)}%3C/text%3E%3C/svg%3E`} 
+              alt={need.profile?.full_name || need.profile?.name || "Tradesperson"} 
               className="h-12 w-12 rounded-2xl object-cover border-2 border-white shadow-md"
             />
             <div className="absolute -bottom-1 -right-1 rounded-full p-1 bg-green-500 border-2 border-white shadow-lg">
@@ -206,7 +210,7 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
           </div>
           <div className="flex flex-col min-w-0">
             <h3 className="text-lg font-black truncate text-on-surface leading-none mb-1">
-              {need.profile?.name || "Verified Artisan"}
+              {need.profile?.full_name || need.profile?.name || "Verified Artisan"}
             </h3>
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3 w-3 text-primary" />
@@ -319,6 +323,34 @@ export function NeedCard({ need, className, onClick, isDashboard = false }: Need
               {buttonText}
             </Button>
         </div>
+
+        {/* Dashboard Owner Actions */}
+        {isDashboard && (
+          <div className="pt-4 flex gap-3 mt-auto">
+            <Button 
+              variant="outline"
+              className="flex-1 border-outline/30 hover:bg-surface-variant/50 text-sm font-black"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onEdit) onEdit();
+              }}
+            >
+              <PencilLine className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button 
+              variant="outline"
+              className="flex-1 border-error/30 text-error hover:bg-error/10 text-sm font-black"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDelete) onDelete();
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        )}
       </div>
     </Card>
   );

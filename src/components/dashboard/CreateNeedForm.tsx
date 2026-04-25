@@ -344,11 +344,8 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
-                                  experience: tradeCategory || "Artisan",
-                                  product: formData.item_name === "custom" ? formData.custom_item : formData.item_name,
-                                  community: "my community",
-                                  equipment: formData.story,
-                                  isSelf: true
+                                  enhanceExisting: true,
+                                  existingStory: formData.story
                                 })
                               });
                               const data = await res.json();

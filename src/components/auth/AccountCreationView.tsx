@@ -107,18 +107,20 @@ export function AccountCreationView({ onBack, onSubmit, onGoogleAuth, isLoading 
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="flex flex-col gap-4">
-          <div className="relative group">
-            <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
-            <input 
-              type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={() => setTouched(t => ({ ...t, name: true }))}
-              className="w-full h-18 rounded-2xl border-2 border-outline-variant focus:border-primary px-16 font-bold text-lg outline-none transition-all"
-              required
-            />
-            <p className="text-[11px] font-bold text-on-surface-variant/60 ml-6 uppercase tracking-wider">This can be a nickname if you prefer privacy.</p>
+          <div className="flex flex-col gap-1">
+            <div className="relative group">
+              <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
+              <input 
+                type="text"
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, name: true }))}
+                className="w-full h-18 rounded-2xl border-2 border-outline-variant focus:border-primary px-16 font-bold text-lg outline-none transition-all"
+                required
+              />
+            </div>
+            <p className="text-[11px] font-bold text-on-surface-variant/60 ml-6 uppercase tracking-wider mt-1">This can be a nickname if you prefer privacy.</p>
           </div>
 
           <div className="flex flex-col gap-1">

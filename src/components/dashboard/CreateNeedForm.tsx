@@ -181,7 +181,7 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
             origin: { x: 1, y: 0.6 },
           })
         }, 300)
-        setCurrentStep(7) // Go to Success Step
+        setShowSuccessModal(true) // Show the modal instead of going to a new step
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to create need. Please try again.")
@@ -666,7 +666,6 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
                 </div>
             </motion.div>
         )
-
 
       default:
         return null

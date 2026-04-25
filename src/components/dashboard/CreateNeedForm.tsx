@@ -55,6 +55,7 @@ interface CreateNeedFormProps {
 export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isEnhancingStory, setIsEnhancingStory] = useState(false)
   const [isGeneratingImpact, setIsGeneratingImpact] = useState(false)
@@ -653,10 +654,9 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
                         <span className="text-label-large text-on-surface">I confirm this information is accurate and honest.</span>
                     </label>
 
-                    <Button onClick={handleSubmit} isLoading={loading} disabled={!formData.agreed_to_terms} className="w-full text-headline-small py-8">
+                    <Button onClick={handleSubmit} isLoading={loading} disabled={!formData.agreed_to_terms} className="w-full">
                         Submit for Review
                     </Button>
-
                     {errorMsg && (
                       <div className="p-4 bg-error/10 border border-error/30 rounded-2xl flex gap-3 items-start">
                         <span className="text-error text-lg flex-shrink-0">⚠</span>
@@ -667,63 +667,6 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
             </motion.div>
         )
 
-      case 7: // Success Page
-        return (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center gap-8 py-10 relative">
-            {/* Confetti Lottie overlay */}
-            <div className="absolute inset-0 pointer-events-none -top-20 flex items-start justify-center overflow-hidden z-0">
-              <ConfettiAnimation />
-            </div>
-
-            <div className="relative z-10 flex flex-col items-center gap-8">
-              <motion.div 
-                initial={{ scale: 0 }} 
-                animate={{ scale: 1 }} 
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-                className="w-28 h-28 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center shadow-xl shadow-primary/10"
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.5 }}
-                >
-                  <CheckCircle2 className="w-14 h-14 text-primary" />
-                </motion.div>
-              </motion.div>
-              
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="flex flex-col gap-4"
-              >
-                <h1 className="text-display-small font-black text-primary">Congratulations! 🎉</h1>
-                <p className="text-body-large text-on-surface-variant font-medium max-w-md leading-relaxed">
-                  You have created your need successfully and it will be reviewed within the next <strong className="text-on-surface">24–72 hours</strong>.
-                </p>
-                <div className="mt-2 p-4 bg-primary/5 border border-primary/10 rounded-2xl">
-                  <p className="text-body-small text-on-surface-variant font-medium">
-                    Your need will appear on your dashboard as <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-black uppercase tracking-wider">Pending Approval</span> until it has been reviewed.
-                  </p>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 }}
-                className="w-full max-w-sm mt-4"
-              >
-                <Button onClick={() => {
-                  router.refresh()
-                  router.push("/dashboard?new_need=success")
-                }} className="w-full py-6 text-title-medium">
-                  Go to Dashboard
-                </Button>
-              </motion.div>
-            </div>
-          </motion.div>
-        )
 
       default:
         return null
@@ -761,6 +704,70 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
             <React.Fragment key={currentStep}>
                 {renderStep()}
             </React.Fragment>
+        </AnimatePresence>
+
+        {/* Success Modal */}
+        <AnimatePresence>
+          {showSuccessModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="bg-white rounded-[2rem] shadow-2xl border border-outline-variant/30 p-8 max-w-md w-full flex flex-col items-center text-center gap-6 relative overflow-hidden"
+              >
+                {/* Confetti overlay */}
+                <div className="absolute inset-0 pointer-events-none -top-10 flex items-start justify-center overflow-hidden z-0">
+                  <ConfettiAnimation />
+                </div>
+
+                <div className="relative z-10 flex flex-col items-center gap-6">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                    className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center shadow-lg shadow-primary/10"
+                  >
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.4 }}
+                    >
+                      <CheckCircle2 className="w-10 h-10 text-primary" />
+                    </motion.div>
+                  </motion.div>
+
+                  <div className="flex flex-col gap-3">
+                    <h2 className="text-2xl font-black text-on-surface">Need Created! 🎉</h2>
+                    <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
+                      Your need has been submitted successfully and will be reviewed within <strong className="text-on-surface">24–48 hours</strong>. You will be notified once it's approved.
+                    </p>
+                    <div className="p-3 bg-amber-50 border border-amber-200/50 rounded-xl">
+                      <p className="text-xs text-amber-800 font-medium">
+                        It will appear on your dashboard as <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-black uppercase tracking-wider">Pending Review</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => {
+                      router.refresh()
+                      router.push("/dashboard")
+                    }}
+                    className="w-full mt-2"
+                  >
+                    Proceed to Dashboard
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
     </div>
   )

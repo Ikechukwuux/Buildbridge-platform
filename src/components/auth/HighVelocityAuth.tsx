@@ -10,7 +10,24 @@ import { AccountCreationView } from "./AccountCreationView";
 import { registerUserAdmin, syncUserRecord } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Sparkles } from "lucide-react";
+import { Sparkles, CheckCircle2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import confettiAnimation from "../../../public/animations/confetti.json";
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+
+function ConfettiAnimation() {
+  return (
+    <div className="w-[600px] h-[600px] max-w-[100vw]">
+      <Lottie
+        animationData={confettiAnimation}
+        loop={true}
+        autoplay={true}
+        style={{ width: "100%", height: "100%" }}
+      />
+    </div>
+  );
+}
 
 export function HighVelocityAuth() {
   const router = useRouter();
@@ -21,6 +38,7 @@ export function HighVelocityAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Form State
   const [discoveryData, setDiscoveryData] = useState<any>(null);
@@ -124,15 +142,19 @@ export function HighVelocityAuth() {
             item_cost: itemCostKobo,
             story: discoveryData.story || "",
             impact_statement: discoveryData.impact || "",
-            status: 'active',
+            status: 'pending_review',
             deadline: deadlineDate.toISOString().split('T')[0],
             photo_url: discoveryData.photoUrl || "/images/placeholders/need-default.png"
           });
         }
+        
+        // They completed the flow and created a need, show the success modal
+        setShowSuccessModal(true);
+      } else {
+        // They skipped the need creation flow, just go straight to dashboard
+        window.location.href = "/dashboard";
       }
 
-      // Success! Go to dashboard
-      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message || "Signup failed. Please try again.");
       setIsLoading(false);
@@ -142,7 +164,8 @@ export function HighVelocityAuth() {
   if (!isMounted) return <div className="h-[600px] w-full max-w-xl bg-white/10 animate-pulse rounded-[2.5rem] border border-white/20" />;
 
   return (
-    <Card className="w-full max-w-xl mx-auto p-10 shadow-2xl rounded-[2.5rem] border-primary/10 overflow-hidden relative">
+    <>
+      <Card className="w-full max-w-xl mx-auto p-10 shadow-2xl rounded-[2.5rem] border-primary/10 overflow-hidden relative">
       <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
         <Sparkles className="w-24 h-24 text-primary" />
       </div>
@@ -168,6 +191,70 @@ export function HighVelocityAuth() {
       {error && (
         <p className="mt-4 text-error font-bold text-center bg-error/5 py-2 rounded-xl border border-error/10 animate-shake">{error}</p>
       )}
-    </Card>
+      </Card>
+
+      {/* Success Modal */}
+      <AnimatePresence>
+        {showSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="bg-white rounded-[2rem] shadow-2xl border border-outline-variant/30 p-8 max-w-md w-full flex flex-col items-center text-center gap-6 relative overflow-hidden"
+            >
+              {/* Confetti overlay */}
+              <div className="absolute inset-0 pointer-events-none -top-10 flex items-start justify-center overflow-hidden z-0">
+                <ConfettiAnimation />
+              </div>
+
+              <div className="relative z-10 flex flex-col items-center gap-6">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                  className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center shadow-lg shadow-primary/10"
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.4 }}
+                  >
+                    <CheckCircle2 className="w-10 h-10 text-primary" />
+                  </motion.div>
+                </motion.div>
+
+                <div className="flex flex-col gap-3">
+                  <h2 className="text-2xl font-black text-on-surface">Account & Need Created! 🎉</h2>
+                  <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
+                    Your account is ready and your need has been submitted successfully. It will be reviewed within <strong className="text-on-surface">24–48 hours</strong>.
+                  </p>
+                  <div className="p-3 bg-amber-50 border border-amber-200/50 rounded-xl">
+                    <p className="text-xs text-amber-800 font-medium">
+                      It will appear on your dashboard as <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-black uppercase tracking-wider">Pending Review</span>
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    window.location.href = "/dashboard";
+                  }}
+                  className="w-full mt-2"
+                >
+                  Proceed to Dashboard
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

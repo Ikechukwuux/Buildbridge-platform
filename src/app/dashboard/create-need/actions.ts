@@ -84,10 +84,7 @@ export async function createNeedAction(formData: FormData) {
       story: story,
       impact_statement: impact,
       deadline: deadlineDate.toISOString().split('T')[0], // DATE format
-      status: "pending_review",
-      impact_statement_source: "manual",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      status: "pending_review"
     })
 
   if (dbError) {

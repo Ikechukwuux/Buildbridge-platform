@@ -56,8 +56,7 @@ export default function NeedDetailPage() {
               location_state,
               location_lga,
               badge_level,
-              vouch_count,
-              photo_url
+              vouch_count
             )
           `)
           .eq('id', id)

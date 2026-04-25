@@ -88,7 +88,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Step {step} of {totalSteps}</span>
           <button 
             onClick={onSkip}
-            className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 hover:text-primary transition-colors"
+            className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 hover:text-primary transition-colors cursor-pointer"
           >
             Skip to Signup →
           </button>
@@ -242,7 +242,8 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                     <select 
                       value={formData.state}
                       onChange={(e) => updateData({ state: e.target.value, lga: "" })}
-                      className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-4 text-lg font-bold bg-white outline-none"
+                      className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-4 pr-10 text-lg font-bold bg-white outline-none appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_16px_center] cursor-pointer"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
                     >
                       <option value="">Select State</option>
                       {NIGERIA_LOCATIONS.map(s => <option key={s.id} value={s.state}>{s.state}</option>)}
@@ -254,7 +255,8 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                     <select 
                       value={formData.lga}
                       onChange={(e) => updateData({ lga: e.target.value })}
-                      className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-4 text-lg font-bold bg-white outline-none"
+                      className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-4 pr-10 text-lg font-bold bg-white outline-none appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_16px_center] cursor-pointer"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
                       disabled={!formData.state}
                     >
                       <option value="">Select LGA</option>

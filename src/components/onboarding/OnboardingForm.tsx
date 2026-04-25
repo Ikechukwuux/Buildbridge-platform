@@ -669,13 +669,13 @@ export function OnboardingForm() {
             </h1>
             <p className="text-body-large text-on-surface-variant font-medium text-center mb-10">This helps backers find tradespeople in their area.</p>
             <div className="bg-white/70 p-8 rounded-[3rem] shadow-xl border border-outline-variant/30 flex flex-col gap-6">
-              <select value={formData.location_state} onChange={(e) => setFormData({ ...formData, location_state: e.target.value, location_lga: "" })} className="h-16 w-full rounded-2xl border-2 border-outline-variant bg-white px-6 font-bold text-lg outline-none appearance-none cursor-pointer">
+              <select value={formData.location_state} onChange={(e) => setFormData({ ...formData, location_state: e.target.value, location_lga: "" })} className="h-16 w-full rounded-2xl border-2 border-outline-variant bg-white px-6 pr-12 font-bold text-lg outline-none appearance-none cursor-pointer bg-no-repeat bg-[length:16px_16px] bg-[position:right_24px_center]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}>
                 <option value="">Select State</option>
                 {NIGERIA_LOCATIONS.map((s) => (
                   <option key={s.id} value={s.id}>{s.state}</option>
                 ))}
               </select>
-              <select disabled={!formData.location_state} value={formData.location_lga} onChange={(e) => setFormData({ ...formData, location_lga: e.target.value })} className="h-16 w-full rounded-2xl border-2 border-outline-variant bg-white px-6 font-bold text-lg outline-none disabled:opacity-50 cursor-pointer">
+              <select disabled={!formData.location_state} value={formData.location_lga} onChange={(e) => setFormData({ ...formData, location_lga: e.target.value })} className="h-16 w-full rounded-2xl border-2 border-outline-variant bg-white px-6 pr-12 font-bold text-lg outline-none appearance-none disabled:opacity-50 cursor-pointer bg-no-repeat bg-[length:16px_16px] bg-[position:right_24px_center]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}>
                 <option value="">Select Local Area</option>
                 {formData.location_state && NIGERIA_LOCATIONS.find(s => s.id === formData.location_state)?.lgas.map((lga) => (
                   <option key={lga} value={lga}>{lga}</option>

@@ -136,6 +136,28 @@ export function HighVelocityAuth() {
           const rawCost = String(discoveryData.cost || '0');
           const itemCostKobo = (parseInt(rawCost.replace(/[^0-9]/g, ""), 10) || 0) * 100;
 
+          // Map trade category
+          let tradeCategory = 'other';
+          if (discoveryData.category) {
+            const cat = discoveryData.category.toLowerCase();
+            if (cat.includes('tailor')) tradeCategory = 'tailor';
+            else if (cat.includes('carpenter')) tradeCategory = 'carpenter';
+            else if (cat.includes('welder')) tradeCategory = 'welder';
+            else if (cat.includes('cobbler') || cat.includes('shoemaker')) tradeCategory = 'cobbler_shoemaker';
+            else if (cat.includes('baker') || cat.includes('food')) tradeCategory = 'baker_food';
+            else if (cat.includes('mechanic')) tradeCategory = 'mechanic';
+            else if (cat.includes('electrician')) tradeCategory = 'electrician';
+          }
+
+          // 1. Update the profile with location and trade data
+          await supabase.from('profiles').update({
+            location_state: discoveryData.state ? discoveryData.state.toLowerCase().replace(/\s+/g, '_') : null,
+            location_lga: discoveryData.lga || null,
+            trade_category: tradeCategory,
+            trade_other_description: tradeCategory === 'other' ? discoveryData.otherCategory : null,
+          }).eq('id', profile.id);
+
+          // 2. Create the Need
           await supabase.from('needs').insert({
             profile_id: profile.id,
             item_name: discoveryData.itemName,

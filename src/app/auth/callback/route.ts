@@ -120,12 +120,46 @@ export async function GET(request: NextRequest) {
           )
 
           // Create a basic profile for the user so they're set up
-          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Artisan'
+          let locationState = undefined;
+          let locationLga = undefined;
+          let tradeCategory = undefined;
+
+          const discoveryCookie = request.cookies.get('discovery_data')?.value;
+          let discoveryData: any = null;
+
+          if (discoveryCookie) {
+            try {
+              discoveryData = JSON.parse(decodeURIComponent(discoveryCookie));
+              if (discoveryData.state) locationState = discoveryData.state.toLowerCase().replace(/\s+/g, '_');
+              if (discoveryData.lga) locationLga = discoveryData.lga;
+              
+              // Map trade category to expected enum
+              if (discoveryData.category) {
+                const cat = discoveryData.category.toLowerCase();
+                if (cat.includes('tailor')) tradeCategory = 'tailor';
+                else if (cat.includes('carpenter')) tradeCategory = 'carpenter';
+                else if (cat.includes('welder')) tradeCategory = 'welder';
+                else if (cat.includes('cobbler') || cat.includes('shoemaker')) tradeCategory = 'cobbler_shoemaker';
+                else if (cat.includes('baker') || cat.includes('food')) tradeCategory = 'baker_food';
+                else if (cat.includes('mechanic')) tradeCategory = 'mechanic';
+                else if (cat.includes('electrician')) tradeCategory = 'electrician';
+                else tradeCategory = 'other';
+              }
+            } catch (err) {
+              console.error("Failed to parse discovery data for profile creation", err);
+            }
+          }
+
+          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Artisan';
           const { data: newProfile, error: profileCreateError } = await supabaseAdmin
             .from('profiles')
             .upsert({
               user_id: user.id,
               full_name: fullName,
+              location_state: locationState,
+              location_lga: locationLga,
+              trade_category: tradeCategory,
+              trade_other_description: tradeCategory === 'other' ? discoveryData?.otherCategory : null,
             }, { onConflict: 'user_id' })
             .select()
             .single()

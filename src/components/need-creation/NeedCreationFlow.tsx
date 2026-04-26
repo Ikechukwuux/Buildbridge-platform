@@ -856,6 +856,18 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
       if (!finalProfileId) {
         throw new Error("Profile ID is missing")
       }
+
+      // Always ensure the profile is updated with the latest trade and location from the form
+      const tradeCategoryId = getTradeCategoryId(formData.tradeCategory)
+      await supabase
+        .from('profiles')
+        .update({
+          trade_category: tradeCategoryId as any,
+          trade_other_description: formData.tradeCategory === "Other" ? formData.customTrade : null,
+          location_state: formData.state.toLowerCase().replace(/\s+/g, '_') as any,
+          location_lga: formData.lga,
+        })
+        .eq('id', finalProfileId)
       
       // Use uploaded photo URL or default placeholder
       const photoUrl = formData.photoUrl || "/images/placeholder-need.jpg"

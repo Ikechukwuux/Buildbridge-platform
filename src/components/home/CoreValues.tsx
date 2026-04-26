@@ -4,7 +4,7 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { ShieldCheck, Zap, HeartHandshake, Eye, Users, Lock } from "lucide-react"
 
-const values = [
+const values: any[] = [
   {
     icon: ShieldCheck,
     title: "Verified Trades",
@@ -30,10 +30,8 @@ const values = [
     icon: Eye,
     title: "Total Transparency",
     desc: "Get real-time updates and proof-of-use photos for every kobo funded.",
-    color: "bg-[#7C3AED]/15", // Soft Purple
-    iconColor: "text-white",
-    border: "border-primary/20",
-    darkText: true
+    color: "bg-primary",
+    iconColor: "text-white"
   },
   {
     icon: Users,

@@ -58,8 +58,8 @@ export default async function middleware(request: NextRequest) {
 
   const isHome = pathname === "/";
 
-  // CASE 1: Authenticated user hitting /, /login, or /signup
-  if (user && (isAuthOnly || isHome)) {
+  // CASE 1: Authenticated user hitting /login or /signup
+  if (user && isAuthOnly) {
     const dashboardUrl = request.nextUrl.clone();
     dashboardUrl.pathname = "/dashboard";
     return NextResponse.redirect(dashboardUrl);

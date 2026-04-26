@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { ChevronLeft, ArrowLeft, ShieldCheck, Zap, Star } from "lucide-react"
+import { ChevronLeft, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { PledgeFlow } from "@/components/pledge/PledgeFlow"
 
@@ -63,23 +63,6 @@ export async function generateMetadata({ params }: PaymentPageProps): Promise<Me
   }
 }
 
-const TRUST_PILLARS = [
-  {
-    icon: ShieldCheck,
-    label: "Secure Escrow",
-    desc: "Funds are held securely and only released when the tradesperson provides proof of purchase.",
-  },
-  {
-    icon: Zap,
-    label: "Zero Fees",
-    desc: "We charge 0% fees to tradespeople. 100% of your pledge goes to them.",
-  },
-  {
-    icon: Star,
-    label: "Verified Impact",
-    desc: "Every funded need requires proof of use, so you see exactly what your backing made possible.",
-  },
-]
 
 export default async function PaymentPage({ params }: PaymentPageProps) {
   const need = MOCK_NEEDS[params.needId] || MOCK_NEEDS["demo-need-001"]
@@ -145,21 +128,6 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
           </div>
         </div>
 
-        {/* Trust pillars */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {TRUST_PILLARS.map(({ icon: Icon, label, desc }) => (
-            <div
-              key={label}
-              className="flex flex-col gap-3 p-7 bg-surface rounded-[2rem] border border-outline-variant/30 shadow-sm hover:shadow-md transition-all group"
-            >
-              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Icon className="h-5 w-5" />
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-primary">{label}</p>
-              <p className="text-sm font-medium text-on-surface-variant leading-relaxed">{desc}</p>
-            </div>
-          ))}
-        </div>
 
       </div>
     </main>

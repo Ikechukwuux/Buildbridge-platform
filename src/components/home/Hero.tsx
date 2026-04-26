@@ -83,13 +83,13 @@ export function Hero() {
            >
              <Link 
                href="/browse" 
-               className="w-full sm:w-auto h-16 px-10 rounded-full font-black text-lg bg-primary text-white shadow-lg shadow-primary/10 transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+               className="w-full sm:w-60 h-16 rounded-full font-black text-lg bg-primary text-white shadow-lg shadow-primary/10 transition-all flex items-center justify-center hover:scale-[1.02] active:scale-[0.98]"
              >
                Start Supporting
              </Link>
              <Link 
                 href="/signup"
-                className="w-full sm:w-auto h-16 px-10 rounded-full border-2 border-primary text-primary bg-transparent font-black text-lg transition-all flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/5 hover:bg-primary/5"
+                className="w-full sm:w-60 h-16 rounded-full border-2 border-primary text-primary bg-transparent font-black text-lg transition-all flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/5 hover:bg-primary/5"
              >
                Join as Artisan
              </Link>

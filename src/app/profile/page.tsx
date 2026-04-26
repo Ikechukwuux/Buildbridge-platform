@@ -153,7 +153,7 @@ function EditProfileModal({
               )}
 
               <Button type="submit" isLoading={isLoading} className="h-14 rounded-2xl font-black text-lg mt-2">
-                Save Changes
+                Save
               </Button>
             </form>
           </motion.div>
@@ -464,7 +464,7 @@ export default function ProfilePage() {
   const handleNinSubmit = async (nin: string) => {
     // Simulate network latency
     await new Promise(r => setTimeout(r, 1000));
-    
+
     // In a real flow, this would call an API like Dojah/Prembly to verify NIN.
     // Since columns don't exist in DB schema yet, we just update local state to reflect UI changes
     setProfile((prev: any) => ({
@@ -476,7 +476,7 @@ export default function ProfilePage() {
   const handleBankDetailsSubmit = async (data: { bvn: string; accountNumber: string; accountName: string; bankName: string }) => {
     // Simulate network latency
     await new Promise(r => setTimeout(r, 1000));
-    
+
     setProfile((prev: any) => ({
       ...prev,
       bvn: data.bvn,
@@ -532,14 +532,14 @@ export default function ProfilePage() {
         Back
       </motion.button>
       {/* Hero Profile Header */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative h-64 sm:h-80 rounded-[3rem] overflow-hidden bg-primary shadow-2xl"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" />
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-        
+
         <div className="absolute -bottom-1 left-0 right-0 p-8 flex flex-col sm:flex-row items-end gap-6 text-white">
           <div className="relative group">
             <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[2.5rem] bg-white text-primary flex items-center justify-center text-5xl font-black border-8 border-primary shadow-2xl">
@@ -549,7 +549,7 @@ export default function ProfilePage() {
               <Camera className="w-5 h-5" />
             </button>
           </div>
-          
+
           <div className="flex-grow pb-4">
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight">{profile?.full_name || "Artisan"}</h1>
             <p className="opacity-80 font-bold uppercase tracking-widest text-xs mt-1 flex items-center gap-2">
@@ -569,12 +569,12 @@ export default function ProfilePage() {
       </motion.div>
 
       <div className="flex flex-col gap-8">
-        
+
         {/* TOP ROW: Contact Info + About Me */}
         <div className="flex flex-col lg:flex-row items-stretch gap-8">
-          
+
           {/* Contact Info */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
@@ -582,7 +582,7 @@ export default function ProfilePage() {
           >
             <Card className="p-8 rounded-[2rem] border-outline-variant/30 space-y-6 w-full flex flex-col h-full">
               <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant/60">Contact Information</h3>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center gap-4 group">
                   <div className="p-3 rounded-2xl bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white transition-all">
@@ -620,266 +620,266 @@ export default function ProfilePage() {
           </motion.div>
 
           {/* About Me */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
             className="w-full lg:w-2/3 flex"
           >
             <Card className="p-10 rounded-[2.5rem] border-outline-variant/30 bg-surface relative overflow-hidden w-full flex flex-col h-full">
-               <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-                  <User className="w-64 h-64" />
-               </div>
-               
-               <div className="relative z-10 space-y-6 flex flex-col h-full">
-                  <h2 className="text-3xl font-black text-on-surface">About Me</h2>
-                  <p className="text-lg text-on-surface-variant leading-relaxed font-medium flex-grow">
-                    {profile?.bio || `Professional ${tradeLabel} dedicated to high-quality work and community impact. Let's build something amazing together.`}
-                  </p>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 mt-auto">
-                    {[
-                      { label: "Verified", value: profile?.badge_level ? "Level " + (profile.badge_level.match(/\d/)?.[0] || "0") : "Level 0" },
-                      { label: "Impact", value: `${impactStories.length} ${impactStories.length === 1 ? "Story" : "Stories"}` },
-                      { label: "Gallery", value: `${galleryImages.length} Photos` },
-                    ].map((stat, i) => (
-                      <div key={i} className="p-4 rounded-2xl bg-surface-variant/20 border border-outline-variant/30">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{stat.label}</p>
-                        <p className="text-lg font-black text-on-surface">{stat.value}</p>
-                      </div>
-                    ))}
-                  </div>
-               </div>
+              <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+                <User className="w-64 h-64" />
+              </div>
+
+              <div className="relative z-10 space-y-6 flex flex-col h-full">
+                <h2 className="text-3xl font-black text-on-surface">About Me</h2>
+                <p className="text-lg text-on-surface-variant leading-relaxed font-medium flex-grow">
+                  {profile?.bio || `Professional ${tradeLabel} dedicated to high-quality work and community impact. Let's build something amazing together.`}
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 mt-auto">
+                  {[
+                    { label: "Verified", value: profile?.badge_level ? "Level " + (profile.badge_level.match(/\d/)?.[0] || "0") : "Level 0" },
+                    { label: "Impact", value: `${impactStories.length} ${impactStories.length === 1 ? "Story" : "Stories"}` },
+                    { label: "Gallery", value: `${galleryImages.length} Photos` },
+                  ].map((stat, i) => (
+                    <div key={i} className="p-4 rounded-2xl bg-surface-variant/20 border border-outline-variant/30">
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{stat.label}</p>
+                      <p className="text-lg font-black text-on-surface">{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </Card>
           </motion.div>
         </div>
 
         {/* BOTTOM ROW: Compliance & Payment + Gallery & Impact Wall */}
         <div className="flex flex-col lg:flex-row items-stretch gap-8">
-          
+
           {/* Left Column (Compliance + Payment) */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className="w-full lg:w-1/3 flex flex-col gap-8 h-fit"
           >
 
-          {/* Compliance Section */}
-          <Card className="p-8 rounded-[2rem] border-outline-variant/30 space-y-6">
-            <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant/60">Compliance</h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between group">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-yellow-500/5 text-yellow-600 group-hover:bg-yellow-500 group-hover:text-white transition-all">
-                    <Shield className="w-5 h-5" />
+            {/* Compliance Section */}
+            <Card className="p-8 rounded-[2rem] border-outline-variant/30 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant/60">Compliance</h3>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-yellow-500/5 text-yellow-600 group-hover:bg-yellow-500 group-hover:text-white transition-all">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">National ID (NIN)</p>
+                      <p className="text-sm font-bold text-on-surface">
+                        {profile?.nin_verified ? "Verified" : "Not verified"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">National ID (NIN)</p>
-                    <p className="text-sm font-bold text-on-surface">
-                      {profile?.nin_verified ? "Verified" : "Not verified"}
+                  {profile?.nin_verified === true ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
+                    </div>
+                  ) : profile?.nin_verified === 'pending' ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Pending</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowNinModal(true)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-yellow-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-yellow-600 hover:scale-105 transition-all shadow-lg shadow-yellow-500/20"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Verify
+                    </button>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            {/* Payment Information Section */}
+            <Card className="p-8 rounded-[2rem] border-outline-variant/30 space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant/60">Payment Information</h3>
+                {(!profile?.bvn || !profile?.account_number) && (
+                  <button
+                    onClick={() => setShowBankModal(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-variant/50 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all whitespace-nowrap shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5 shrink-0" />
+                    Add Details
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 rounded-2xl bg-green-500/5 text-green-600 group-hover:bg-green-500 group-hover:text-white transition-all">
+                    <Hash className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">BVN</p>
+                    <p className="text-sm font-bold text-on-surface truncate">
+                      {profile?.bvn ? "••••••" + profile.bvn.slice(-4) : "Not provided"}
                     </p>
                   </div>
                 </div>
-                {profile?.nin_verified === true ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
+
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 rounded-2xl bg-blue-500/5 text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                    <CreditCard className="w-5 h-5" />
                   </div>
-                ) : profile?.nin_verified === 'pending' ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Pending</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Account Number</p>
+                    <p className="text-sm font-bold text-on-surface truncate">
+                      {profile?.account_number || "Not provided"}
+                    </p>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => setShowNinModal(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-yellow-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-yellow-600 hover:scale-105 transition-all shadow-lg shadow-yellow-500/20"
-                  >
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    Verify
-                  </button>
-                )}
-              </div>
-            </div>
-          </Card>
+                </div>
 
-          {/* Payment Information Section */}
-          <Card className="p-8 rounded-[2rem] border-outline-variant/30 space-y-6">
-            <div className="flex items-center justify-between gap-4">
-              <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant/60">Payment Information</h3>
-              {(!profile?.bvn || !profile?.account_number) && (
-                <button
-                  onClick={() => setShowBankModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-variant/50 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all whitespace-nowrap shrink-0"
-                >
-                  <Plus className="w-3.5 h-3.5 shrink-0" />
-                  Add Details
-                </button>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 group">
-                <div className="p-3 rounded-2xl bg-green-500/5 text-green-600 group-hover:bg-green-500 group-hover:text-white transition-all">
-                  <Hash className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">BVN</p>
-                  <p className="text-sm font-bold text-on-surface truncate">
-                    {profile?.bvn ? "••••••" + profile.bvn.slice(-4) : "Not provided"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 group">
-                <div className="p-3 rounded-2xl bg-blue-500/5 text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Account Number</p>
-                  <p className="text-sm font-bold text-on-surface truncate">
-                    {profile?.account_number || "Not provided"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 group">
-                <div className="p-3 rounded-2xl bg-purple-500/5 text-purple-600 group-hover:bg-purple-500 group-hover:text-white transition-all">
-                  <User className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Account Name</p>
-                  <p className="text-sm font-bold text-on-surface truncate">
-                    {profile?.account_name || "Not provided"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 group">
-                <div className="p-3 rounded-2xl bg-orange-500/5 text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-all">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Bank Name</p>
-                  <p className="text-sm font-bold text-on-surface truncate">
-                    {profile?.bank_name || "Not provided"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Right Column (Gallery + Impact Wall) */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="w-full lg:w-2/3 flex h-full"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-            {/* My Gallery - Interactive */}
-            <Card className="p-8 rounded-[2rem] border-outline-variant/30 group hover:border-primary/30 transition-all flex flex-col h-full">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-black text-on-surface">My Gallery</h3>
-                <button
-                  onClick={() => galleryInputRef.current?.click()}
-                  className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              <p className="text-sm text-on-surface-variant font-medium mb-4">Showcase your best work to the community.</p>
-              
-              <input
-                type="file"
-                ref={galleryInputRef}
-                onChange={handleGalleryUpload}
-                accept="image/*"
-                multiple
-                className="hidden"
-              />
-
-              <div className="flex-grow flex flex-col justify-end">
-                {galleryImages.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    {galleryImages.map((img, index) => (
-                      <div key={index} className="relative group/img rounded-2xl overflow-hidden aspect-square">
-                        <img src={img} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                          <button
-                            onClick={() => removeGalleryImage(index)}
-                            className="p-2 bg-error text-white rounded-full hover:scale-110 transition-transform"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="aspect-square rounded-2xl border-2 border-dashed border-outline-variant/50 flex flex-col items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary transition-all cursor-pointer"
-                    >
-                      <Plus className="w-6 h-6 mb-1" />
-                      <span className="text-xs font-bold">Add More</span>
-                    </button>
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 rounded-2xl bg-purple-500/5 text-purple-600 group-hover:bg-purple-500 group-hover:text-white transition-all">
+                    <User className="w-5 h-5" />
                   </div>
-                ) : (
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Account Name</p>
+                    <p className="text-sm font-bold text-on-surface truncate">
+                      {profile?.account_name || "Not provided"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 rounded-2xl bg-orange-500/5 text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-all">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Bank Name</p>
+                    <p className="text-sm font-bold text-on-surface truncate">
+                      {profile?.bank_name || "Not provided"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Right Column (Gallery + Impact Wall) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="w-full lg:w-2/3 flex h-full"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+              {/* My Gallery - Interactive */}
+              <Card className="p-8 rounded-[2rem] border-outline-variant/30 group hover:border-primary/30 transition-all flex flex-col h-full">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-black text-on-surface">My Gallery</h3>
                   <button
                     onClick={() => galleryInputRef.current?.click()}
-                    className="w-full h-40 rounded-2xl bg-surface-variant/10 border-2 border-dashed border-outline-variant/50 flex flex-col items-center justify-center text-on-surface-variant font-bold hover:border-primary hover:text-primary transition-all cursor-pointer group mt-4"
+                    className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all"
                   >
-                    <ImageIcon className="w-8 h-8 mb-2 opacity-40 group-hover:opacity-100 transition-opacity" />
-                    <span className="text-sm">+ Add Photos</span>
-                    <span className="text-[10px] opacity-50 mt-1">Showcase your craft</span>
+                    <Plus className="w-4 h-4" />
                   </button>
-                )}
-              </div>
-            </Card>
+                </div>
+                <p className="text-sm text-on-surface-variant font-medium mb-4">Showcase your best work to the community.</p>
 
-            {/* Impact Wall - Interactive */}
-            <Card className="p-8 rounded-[2rem] border-outline-variant/30 group hover:border-secondary/30 transition-all flex flex-col h-full">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-black text-on-surface">Impact Wall</h3>
-                <a
-                  href="/impact"
-                  className="p-2 rounded-full bg-secondary/10 text-secondary hover:bg-secondary hover:text-white transition-all"
-                >
-                  <Sparkles className="w-4 h-4" />
-                </a>
-              </div>
-              <p className="text-sm text-on-surface-variant font-medium mb-4">Stories of lives changed through your work.</p>
-              
-              <div className="flex-grow flex flex-col justify-end">
-                {impactStories.length > 0 ? (
-                  <div className="flex flex-col gap-3 mt-4">
-                    {impactStories.slice(0, 3).map((story, index) => (
-                      <div key={index} className="p-4 rounded-2xl bg-surface-variant/10 border border-outline-variant/30 hover:border-secondary/30 transition-all">
-                        <p className="text-sm font-bold text-on-surface line-clamp-2">{story.title || story.description}</p>
-                        <p className="text-[10px] font-medium text-on-surface-variant/50 mt-1">
-                          {new Date(story.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ))}
-                    {impactStories.length > 3 && (
-                      <a href="/impact" className="text-xs font-black text-secondary hover:underline text-center">
-                        View all {impactStories.length} stories →
-                      </a>
-                    )}
-                  </div>
-                ) : (
-                  <div className="h-40 rounded-2xl bg-surface-variant/10 border-2 border-dashed border-outline-variant/50 flex flex-col items-center justify-center text-on-surface-variant font-bold mt-4">
-                    <Sparkles className="w-8 h-8 mb-2 opacity-40" />
-                    <span className="text-sm">No stories yet</span>
-                    <span className="text-[10px] opacity-50 mt-1">Complete a funded need to share your story</span>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-        </motion.div>
+                <input
+                  type="file"
+                  ref={galleryInputRef}
+                  onChange={handleGalleryUpload}
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                />
+
+                <div className="flex-grow flex flex-col justify-end">
+                  {galleryImages.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      {galleryImages.map((img, index) => (
+                        <div key={index} className="relative group/img rounded-2xl overflow-hidden aspect-square">
+                          <img src={img} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                            <button
+                              onClick={() => removeGalleryImage(index)}
+                              className="p-2 bg-error text-white rounded-full hover:scale-110 transition-transform"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="aspect-square rounded-2xl border-2 border-dashed border-outline-variant/50 flex flex-col items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary transition-all cursor-pointer"
+                      >
+                        <Plus className="w-6 h-6 mb-1" />
+                        <span className="text-xs font-bold">Add More</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="w-full h-40 rounded-2xl bg-surface-variant/10 border-2 border-dashed border-outline-variant/50 flex flex-col items-center justify-center text-on-surface-variant font-bold hover:border-primary hover:text-primary transition-all cursor-pointer group mt-4"
+                    >
+                      <ImageIcon className="w-8 h-8 mb-2 opacity-40 group-hover:opacity-100 transition-opacity" />
+                      <span className="text-sm">+ Add Photos</span>
+                      <span className="text-[10px] opacity-50 mt-1">Showcase your craft</span>
+                    </button>
+                  )}
+                </div>
+              </Card>
+
+              {/* Impact Wall - Interactive */}
+              <Card className="p-8 rounded-[2rem] border-outline-variant/30 group hover:border-secondary/30 transition-all flex flex-col h-full">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-black text-on-surface">Impact Wall</h3>
+                  <a
+                    href="/impact"
+                    className="p-2 rounded-full bg-secondary/10 text-secondary hover:bg-secondary hover:text-white transition-all"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </a>
+                </div>
+                <p className="text-sm text-on-surface-variant font-medium mb-4">Stories of lives changed through your work.</p>
+
+                <div className="flex-grow flex flex-col justify-end">
+                  {impactStories.length > 0 ? (
+                    <div className="flex flex-col gap-3 mt-4">
+                      {impactStories.slice(0, 3).map((story, index) => (
+                        <div key={index} className="p-4 rounded-2xl bg-surface-variant/10 border border-outline-variant/30 hover:border-secondary/30 transition-all">
+                          <p className="text-sm font-bold text-on-surface line-clamp-2">{story.title || story.description}</p>
+                          <p className="text-[10px] font-medium text-on-surface-variant/50 mt-1">
+                            {new Date(story.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                      {impactStories.length > 3 && (
+                        <a href="/impact" className="text-xs font-black text-secondary hover:underline text-center">
+                          View all {impactStories.length} stories →
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-40 rounded-2xl bg-surface-variant/10 border-2 border-dashed border-outline-variant/50 flex flex-col items-center justify-center text-on-surface-variant font-bold mt-4">
+                      <Sparkles className="w-8 h-8 mb-2 opacity-40" />
+                      <span className="text-sm">No stories yet</span>
+                      <span className="text-[10px] opacity-50 mt-1">Complete a funded need to share your story</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          </motion.div>
         </div>
       </div>
 

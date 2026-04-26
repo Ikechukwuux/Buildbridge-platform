@@ -8,61 +8,257 @@ import {
   Calendar, 
   ShieldCheck, 
   Info,
-  ChevronLeft
+  ChevronLeft,
+  AlertTriangle,
+  Heart
 } from "lucide-react"
 import Link from "next/link"
 import { PledgeFlow } from "@/components/pledge/PledgeFlow"
 import { ShareButton } from "@/components/ui/ShareButton"
 
 interface NeedPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-/**
- * DEMO MODE: Returns rich mock data for any need ID.
- * No Supabase queries are made.
- *
- * To re-enable Supabase:
- *   1. Import createClient from "@/lib/supabase/server"
- *   2. Restore the supabase.from("needs").select(...) query
- *   3. Replace mock data with real data
- */
-
-// Mock need data for demo
-const MOCK_NEED = {
-  id: "demo-need-001",
-  item_name: "Industrial Overlock Machine",
-  item_cost: 35000000,
-  funded_amount: 21500000,
-  pledge_count: 14,
-  status: "active",
-  photo_url: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&q=80&w=800",
-  story: "I've been a tailor in Surulere for 8 years, specializing in school uniforms and traditional attire. My current machine breaks down every other week, costing me clients and income.\n\nWith an industrial overlock machine, I can take on bulk uniform contracts for 3 local schools and hire two apprentices from my community. This is not just a machine — it's the foundation of a workshop.",
-  impact_statement: "This machine will allow me to hire 2 apprentices and fulfill bulk contracts for 3 local schools, growing my output by 300%.",
-  deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-  created_at: new Date().toISOString(),
-  profile: {
-    name: "Amina S.",
-    location_lga: "Surulere",
-    location_state: "Lagos",
-    trade_category: "tailor",
-    badge_level: "level_3_established",
-    vouch_count: 8,
-    photo_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=200",
+const DEMO_NEEDS: Record<string, any> = {
+  "demo-need-001": {
+    id: "demo-need-001",
+    item_name: "Industrial Overlock Machine",
+    item_cost: 35000000,
+    funded_amount: 21500000,
+    pledge_count: 14,
+    status: "active",
+    photo_url: "/images/hero/tailor.png",
+    story: "I've been a tailor in Surulere for 8 years, specializing in school uniforms and traditional attire. My current machine breaks down every other week, costing me clients and income. With an industrial overlock machine, I can take on bulk uniform contracts for 3 local schools and hire two apprentices from my community. This is not just a machine — it's the foundation of a workshop.",
+    impact_statement: "This machine will allow me to hire 2 apprentices and fulfill bulk contracts for 3 local schools, growing my output by 300%.",
+    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date().toISOString(),
+    profile: {
+      name: "Amina S.",
+      location_lga: "Surulere",
+      location_state: "Lagos",
+      trade_category: "tailor",
+      badge_level: "level_3_established",
+      vouch_count: 8,
+      photo_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+  "demo-need-002": {
+    id: "demo-need-002",
+    item_name: "Precision Wood Planer",
+    item_cost: 52000000,
+    funded_amount: 39000000,
+    pledge_count: 22,
+    status: "active",
+    photo_url: "/images/hero/carpenter.png",
+    story: "I need a precision wood planer to finish furniture sets in half the time with zero waste. This will let me take on larger contracts and train two apprentices in fine woodworking.",
+    impact_statement: "This planer will double my production capacity and allow me to create more furniture pieces per month.",
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date().toISOString(),
+    profile: {
+      name: "Chidi O.",
+      location_lga: "Enugu North",
+      location_state: "Enugu",
+      trade_category: "carpenter",
+      badge_level: "level_4_platform_verified",
+      vouch_count: 15,
+      photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+  "demo-need-003": {
+    id: "demo-need-003",
+    item_name: "Commercial Baking Oven",
+    item_cost: 28000000,
+    funded_amount: 8400000,
+    pledge_count: 7,
+    status: "active",
+    photo_url: "/images/hero/baker.png",
+    story: "I bake bread for 3 communities but my current oven is failing. A new commercial baking oven will allow me to hire 2 more hands and serve twice as many customers daily.",
+    impact_statement: "This oven will let me serve more communities and create jobs for 2 additional staff members.",
+    deadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date().toISOString(),
+    profile: {
+      name: "Fatima B.",
+      location_lga: "Kano Municipal",
+      location_state: "Kano",
+      trade_category: "baker",
+      badge_level: "level_2_trusted_tradesperson",
+      vouch_count: 5,
+      photo_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200",
+    },
+  },
+  "demo-browse-001": {
+    id: "demo-browse-001",
+    item_name: "Industrial Overlock Machine",
+    item_cost: 35000000,
+    funded_amount: 21500000,
+    pledge_count: 14,
+    status: "active",
+    photo_url: "/images/profiles/amina_profile_1776774856536.png",
+    story: "I need an overlock machine to take on more uniform contracts for local schools.",
+    impact_statement: "This machine will allow me to hire 2 apprentices and fulfill bulk contracts for 3 local schools, growing my output by 300%.",
+    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Amina S.",
+      location_lga: "Surulere",
+      location_state: "Lagos",
+      trade_category: "tailor",
+      badge_level: "level_3_established",
+      vouch_count: 8,
+      photo_url: "/images/profiles/amina_profile_1776774856536.png",
+    },
+  },
+  "demo-browse-002": {
+    id: "demo-browse-002",
+    item_name: "Precision Wood Planer",
+    item_cost: 52000000,
+    funded_amount: 39000000,
+    pledge_count: 22,
+    status: "active",
+    photo_url: "/images/profiles/chidi_profile_1776774911497.png",
+    story: "A planer to finish furniture sets in half the time.",
+    impact_statement: "This planer will double my production capacity and allow me to create more furniture pieces per month.",
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Chidi O.",
+      location_lga: "Enugu North",
+      location_state: "Enugu",
+      trade_category: "carpenter",
+      badge_level: "level_4_platform_verified",
+      vouch_count: 15,
+      photo_url: "/images/profiles/chidi_profile_1776774911497.png",
+    },
+  },
+  "demo-browse-003": {
+    id: "demo-browse-003",
+    item_name: "Commercial Baking Oven",
+    item_cost: 28000000,
+    funded_amount: 8400000,
+    pledge_count: 7,
+    status: "active",
+    photo_url: "/images/profiles/fatima_profile_1776775065422.png",
+    story: "A new oven to serve 3 communities and hire 2 more hands.",
+    impact_statement: "This oven will let me serve more communities and create jobs for 2 additional staff members.",
+    deadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Fatima B.",
+      location_lga: "Kano Municipal",
+      location_state: "Kano",
+      trade_category: "baker",
+      badge_level: "level_2_trusted_tradesperson",
+      vouch_count: 5,
+      photo_url: "/images/profiles/fatima_profile_1776775065422.png",
+    },
+  },
+  "demo-browse-004": {
+    id: "demo-browse-004",
+    item_name: "TIG Welding Machine",
+    item_cost: 45000000,
+    funded_amount: 31500000,
+    pledge_count: 19,
+    status: "active",
+    photo_url: "/images/profiles/ibrahim_profile_1776774679869.png",
+    story: "Upgrade from arc welding to TIG for precision metalwork contracts.",
+    impact_statement: "A TIG welder will let me take on high-precision metalwork contracts and train more apprentices.",
+    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Ibrahim K.",
+      location_lga: "Wuse",
+      location_state: "Abuja",
+      trade_category: "welder",
+      badge_level: "level_3_established",
+      vouch_count: 11,
+      photo_url: "/images/profiles/ibrahim_profile_1776774679869.png",
+    },
+  },
+  "demo-browse-005": {
+    id: "demo-browse-005",
+    item_name: "Professional Hair Dryer Station",
+    item_cost: 18000000,
+    funded_amount: 14400000,
+    pledge_count: 12,
+    status: "active",
+    photo_url: "/images/profiles/grace_profile_1776775079641.png",
+    story: "A professional dryer station to reduce wait times and serve more clients daily.",
+    impact_statement: "This station will reduce client wait times by 60% and allow me to serve more customers each day.",
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Grace N.",
+      location_lga: "Ikeja",
+      location_state: "Lagos",
+      trade_category: "hair_stylist",
+      badge_level: "level_2_trusted_tradesperson",
+      vouch_count: 6,
+      photo_url: "/images/profiles/grace_profile_1776775079641.png",
+    },
+  },
+  "demo-browse-006": {
+    id: "demo-browse-006",
+    item_name: "Industrial Pipe Threading Set",
+    item_cost: 22000000,
+    funded_amount: 5500000,
+    pledge_count: 4,
+    status: "active",
+    photo_url: "/images/profiles/emeka_profile_1776775102118.png",
+    story: "Threading set for taking on commercial plumbing contracts across the state.",
+    impact_statement: "This set will let me take on larger commercial plumbing contracts and grow my business.",
+    deadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    profile: {
+      name: "Emeka A.",
+      location_lga: "Port Harcourt",
+      location_state: "Rivers",
+      trade_category: "plumber",
+      badge_level: "level_1_community_member",
+      vouch_count: 3,
+      photo_url: "/images/profiles/emeka_profile_1776775102118.png",
+    },
   },
 }
 
 export async function generateMetadata({ params }: NeedPageProps): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  
+  try {
+    const { data: need } = await supabase
+      .from('needs')
+      .select('item_name, story')
+      .eq('id', id)
+      .single()
+    
+    if (need) {
+      return {
+        title: `${need.item_name} | BuildBridge`,
+        description: need.story?.slice(0, 160) || "Support a tradesperson's equipment need on BuildBridge.",
+      }
+    }
+  } catch {}
+
+  const demo = DEMO_NEEDS[id]
+  if (demo) {
+    return {
+      title: `${demo.item_name} | BuildBridge`,
+      description: demo.story?.slice(0, 160) || "Support a tradesperson's equipment need on BuildBridge.",
+    }
+  }
+  
   return {
-    title: `${MOCK_NEED.item_name} | BuildBridge`,
-    description: MOCK_NEED.story.slice(0, 160),
+    title: "Need Details | BuildBridge",
+    description: "Support a tradesperson's equipment need on BuildBridge.",
   }
 }
 
 export default async function NeedDetailPage({ params }: NeedPageProps) {
+  const { id } = await params
   const supabase = await createClient()
   
-  let need = MOCK_NEED
+  let need: any = null
   
   try {
     const { data: dbNeed, error } = await supabase
@@ -71,11 +267,10 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
         *,
         profile:profiles(*)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
       
     if (dbNeed && !error) {
-      // Map the DB structure to match the expected format for the UI
       need = {
         ...dbNeed,
         profile: {
@@ -85,12 +280,35 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
           trade_category: dbNeed.profile?.trade_category || "trade",
           badge_level: dbNeed.profile?.badge_level || "level_1_community_member",
           vouch_count: dbNeed.profile?.vouch_count || 0,
-          photo_url: dbNeed.profile?.photo_url || "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=200"
+          photo_url: dbNeed.profile?.photo_url || "",
         }
-      } as any;
+      }
     }
   } catch (err) {
     console.error("Failed to fetch need details:", err)
+  }
+
+  if (!need) {
+    need = DEMO_NEEDS[id]
+  }
+
+  if (!need) {
+    return (
+      <main className="min-h-screen bg-background pt-24 pb-20 flex items-center justify-center">
+        <div className="text-center flex flex-col items-center gap-6 max-w-md px-4">
+          <AlertTriangle className="h-16 w-16 text-on-surface-variant/30" />
+          <h1 className="text-display-small font-black text-on-surface">Need Not Found</h1>
+          <p className="text-body-large text-on-surface-variant">
+            This need may have been removed or is not yet published. Browse other active needs to support.
+          </p>
+          <Link href="/browse">
+            <Button className="rounded-full px-8 font-black text-sm">
+              Browse Needs
+            </Button>
+          </Link>
+        </div>
+      </main>
+    )
   }
 
   const formattedGoal = new Intl.NumberFormat("en-NG", {
@@ -105,9 +323,8 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
     maximumFractionDigits: 0,
   }).format(need.funded_amount / 100)
 
-  const percentage = (need.funded_amount / need.item_cost) * 100
+  const percentage = need.item_cost > 0 ? (need.funded_amount / need.item_cost) * 100 : 0
   
-  // Calculate days remaining
   const deadlineDate = new Date(need.deadline)
   const today = new Date()
   const diffDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
@@ -220,52 +437,43 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
               <div className="p-6 rounded-3xl bg-surface-variant/30 border border-outline-variant flex flex-col gap-4">
                  <p className="text-label-small uppercase font-bold text-on-surface-variant tracking-widest">About the Tradesperson</p>
                  <div className="flex items-center gap-4">
-                    <img 
-                       src={need.profile.photo_url} 
-                       alt={need.profile.name} 
-                       className="h-14 w-14 rounded-full border-2 border-surface shadow-sm object-cover"
-                       loading="lazy"
-                    />
+                    {need.profile.photo_url ? (
+                      <img 
+                         src={need.profile.photo_url} 
+                         alt={need.profile.name} 
+                         className="h-14 w-14 rounded-full border-2 border-surface shadow-sm object-cover"
+                         loading="lazy"
+                      />
+                    ) : (
+                      <div className="h-14 w-14 rounded-full bg-primary/10 border-2 border-surface shadow-sm flex items-center justify-center">
+                        <span className="text-xl font-black text-primary">{(need.profile.name || "A").charAt(0).toUpperCase()}</span>
+                      </div>
+                    )}
                     <div className="flex flex-col">
                        <h3 className="text-title-medium font-black text-on-surface">{need.profile.name}</h3>
                        <div className="flex items-center gap-1 text-body-small text-on-surface-variant">
                           <MapPin className="h-3 w-3" />
-                          {need.profile.location_lga}, {need.profile.location_state.toUpperCase()}
+                          {need.profile.location_lga}, {typeof need.profile.location_state === 'string' ? need.profile.location_state.toUpperCase() : need.profile.location_state}
                        </div>
                     </div>
                  </div>
                  <Badge level={need.profile.badge_level === 'level_4_platform_verified' ? 4 : need.profile.badge_level === 'level_3_established' ? 3 : need.profile.badge_level === 'level_2_trusted_tradesperson' ? 2 : need.profile.badge_level === 'level_1_community_member' ? 1 : 0} />
               </div>
 
-              {/* Recent Backers */}
+              {/* Recent Support */}
               <div className="p-6 rounded-3xl bg-surface border border-outline-variant flex flex-col gap-4">
                  <p className="text-label-small uppercase font-bold text-on-surface-variant tracking-widest flex items-center justify-between">
-                    Recent Backers 
+                    Recent Support
                     <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-[10px]">{need.pledge_count}</span>
                  </p>
-                 <div className="flex flex-col gap-4 divide-y divide-outline-variant/30">
-                    {[
-                      { name: "Chinedu O.", time: "2 hours ago", amount: "₦20,000", comment: "Keep building! We need more tailors like you." },
-                      { name: "Anonymous", time: "5 hours ago", amount: "₦50,000", comment: "" },
-                      { name: "Sarah M.", time: "1 day ago", amount: "₦10,000", comment: "Happy to support." }
-                    ].map((backer, i) => (
-                      <div key={i} className="pt-4 first:pt-0 flex flex-col gap-1">
-                         <div className="flex justify-between items-baseline">
-                            <span className="font-bold text-sm text-on-surface">{backer.name}</span>
-                            <span className="text-xs font-black text-primary">{backer.amount}</span>
-                         </div>
-                         <div className="flex justify-between items-center text-xs text-on-surface-variant mt-1">
-                            <span>{backer.time}</span>
-                         </div>
-                         {backer.comment && (
-                            <p className="text-sm font-medium text-on-surface-variant/80 mt-2 bg-surface-variant/20 p-3 rounded-xl rounded-tl-none relative leading-snug">
-                               "{backer.comment}"
-                            </p>
-                         )}
-                      </div>
-                    ))}
+                 <div className="flex flex-col items-center gap-3 py-4">
+                    <Heart className="h-8 w-8 text-primary/30" />
+                    <p className="text-body-medium font-medium text-on-surface-variant text-center">
+                       {need.pledge_count > 0 
+                         ? `${need.pledge_count} supporter${need.pledge_count !== 1 ? 's' : ''} have backed this need. Be the next one!` 
+                         : "Be the first to support this need!"}
+                    </p>
                  </div>
-                 <Button variant="secondary" className="w-full mt-2 rounded-xl text-xs font-bold uppercase tracking-widest bg-surface-variant text-on-surface hover:text-primary">See All</Button>
               </div>
 
            </div>

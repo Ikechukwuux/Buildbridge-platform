@@ -19,7 +19,8 @@ import {
   Sparkles,
   CheckCircle2,
   Trash2,
-  PencilLine
+  PencilLine,
+  AlertTriangle
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -46,14 +47,33 @@ function DashboardContent() {
   const [isCreatingNeed, setIsCreatingNeed] = useState(false)
   const [needToDelete, setNeedToDelete] = useState<string | null>(null)
 
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
   const handleDeleteConfirm = async (id: string) => {
     try {
-      const { error } = await supabase.from('needs').delete().eq('id', id);
-      if (!error) {
-        setNeeds(prev => prev.filter(n => n.id !== id));
+      setDeleteError(null)
+      const { error, count } = await supabase
+        .from('needs')
+        .delete({ count: 'exact' })
+        .eq('id', id)
+        .eq('profile_id', profile?.id)
+
+      if (error) {
+        console.error("Error deleting need:", error)
+        setDeleteError("Failed to delete this need. Please try again.")
+        return
       }
+
+      if (count === 0) {
+        console.error("Delete returned 0 rows — likely blocked by RLS policy")
+        setDeleteError("Unable to delete — you may not have permission. Please contact support.")
+        return
+      }
+
+      setNeeds(prev => prev.filter(n => n.id !== id));
     } catch (error) {
       console.error("Error deleting need:", error);
+      setDeleteError("An unexpected error occurred. Please try again.")
     } finally {
       setNeedToDelete(null);
     }
@@ -397,6 +417,21 @@ function DashboardContent() {
           >
             <CheckCircle2 className="h-5 w-5 text-primary" />
             Vouch link copied to clipboard!
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deleteError && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-error text-white py-3 px-6 rounded-2xl shadow-2xl font-bold flex items-center gap-2 max-w-md"
+            onClick={() => setDeleteError(null)}
+          >
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            {deleteError}
           </motion.div>
         )}
       </AnimatePresence>

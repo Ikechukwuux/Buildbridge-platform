@@ -8,10 +8,9 @@ import { ProgressBar } from "./ProgressBar"
 import { Skeleton } from "./Skeleton"
 import { Badge } from "./Badge"
 import { Button } from "./Button"
-import { 
-  MapPin, 
-  Calendar, 
-  Heart, 
+import {
+  Calendar,
+  Heart,
   ShieldCheck,
   ShieldAlert,
   Share2,
@@ -55,101 +54,83 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
 
   const percentage = (need.funded_amount / need.item_cost) * 100;
   const isCompleted = need.status === 'completed' || percentage >= 100;
-  
-   const deadlineDate = new Date(need.deadline);
-   const today = new Date();
-   const diffTime = deadlineDate.getTime() - today.getTime();
-   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-   const daysRemaining = Math.max(0, diffDays);
-   const isDeadlinePassed = diffDays <= 0;
-   const isNearlyFunded = percentage >= 80 && percentage < 100 && !isDeadlinePassed;
-   const isFullyFunded = percentage >= 100;
-   const isPartiallyFundedDeadline = isDeadlinePassed && percentage > 0 && percentage < 100;
-   const isZeroPledgesDeadline = isDeadlinePassed && need.pledge_count === 0;
-   const amountLeft = need.item_cost - need.funded_amount;
-   const formattedAmountLeft = new Intl.NumberFormat("en-NG", {
-     style: "currency",
-     currency: "NGN",
-     maximumFractionDigits: 0,
-   }).format(amountLeft / 100);
-   
-   // Progress bar color and label
-   let progressColor = "bg-primary";
-   let progressLabel = "";
-   if (isFullyFunded) {
-     progressColor = "bg-green-500";
-     progressLabel = "Fully Funded ✓";
-   } else if (isNearlyFunded) {
-     progressColor = "bg-green-500";
-     progressLabel = `Almost there — just ${formattedAmountLeft} left`;
-   } else if (isPartiallyFundedDeadline) {
-     progressColor = "bg-on-surface-variant/40";
-     progressLabel = "Closed — Partially Funded";
-   } else if (isZeroPledgesDeadline) {
-     progressColor = "bg-on-surface-variant/40";
-     // This state is private dashboard only, not shown in browse feed
-   }
-   
-   // Detect verification status from profile badge_level
-   const isUnverified = !need.profile?.badge_level || need.profile.badge_level === 'level_0_unverified';
 
-   // Button text and state
-   let buttonText = "Back now";
-   let buttonDisabled = false;
-   let buttonClassName = "bg-primary text-white shadow-primary/20";
-   let buttonIcon: React.ReactNode = null;
-   let buttonHref: string | null = null;
+  const deadlineDate = new Date(need.deadline);
+  const today = new Date();
+  const diffTime = deadlineDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const daysRemaining = Math.max(0, diffDays);
+  const isDeadlinePassed = diffDays <= 0;
+  const isNearlyFunded = percentage >= 80 && percentage < 100 && !isDeadlinePassed;
+  const isFullyFunded = percentage >= 100;
+  const isPartiallyFundedDeadline = isDeadlinePassed && percentage > 0 && percentage < 100;
+  const isZeroPledgesDeadline = isDeadlinePassed && need.pledge_count === 0;
+  const amountLeft = need.item_cost - need.funded_amount;
+  const formattedAmountLeft = new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(amountLeft / 100);
 
-   if (isDashboard && isUnverified && !isFullyFunded && !isCompleted && !isPartiallyFundedDeadline && !isZeroPledgesDeadline) {
-     // Owner dashboard: unverified user
-     buttonText = "Verify Now";
-     buttonClassName = "bg-yellow-500 text-white shadow-yellow-500/20";
-     buttonIcon = <ShieldAlert className="h-3.5 w-3.5" />;
-     buttonHref = "/profile";
-   } else if (isDashboard && !isUnverified && !isFullyFunded && !isCompleted && !isPartiallyFundedDeadline && !isZeroPledgesDeadline) {
-     // Owner dashboard: verified user with active need
-     buttonText = "Share Need";
-     buttonClassName = "bg-primary text-white shadow-primary/20";
-     buttonIcon = <Share2 className="h-3.5 w-3.5" />;
-   } else if (isFullyFunded) {
-     buttonText = "View Story";
-     buttonClassName = "bg-primary/10 text-primary shadow-none";
-   } else if (isPartiallyFundedDeadline || isZeroPledgesDeadline) {
-     buttonText = "Closed";
-     buttonDisabled = true;
-     buttonClassName = "bg-surface-variant/20 text-on-surface-variant shadow-none cursor-not-allowed";
-   } else if (isCompleted) {
-     buttonText = "View Impact";
-     buttonClassName = "bg-primary/10 text-primary shadow-none";
-   }
+  // Progress bar color and label
+  let progressColor = "bg-primary";
+  let progressLabel = "";
+  if (isFullyFunded) {
+    progressColor = "bg-green-500";
+    progressLabel = "Fully Funded ✓";
+  } else if (isNearlyFunded) {
+    progressColor = "bg-green-500";
+    progressLabel = `Almost there — just ${formattedAmountLeft} left`;
+  } else if (isPartiallyFundedDeadline) {
+    progressColor = "bg-on-surface-variant/40";
+    progressLabel = "Closed — Partially Funded";
+  } else if (isZeroPledgesDeadline) {
+    progressColor = "bg-on-surface-variant/40";
+    // This state is private dashboard only, not shown in browse feed
+  }
+
+  // Detect verification status from profile badge_level
+  const isUnverified = !need.profile?.badge_level || need.profile.badge_level === 'level_0_unverified';
+
+  // Button text and state
+  let buttonText = "Back now";
+  let buttonDisabled = false;
+  let buttonClassName = "bg-primary text-white shadow-primary/20";
+  let buttonIcon: React.ReactNode = null;
+  let buttonHref: string | null = null;
+
+  if (isDashboard && !isFullyFunded && !isCompleted && !isPartiallyFundedDeadline && !isZeroPledgesDeadline) {
+    // Owner dashboard: active need
+    buttonText = "Share Need";
+    buttonClassName = "bg-primary text-white shadow-primary/20";
+    buttonIcon = <Share2 className="h-3.5 w-3.5" />;
+  } else if (isFullyFunded) {
+    buttonText = "View Story";
+    buttonClassName = "bg-primary/10 text-primary shadow-none";
+  } else if (isPartiallyFundedDeadline || isZeroPledgesDeadline) {
+    buttonText = "Closed";
+    buttonDisabled = true;
+    buttonClassName = "bg-surface-variant/20 text-on-surface-variant shadow-none cursor-not-allowed";
+  } else if (isCompleted) {
+    buttonText = "View Impact";
+    buttonClassName = "bg-primary/10 text-primary shadow-none";
+  }
 
   const TradeIcon = need.profile?.trade_category ? TRADE_ICONS_MAP[need.profile.trade_category] : MoreHorizontal;
 
-  const badgeLevel = need.profile?.badge_level === 'level_4_platform_verified' ? 4 
-    : need.profile?.badge_level === 'level_3_established' ? 3 
-    : need.profile?.badge_level === 'level_2_trusted_tradesperson' ? 2 
-    : need.profile?.badge_level === 'level_1_community_member' ? 1 : 0;
+  const badgeLevel = need.profile?.badge_level === 'level_4_platform_verified' ? 4
+    : need.profile?.badge_level === 'level_3_established' ? 3
+      : need.profile?.badge_level === 'level_2_trusted_tradesperson' ? 2
+        : need.profile?.badge_level === 'level_1_community_member' ? 1 : 0;
 
-  const [isVouched, setIsVouched] = React.useState(false);
-  const [localVouchCount, setLocalVouchCount] = React.useState(need.profile?.vouch_count || 0);
   const [imageError, setImageError] = React.useState(false);
 
-  const handleVouchClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isVouched) {
-      setLocalVouchCount(prev => prev - 1);
-    } else {
-      setLocalVouchCount(prev => prev + 1);
-    }
-    setIsVouched(!isVouched);
-  };
-
   return (
-    <Card 
-      hoverLift 
+    <Card
+      hoverLift
       onClick={handleCardClick}
       className={cn(
-        "overflow-hidden flex flex-col h-full bg-white rounded-[2rem] border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] cursor-pointer group transition-all", 
+        "overflow-hidden flex flex-col h-full bg-surface rounded-[2rem] cursor-pointer group transition-all",
         isCompleted && "ring-2 ring-primary/20 bg-primary/5",
         className
       )}
@@ -168,7 +149,7 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
             <TradeIcon className="h-16 w-16" style={{ color: 'var(--color-primary)', opacity: 0.15 }} />
           </div>
         )}
-        
+
         {/* Category Badge */}
         <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-widest bg-white/90 backdrop-blur-sm border border-white/20 text-on-surface shadow-sm">
           <TradeIcon className="h-3.5 w-3.5 text-primary" />
@@ -189,19 +170,40 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
           </div>
         )}
 
-        {/* Amount Tooltip-like Badge */}
-        <div className="absolute bottom-4 right-4 rounded-2xl px-4 py-2 text-sm font-black bg-yellow-400 text-[#121212] shadow-xl">
-          {formattedCost}
-        </div>
+        {/* Dashboard Owner Actions */}
+        {isDashboard && (
+          <>
+            <button
+              className="absolute bottom-4 left-4 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm border border-outline/30 hover:bg-white flex items-center justify-center text-on-surface transition-colors shadow-lg cursor-pointer z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onEdit) onEdit();
+              }}
+              title="Edit Need"
+            >
+              <PencilLine className="h-5 w-5" />
+            </button>
+            <button
+              className="absolute bottom-4 right-4 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm border border-error/30 hover:bg-error/10 flex items-center justify-center text-error transition-colors shadow-lg cursor-pointer z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDelete) onDelete();
+              }}
+              title="Delete Need"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          </>
+        )}
       </div>
 
       <div className="flex flex-col flex-grow p-6 gap-6">
         {/* Artisan Info */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-end gap-4">
           <div className="relative shrink-0">
-            <img 
-              src={need.profile?.photo_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e9ddff' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-size='40' font-weight='bold' fill='%236750A4'%3E${(need.profile?.full_name || need.profile?.name || 'A').charAt(0)}%3C/text%3E%3C/svg%3E`} 
-              alt={need.profile?.full_name || need.profile?.name || "Tradesperson"} 
+            <img
+              src={need.profile?.photo_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e9ddff' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-size='40' font-weight='bold' fill='%236750A4'%3E${(need.profile?.full_name || need.profile?.name || 'A').charAt(0)}%3C/text%3E%3C/svg%3E`}
+              alt={need.profile?.full_name || need.profile?.name || "Tradesperson"}
               className="h-12 w-12 rounded-2xl object-cover border-2 border-white shadow-md"
             />
             <div className="absolute -bottom-1 -right-1 rounded-full p-1 bg-green-500 border-2 border-white shadow-lg">
@@ -209,13 +211,12 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
             </div>
           </div>
           <div className="flex flex-col min-w-0">
-            <h3 className="text-lg font-black truncate text-on-surface leading-none mb-1">
+            <h3 className="text-lg font-black truncate text-on-surface leading-none">
               {need.profile?.full_name || need.profile?.name || "Verified Artisan"}
             </h3>
-            <div className="flex items-center gap-1.5">
-              <MapPin className="h-3 w-3 text-primary" />
-              <span className="text-xs font-black uppercase tracking-widest text-on-surface-variant truncate">
-                {need.profile?.location_lga}, {need.profile?.location_state}
+            <div className="flex items-center mt-0.5">
+              <span className="text-sm font-medium text-on-surface-variant truncate">
+                {[need.profile?.location_lga, need.profile?.location_state].filter(Boolean).join(", ") || "Location not provided"}
               </span>
             </div>
           </div>
@@ -223,134 +224,89 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
 
         {/* Need Story */}
         <div className="flex flex-col gap-2">
-           <h4 className="text-2xl font-black leading-[1.1] text-on-surface group-hover:text-primary transition-colors">
-             {need.item_name}
-           </h4>
-           <p className="text-base line-clamp-2 leading-relaxed font-medium text-on-surface-variant">
-             {need.story}
-           </p>
+          <h4 className="text-2xl font-black leading-[1.1] text-on-surface group-hover:text-primary transition-colors">
+            {need.item_name}
+          </h4>
+          <p className="text-base line-clamp-2 leading-relaxed font-medium text-on-surface-variant">
+            {need.story}
+          </p>
         </div>
 
         {/* Progress Section */}
         <div className="flex flex-col gap-4 mt-auto">
           <div className="flex justify-between items-end">
-             <div className="flex flex-col">
-               <span className="text-xs uppercase font-black tracking-widest text-primary mb-1">
-                  Funded Progress
-               </span>
-               <div className="flex items-baseline gap-1">
-                 <span className="text-3xl font-black text-on-surface">
-                    {Math.min(100, Math.floor(percentage))}%
-                 </span>
-                 <span className="text-sm font-bold text-on-surface-variant">
-                   raised
-                 </span>
-               </div>
-             </div>
-             
-             <div className="text-right">
-                <span className="text-xs uppercase font-black tracking-widest text-on-surface-variant mb-1 block">
-                   Days Left
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black text-on-surface">
+                  {Math.min(100, Math.floor(percentage))}%
                 </span>
-                <span className="text-base font-black text-on-surface bg-on-surface-variant/10 px-3 py-1 rounded-full">
-                    {isDeadlinePassed ? "Ended" : daysRemaining}
+                <span className="text-sm font-bold text-on-surface-variant">
+                  raised
                 </span>
-             </div>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="text-xs uppercase font-black tracking-widest text-on-surface-variant mb-1 block">
+                Days Left
+              </span>
+              <span className="text-base font-black text-on-surface bg-on-surface-variant/10 px-3 py-1 rounded-full">
+                {isDeadlinePassed ? "Ended" : daysRemaining}
+              </span>
+            </div>
           </div>
-          
-           {/* Progress Label */}
-           {progressLabel && (
-             <div className="text-xs font-black uppercase tracking-widest text-center py-1 px-3 rounded-full bg-surface-variant/20 text-on-surface-variant">
-               {progressLabel}
-             </div>
-           )}
-           
-           <div className="relative h-3 w-full bg-surface-variant/20 rounded-full overflow-hidden">
-             <motion.div 
-                initial={{ width: 0 }}
-                whileInView={{ width: `${Math.min(100, percentage)}%` }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className={cn("h-full rounded-full", progressColor)}
-             />
-           </div>
+
+          {/* Progress Label */}
+          {progressLabel && (
+            <div className="text-xs font-black uppercase tracking-widest text-center py-1 px-3 rounded-full bg-surface-variant/20 text-on-surface-variant">
+              {progressLabel}
+            </div>
+          )}
+
+          <div className="relative h-3 w-full bg-surface-variant/20 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              whileInView={{ width: `${Math.min(100, percentage)}%` }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className={cn("h-full rounded-full", progressColor)}
+            />
+          </div>
 
           <div className="flex justify-between text-xs font-black uppercase tracking-widest text-on-surface-variant/60">
-             <span>₦{new Intl.NumberFormat().format(need.funded_amount / 100)} raised</span>
-             <span>Goal: {formattedCost}</span>
+            <span>₦{new Intl.NumberFormat().format(need.funded_amount / 100)} raised</span>
+            <span>Goal: {formattedCost}</span>
           </div>
         </div>
 
         {/* Divider & Actions */}
         <div className="pt-6 border-t border-outline-variant/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
-             <Badge level={badgeLevel as 0|1|2|3|4} />
-             <div 
-                onClick={handleVouchClick}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all cursor-pointer",
-                  isVouched ? "bg-error/10" : "bg-error/5 hover:bg-error/10"
-                )}
-             >
-                <Heart 
-                  className={cn(
-                    "h-4 w-4 text-error transition-transform duration-300",
-                    isVouched ? "fill-error scale-110" : "fill-none"
-                  )} 
-                />
-                <span className="text-sm font-black text-on-surface">{localVouchCount}</span>
-             </div>
+            <Badge level={badgeLevel as 0 | 1 | 2 | 3 | 4} />
           </div>
-           <Button 
-              className={cn(
-                 "rounded-full px-8 font-black text-sm shadow-xl transition-all hover:-translate-y-1 flex items-center gap-1.5",
-                 buttonClassName,
-                 buttonDisabled && "cursor-not-allowed"
-              )}
-              disabled={buttonDisabled}
-              onClick={(e: React.MouseEvent) => {
-                if (buttonHref) {
-                  e.stopPropagation();
-                  router.push(buttonHref);
-                } else if (isDashboard && !isUnverified && buttonText === "Share Need") {
-                  e.stopPropagation();
-                  const needUrl = `${window.location.origin}/needs/${need.id}`;
-                  handleShare(`Help ${need.profile?.name || "Verified Artisan"} get a ${need.item_name}`, `Support ${need.profile?.name || "this artisan"}'s need on BuildBridge!`, needUrl);
-                }
-              }}
-            >
-              {buttonIcon}
-              {buttonText}
-            </Button>
+          <Button
+            className={cn(
+              "rounded-full px-8 font-black text-sm shadow-xl transition-all hover:-translate-y-1 flex items-center gap-1.5",
+              buttonClassName,
+              buttonDisabled && "cursor-not-allowed"
+            )}
+            disabled={buttonDisabled}
+            onClick={(e: React.MouseEvent) => {
+              if (buttonHref) {
+                e.stopPropagation();
+                router.push(buttonHref);
+              } else if (isDashboard && buttonText === "Share Need") {
+                e.stopPropagation();
+                const needUrl = `${window.location.origin}/needs/${need.id}`;
+                handleShare(`Help ${need.profile?.name || "Verified Artisan"} get a ${need.item_name}`, `Support ${need.profile?.name || "this artisan"}'s need on BuildBridge!`, needUrl);
+              }
+            }}
+          >
+            {buttonIcon}
+            {buttonText}
+          </Button>
         </div>
 
-        {/* Dashboard Owner Actions */}
-        {isDashboard && (
-          <div className="pt-4 flex gap-3 mt-auto">
-            <Button 
-              variant="outline"
-              className="flex-1 border-outline/30 hover:bg-surface-variant/50 text-sm font-black"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onEdit) onEdit();
-              }}
-            >
-              <PencilLine className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-            <Button 
-              variant="outline"
-              className="flex-1 border-error/30 text-error hover:bg-error/10 text-sm font-black"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onDelete) onDelete();
-              }}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
-          </div>
-        )}
       </div>
     </Card>
   );
@@ -380,8 +336,8 @@ export function NeedCardSkeleton() {
           <Skeleton className="h-2.5 w-full" />
         </div>
         <div className="flex justify-between items-center pt-2 border-t">
-           <Skeleton className="h-6 w-24 rounded-full" />
-           <Skeleton className="h-8 w-24 rounded-xl" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <Skeleton className="h-8 w-24 rounded-xl" />
         </div>
       </div>
     </Card>

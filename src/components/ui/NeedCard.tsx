@@ -326,29 +326,27 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
 
         {/* Dashboard Owner Actions */}
         {isDashboard && (
-          <div className="pt-4 flex gap-3 mt-auto">
-            <Button 
-              variant="outline"
-              className="flex-1 border-outline/30 hover:bg-surface-variant/50 text-sm font-black"
+          <div className="pt-4 flex justify-end gap-3 mt-auto">
+            <button 
+              className="h-10 w-10 rounded-full border border-outline/30 hover:bg-surface-variant/50 flex items-center justify-center text-on-surface transition-colors shadow-sm cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 if (onEdit) onEdit();
               }}
+              title="Edit Need"
             >
-              <PencilLine className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-            <Button 
-              variant="outline"
-              className="flex-1 border-error/30 text-error hover:bg-error/10 text-sm font-black"
+              <PencilLine className="h-5 w-5" />
+            </button>
+            <button 
+              className="h-10 w-10 rounded-full border border-error/30 hover:bg-error/10 flex items-center justify-center text-error transition-colors shadow-sm cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 if (onDelete) onDelete();
               }}
+              title="Delete Need"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
+              <Trash2 className="h-5 w-5" />
+            </button>
           </div>
         )}
       </div>

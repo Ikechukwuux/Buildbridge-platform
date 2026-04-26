@@ -104,9 +104,53 @@ export async function GET(request: NextRequest) {
         else if (flow === 'signup') {
           // Signup flow
           if (hasProfile) {
-            // Already has profile - redirect to dashboard with message
+            // Profile exists but may be bare (created by trigger without location).
+            // Update it with discovery data if available before redirecting.
+            console.log('Signup flow - has profile, checking for discovery data to enrich')
+            
+            const discoveryCookie = request.cookies.get('discovery_data')?.value;
+            if (discoveryCookie) {
+              try {
+                const discoveryData = JSON.parse(decodeURIComponent(discoveryCookie));
+                const supabaseAdmin = createAdminClient(
+                  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                  process.env.SUPABASE_SERVICE_ROLE_KEY!
+                );
+                
+                let locationState: string | undefined;
+                let locationLga: string | undefined;
+                let tradeCategory: string | undefined;
+                
+                if (discoveryData.state) locationState = discoveryData.state.toLowerCase().replace(/\s+/g, '_');
+                if (discoveryData.lga) locationLga = discoveryData.lga;
+                
+                if (discoveryData.category) {
+                  const cat = discoveryData.category.toLowerCase();
+                  if (cat.includes('tailor')) tradeCategory = 'tailor';
+                  else if (cat.includes('carpenter')) tradeCategory = 'carpenter';
+                  else if (cat.includes('welder')) tradeCategory = 'welder';
+                  else if (cat.includes('cobbler') || cat.includes('shoemaker')) tradeCategory = 'cobbler_shoemaker';
+                  else if (cat.includes('baker') || cat.includes('food')) tradeCategory = 'baker_food';
+                  else if (cat.includes('mechanic')) tradeCategory = 'mechanic';
+                  else if (cat.includes('electrician')) tradeCategory = 'electrician';
+                  else tradeCategory = 'other';
+                }
+                
+                await supabaseAdmin.from('profiles').update({
+                  location_state: locationState,
+                  location_lga: locationLga,
+                  trade_category: tradeCategory,
+                  trade_other_description: tradeCategory === 'other' ? discoveryData.otherCategory : null,
+                }).eq('user_id', user.id);
+                
+                console.log('Signup flow - enriched existing profile with discovery data');
+              } catch (err) {
+                console.error('Signup flow - failed to enrich profile:', err);
+              }
+            }
+            
             const redirectUrl = `${origin}/dashboard?message=already_signed_up`
-            console.log('Signup flow - already has profile, redirecting to:', redirectUrl)
+            console.log('Signup flow - has profile, redirecting to:', redirectUrl)
             return createRedirect(redirectUrl)
           }
           // New user - create profile from onboarding data stored in localStorage, then redirect to dashboard
@@ -194,7 +238,9 @@ export async function GET(request: NextRequest) {
                   impact_statement: discoveryData.impact || "",
                   status: 'active',
                   deadline: deadlineDate.toISOString().split('T')[0],
-                  photo_url: discoveryData.photoUrl || "/images/placeholders/need-default.png"
+                  photo_url: discoveryData.photoUrl || "/images/placeholders/need-default.png",
+                  location_state: locationState,
+                  location_lga: locationLga,
                 });
                 if (needInsertError) {
                   console.error('Admin: Failed to insert need:', needInsertError);

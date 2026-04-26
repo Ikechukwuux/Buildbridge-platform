@@ -166,7 +166,9 @@ export function HighVelocityAuth() {
             impact_statement: discoveryData.impact || "",
             status: 'pending_review',
             deadline: deadlineDate.toISOString().split('T')[0],
-            photo_url: discoveryData.photoUrl || "/images/placeholders/need-default.png"
+            photo_url: discoveryData.photoUrl || "/images/placeholders/need-default.png",
+            location_state: discoveryData.state ? discoveryData.state.toLowerCase().replace(/\s+/g, '_') : null,
+            location_lga: discoveryData.lga || null,
           });
         }
         

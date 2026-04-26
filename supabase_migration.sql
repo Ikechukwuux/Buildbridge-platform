@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS public.needs (
   photo_url       text,
   story           text,
   impact_statement text,
+  location_state  text,
+  location_lga    text,
   deadline        date,
   status          text DEFAULT 'pending_review',
   published_at    timestamptz,
@@ -98,10 +100,12 @@ CREATE POLICY "Published needs are publicly viewable"
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (user_id, full_name)
+  INSERT INTO public.profiles (user_id, full_name, location_state, location_lga)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', '')
+    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+    NEW.raw_user_meta_data->>'location_state',
+    NEW.raw_user_meta_data->>'location_lga'
   )
   ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;

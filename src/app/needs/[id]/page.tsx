@@ -15,6 +15,7 @@ import {
 import Link from "next/link"
 import { PledgeFlow } from "@/components/pledge/PledgeFlow"
 import { ShareButton } from "@/components/ui/ShareButton"
+import { formatStateName } from "@/lib/utils"
 
 interface NeedPageProps {
   params: Promise<{ id: string }>
@@ -275,8 +276,8 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
         ...dbNeed,
         profile: {
           name: dbNeed.profile?.full_name || "Artisan",
-          location_lga: dbNeed.profile?.location_lga || "Local",
-          location_state: dbNeed.profile?.location_state || "Nigeria",
+          location_lga: dbNeed.location_lga || dbNeed.profile?.location_lga || "Local",
+          location_state: dbNeed.location_state || dbNeed.profile?.location_state || "Nigeria",
           trade_category: dbNeed.profile?.trade_category || "trade",
           badge_level: dbNeed.profile?.badge_level || "level_1_community_member",
           vouch_count: dbNeed.profile?.vouch_count || 0,
@@ -453,7 +454,7 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
                        <h3 className="text-title-medium font-black text-on-surface">{need.profile.name}</h3>
                        <div className="flex items-center gap-1 text-body-small text-on-surface-variant">
                           <MapPin className="h-3 w-3" />
-                          {need.profile.location_lga}, {typeof need.profile.location_state === 'string' ? need.profile.location_state.toUpperCase() : need.profile.location_state}
+                           {need.profile.location_lga}, {formatStateName(need.profile.location_state)}
                        </div>
                     </div>
                  </div>

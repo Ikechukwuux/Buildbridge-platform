@@ -129,7 +129,9 @@ export function CreateNeedFlow({ onClose }: CreateNeedFlowProps) {
           photo_url: photo_url,
           photo_geotag_lat: formData.geotag?.lat,
           photo_geotag_lng: formData.geotag?.lng,
-          status: 'pending_review'
+          status: 'pending_review',
+          location_state: formData.state.toLowerCase().replace(/\s+/g, '_'),
+          location_lga: formData.lga,
         });
 
       if (insertError) throw insertError;

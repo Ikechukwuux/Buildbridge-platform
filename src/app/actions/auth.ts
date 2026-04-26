@@ -2,7 +2,12 @@
 
 import { createClient } from "@supabase/supabase-js"
 
-export async function adminSyncPhoneUser(phone: string, fullName: string = "Tradesperson") {
+export async function adminSyncPhoneUser(
+  phone: string,
+  fullName: string = "Tradesperson",
+  locationState?: string | null,
+  locationLga?: string | null,
+) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -50,6 +55,8 @@ export async function adminSyncPhoneUser(phone: string, fullName: string = "Trad
           await supabaseAdmin.from('profiles').upsert({
             user_id: linkData.user.id,
             full_name: linkData.user.user_metadata?.full_name || fullName || "Tradesperson",
+            location_state: locationState || null,
+            location_lga: locationLga || null,
             updated_at: new Date().toISOString()
           }, { onConflict: 'user_id' })
         }
@@ -64,6 +71,8 @@ export async function adminSyncPhoneUser(phone: string, fullName: string = "Trad
       await supabaseAdmin.from('profiles').upsert({
         user_id: user.user.id,
         full_name: fullName || "Tradesperson",
+        location_state: locationState || null,
+        location_lga: locationLga || null,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' })
     }
@@ -75,7 +84,13 @@ export async function adminSyncPhoneUser(phone: string, fullName: string = "Trad
   }
 }
 
-export async function syncUserRecord(userId: string, name: string, identifier: string) {
+export async function syncUserRecord(
+  userId: string,
+  name: string,
+  identifier: string,
+  locationState?: string | null,
+  locationLga?: string | null,
+) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -94,6 +109,8 @@ export async function syncUserRecord(userId: string, name: string, identifier: s
     const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
       user_id: userId,
       full_name: name || "Artisan",
+      location_state: locationState || null,
+      location_lga: locationLga || null,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
 
@@ -106,7 +123,13 @@ export async function syncUserRecord(userId: string, name: string, identifier: s
   }
 }
 
-export async function registerUserAdmin(data: { identifier: string, name: string, password: string }) {
+export async function registerUserAdmin(data: {
+  identifier: string;
+  name: string;
+  password: string;
+  locationState?: string | null;
+  locationLga?: string | null;
+}) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -153,6 +176,8 @@ export async function registerUserAdmin(data: { identifier: string, name: string
     const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
       user_id: userId,
       full_name: data.name,
+      location_state: data.locationState || null,
+      location_lga: data.locationLga || null,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
 

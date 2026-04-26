@@ -19,7 +19,7 @@ import {
   Trash2,
   PencilLine
 } from "lucide-react"
-import { cn, handleShare } from "@/lib/utils"
+import { cn, handleShare, formatStateName } from "@/lib/utils"
 import { type Need, type Profile } from "@/types"
 import { TRADE_ICONS_MAP } from "@/lib/constants"
 
@@ -33,6 +33,12 @@ interface NeedCardProps {
   onEdit?: () => void;
   /** When true, shows owner-specific actions (Verify Now / Share Need) instead of public "Back now" */
   isDashboard?: boolean;
+}
+
+function getLocationDisplay(need: NeedCardProps['need']): string {
+  const lga = need.location_lga || need.profile?.location_lga
+  const state = formatStateName(need.location_state || need.profile?.location_state)
+  return [lga, state].filter(Boolean).join(", ") || "Location not provided"
 }
 
 export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboard = false }: NeedCardProps) {
@@ -116,7 +122,7 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
     buttonClassName = "bg-primary/10 text-primary shadow-none";
   }
 
-  const TradeIcon = need.profile?.trade_category ? TRADE_ICONS_MAP[need.profile.trade_category] : MoreHorizontal;
+  const TradeIcon = (need.profile?.trade_category && TRADE_ICONS_MAP[need.profile.trade_category]) || MoreHorizontal;
 
   const badgeLevel = need.profile?.badge_level === 'level_4_platform_verified' ? 4
     : need.profile?.badge_level === 'level_3_established' ? 3
@@ -216,7 +222,7 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
             </h3>
             <div className="flex items-center mt-0.5">
               <span className="text-sm font-medium text-on-surface-variant truncate">
-                {[need.profile?.location_lga, need.profile?.location_state].filter(Boolean).join(", ") || "Location not provided"}
+                {getLocationDisplay(need)}
               </span>
             </div>
           </div>

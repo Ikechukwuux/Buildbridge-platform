@@ -170,7 +170,7 @@ export function EditNeedForm({ need }: { need: any }) {
           className="flex-1"
           disabled={loading}
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Changes"}
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save"}
         </Button>
       </div>
     </form>

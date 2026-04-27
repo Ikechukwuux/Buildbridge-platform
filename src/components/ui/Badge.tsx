@@ -41,8 +41,8 @@ const levelConfig: Record<number, { bg: string; color: string; icon: React.Eleme
     label: "Established",
   },
   4: {
-    bg: 'var(--color-primary-container)',
-    color: 'var(--color-on-primary-container)',
+    bg: '#ffffff',
+    color: 'var(--color-primary)',
     icon: BadgeCheck,
     label: "Verified",
   }

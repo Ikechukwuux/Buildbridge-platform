@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { createClient } from "@/lib/supabase/server"
+import { verifyTransaction } from "@/lib/paystack"
+
+function extractMessage(metadata: any): string | null {
+  if (!metadata?.custom_fields) return null
+  const msgField = metadata.custom_fields.find(
+    (f: any) => f.variable_name === "message"
+  )
+  return msgField?.value?.trim() || null
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,9 +41,24 @@ export async function POST(req: NextRequest) {
        return NextResponse.json({ error: "Missing metadata" }, { status: 400 })
     }
 
+    // 2. Secondary Verification with Paystack API
+    try {
+      const verifyResult = await verifyTransaction(reference)
+      if (!verifyResult.status || verifyResult.data.status !== "success") {
+        console.error("Paystack secondary verification failed", verifyResult)
+        return NextResponse.json({ error: "Transaction not verified" }, { status: 400 })
+      }
+    } catch (verifyErr) {
+      console.error("Paystack verify API call failed:", verifyErr)
+      // Continue anyway — the HMAC signature was valid
+    }
+
     const supabase = await createClient()
 
-    // 2. Financial Arithmetic (Kobo)
+    // Extract user message from custom_fields
+    const userMessage = extractMessage(metadata)
+
+    // 3. Financial Arithmetic (Kobo)
     const totalPledgeKobo = amount // Already in kobo from Paystack
     const platformFeeKobo = Math.floor(totalPledgeKobo * 0.05) // 5% BuildBridge fee
     const processingFeeKobo = Math.floor(totalPledgeKobo * 0.015) + (totalPledgeKobo > 250000 ? 10000 : 0) // Paystack 1.5% + N100 if > N2500
@@ -46,11 +70,22 @@ export async function POST(req: NextRequest) {
       tradesperson_receives: tradespersonReceivesKobo
     }
 
-    // 3. Escrow Orchestration (Database Transaction)
+    // 4. Escrow Orchestration (Database Transaction)
     // We use Supabase RPC or a simple sequential update since Next.js server actions / routes are single-execution
     // For production, use a database function (RPC) for atomicity
     
-    // Step A: Create Pledge Record
+    // Step A: Check for existing pledge (idempotency)
+    const { data: existingPledge } = await supabase
+      .from("pledges")
+      .select("id")
+      .eq("payment_reference", reference)
+      .maybeSingle()
+
+    if (existingPledge) {
+      return NextResponse.json({ received: true, note: "Pledge already processed" }, { status: 200 })
+    }
+
+    // Step B: Create Pledge Record
     const { error: pledgeError } = await supabase
       .from("pledges")
       .insert({
@@ -62,17 +97,15 @@ export async function POST(req: NextRequest) {
         payment_provider: "paystack",
         payment_reference: reference,
         payment_status: "completed",
+        message: userMessage,
         paid_at: new Date().toISOString()
       })
 
     if (pledgeError) {
-      if (pledgeError.code === "23505") { // Unique constraint (idempotency)
-        return NextResponse.json({ received: true, note: "Pledge already processed" }, { status: 200 })
-      }
       throw pledgeError
     }
 
-    // Step B: Update Need Total
+    // Step C: Update Need Total
     const { data: need, error: fetchError } = await supabase
       .from("needs")
       .select("item_cost, funded_amount, pledge_count")

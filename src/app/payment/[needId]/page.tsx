@@ -4,7 +4,7 @@ import Link from "next/link"
 import { PledgeFlow } from "@/components/pledge/PledgeFlow"
 
 interface PaymentPageProps {
-  params: { needId: string }
+  params: Promise<{ needId: string }>
 }
 
 // Mock need data for demo - same as in need detail page
@@ -56,7 +56,8 @@ const MOCK_NEEDS: Record<string, any> = {
 }
 
 export async function generateMetadata({ params }: PaymentPageProps): Promise<Metadata> {
-  const need = MOCK_NEEDS[params.needId] || MOCK_NEEDS["demo-need-001"]
+  const { needId } = await params
+  const need = MOCK_NEEDS[needId] || MOCK_NEEDS["demo-need-001"]
   return {
     title: `Back ${need.profile.name} - ${need.item_name} | BuildBridge`,
     description: `Support ${need.profile.name}'s need for a ${need.item_name}.`,
@@ -65,7 +66,8 @@ export async function generateMetadata({ params }: PaymentPageProps): Promise<Me
 
 
 export default async function PaymentPage({ params }: PaymentPageProps) {
-  const need = MOCK_NEEDS[params.needId] || MOCK_NEEDS["demo-need-001"]
+  const { needId } = await params
+  const need = MOCK_NEEDS[needId] || MOCK_NEEDS["demo-need-001"]
   const fundedPct = Math.round((need.funded_amount / need.item_cost) * 100)
 
   const formatNGN = (kobo: number) =>

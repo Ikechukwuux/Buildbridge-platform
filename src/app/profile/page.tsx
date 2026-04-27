@@ -8,7 +8,8 @@ import { User, Mail, Briefcase, Calendar, MapPin, Camera, Edit2, X, Check, Plus,
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { cn } from "@/lib/utils";
+import { cn, formatStateName } from "@/lib/utils";
+import { NIGERIA_LOCATIONS } from "@/lib/data/nigeria";
 
 // Edit Profile Modal
 function EditProfileModal({
@@ -24,16 +25,25 @@ function EditProfileModal({
 }) {
   const [name, setName] = useState(profile?.full_name || "");
   const [bio, setBio] = useState(profile?.bio || "");
-  const [location, setLocation] = useState(profile?.location || "Nigeria");
+  const [state, setStateVal] = useState(profile?.location_state || "");
+  const [lga, setLgaVal] = useState(profile?.location_lga || "");
   const [trade, setTrade] = useState(profile?.trade_category || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Map DB state (e.g. "lagos") to display name (e.g. "Lagos")
+  const stateDisplayName = NIGERIA_LOCATIONS.find(s => s.id === state)?.state || state
+
+  const currentLGAs = NIGERIA_LOCATIONS.find(
+    s => s.id === state
+  )?.lgas || []
 
   useEffect(() => {
     if (profile) {
       setName(profile.full_name || "");
       setBio(profile.bio || "");
-      setLocation(profile.location || "Nigeria");
+      setStateVal(profile.location_state || "");
+      setLgaVal(profile.location_lga || "");
       setTrade(profile.trade_category || "");
     }
   }, [profile]);
@@ -48,7 +58,8 @@ function EditProfileModal({
       await onSave({
         full_name: name.trim(),
         bio: bio.trim(),
-        location: location.trim(),
+        location_state: state,
+        location_lga: lga,
         trade_category: trade,
       });
       onClose();
@@ -138,14 +149,36 @@ function EditProfileModal({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant/60 ml-1">Location</label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="City, State"
-                  className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-5 font-bold text-on-surface transition-all outline-none"
-                />
+                <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant/60 ml-1">State</label>
+                <select
+                  value={stateDisplayName}
+                  onChange={(e) => {
+                    const found = NIGERIA_LOCATIONS.find(s => s.state === e.target.value)
+                    setStateVal(found?.id || "")
+                    setLgaVal("")
+                  }}
+                  className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-5 font-bold text-on-surface transition-all outline-none appearance-none bg-white cursor-pointer"
+                >
+                  <option value="">Select state</option>
+                  {NIGERIA_LOCATIONS.map((s) => (
+                    <option key={s.id} value={s.state}>{s.state}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant/60 ml-1">Local Government Area (LGA)</label>
+                <select
+                  value={lga}
+                  onChange={(e) => setLgaVal(e.target.value)}
+                  disabled={!state}
+                  className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-5 font-bold text-on-surface transition-all outline-none appearance-none bg-white cursor-pointer disabled:opacity-40"
+                >
+                  <option value="">Select LGA</option>
+                  {currentLGAs.map((l) => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
               </div>
 
               {error && (
@@ -448,7 +481,8 @@ export default function ProfilePage() {
           user_id: user.id,
           full_name: data.full_name,
           bio: data.bio,
-          location: data.location,
+          location_state: data.location_state,
+          location_lga: data.location_lga,
           trade_category: data.trade_category,
           updated_at: new Date().toISOString(),
         },
@@ -612,7 +646,9 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Location</p>
-                    <p className="text-sm font-bold text-on-surface">{profile?.location || "Nigeria"}</p>
+                    <p className="text-sm font-bold text-on-surface">
+                      {[profile?.location_lga, formatStateName(profile?.location_state)].filter(Boolean).join(", ") || "Not set"}
+                    </p>
                   </div>
                 </div>
               </div>

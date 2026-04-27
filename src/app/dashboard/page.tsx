@@ -193,6 +193,17 @@ function DashboardContent() {
 
   const { totalFunded, totalBackers } = calculateImpactStats()
 
+  const profileCompleteness = React.useMemo(() => {
+    if (!profile) return 0
+    let score = 0
+    if (profile.full_name) score += 25
+    if (profile.trade_category) score += 25
+    if (profile.location_state && profile.location_lga) score += 25
+    if (profile.bio) score += 25
+    return score
+  }, [profile])
+  const isProfileComplete = profileCompleteness === 100
+
   if (loading) {
     return (
       <div className="w-full flex flex-col gap-12 animate-pulse">
@@ -245,13 +256,13 @@ function DashboardContent() {
         {/* ── LEFT BENTO COLUMN (col-span-8) ── */}
         <div className="lg:col-span-8 flex flex-col gap-8">
           
-          {/* Main Focus: Guidance or Celebration */}
-          {needs.length === 0 ? (
-            <GoalGradientCard 
-              progress={20} 
-              onAction={() => setIsCreatingNeed(true)} 
-            />
-          ) : (
+           {/* Main Focus: Guidance or Celebration */}
+           {!isProfileComplete ? (
+             <GoalGradientCard 
+               progress={profileCompleteness}
+               onAction={() => setIsCreatingNeed(true)} 
+             />
+           ) : (
             <div className="relative overflow-hidden p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 group">
               <div className="absolute top-0 right-0 p-8 opacity-10 -rotate-12 group-hover:rotate-0 transition-transform duration-500">
                 <Sparkles className="w-24 h-24 text-primary" />

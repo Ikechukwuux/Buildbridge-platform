@@ -149,7 +149,7 @@ export function ForgotPasswordForm() {
           <Button
             type="submit"
             isLoading={isLoading}
-            className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20"
+            className="h-16 rounded-2xl text-lg font-black shadow-xl shadow-primary/20"
             disabled={!email}
           >
             <span>Send Reset Link</span>

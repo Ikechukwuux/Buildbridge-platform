@@ -99,7 +99,7 @@ export function ResetPasswordForm() {
 
           <Button
             onClick={() => router.push("/login")}
-            className="h-14 w-full rounded-full text-base font-black shadow-xl shadow-primary/20"
+            className="h-16 w-full rounded-2xl text-lg font-black shadow-xl shadow-primary/20"
           >
             <span>Go to Login</span>
             <ArrowRight className="ml-2 w-5 h-5" />
@@ -219,7 +219,7 @@ export function ResetPasswordForm() {
           <Button
             type="submit"
             isLoading={isLoading}
-            className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20"
+            className="h-16 rounded-2xl text-lg font-black shadow-xl shadow-primary/20"
             disabled={!password || !confirm || !sessionReady}
           >
             <span>Update Password</span>

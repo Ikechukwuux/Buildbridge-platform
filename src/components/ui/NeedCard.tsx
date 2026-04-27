@@ -340,7 +340,7 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
           </div>
           <Button
             className={cn(
-              "rounded-full px-8 font-black text-sm shadow-xl transition-all hover:-translate-y-1 flex items-center gap-1.5",
+              "h-10 rounded-xl px-4 font-bold text-sm shadow-md transition-all hover:-translate-y-0.5 flex items-center gap-1.5",
               buttonClassName,
               buttonDisabled && "cursor-not-allowed"
             )}

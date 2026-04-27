@@ -177,7 +177,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
   if (!showFlow) {
     return (
       <Link href={`/payment/${needId}`} className="block">
-        <Button className="w-full text-headline-small py-8 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-white bg-primary">
+        <Button className="w-full h-16 text-lg font-black rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-white bg-primary">
           Back This Tradesperson
         </Button>
       </Link>
@@ -447,7 +447,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
                     onClick={handlePaystackPayment}
                     isLoading={loading}
                     disabled={!paystackReady}
-                    className="w-full h-16 text-lg font-black rounded-[1.75rem] flex items-center justify-center gap-3 bg-on-surface text-surface hover:bg-on-surface/90 shadow-2xl active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full h-16 text-lg font-black rounded-2xl flex items-center justify-center gap-3 bg-on-surface text-surface hover:bg-on-surface/90 shadow-2xl active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Lock className="h-5 w-5" />
                     Pay {formatNGN(totalChargeKobo)} Securely

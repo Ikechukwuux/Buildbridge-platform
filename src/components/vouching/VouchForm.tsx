@@ -248,7 +248,7 @@ export function VouchForm({ recipientProfileId, recipientName }: VouchFormProps)
                <Button variant="ghost" disabled={loading} onClick={() => setStep(1)} className="w-1/3 h-16 rounded-2xl border-2 border-outline-variant">
                  Back
                </Button>
-               <Button onClick={handleSubmit} isLoading={loading} disabled={!formData.understood_liability} className="flex-1 h-16 rounded-2xl text-title-medium">
+               <Button onClick={handleSubmit} isLoading={loading} disabled={!formData.understood_liability} className="flex-1 h-16 rounded-2xl text-base font-black">
                  Submit Vouch
                </Button>
             </div>
@@ -272,7 +272,7 @@ export function VouchForm({ recipientProfileId, recipientName }: VouchFormProps)
                </p>
             </div>
 
-            <Button onClick={() => router.push(`/profile/${recipientProfileId}`)} className="w-full text-title-medium h-16 rounded-2xl shadow-lg mt-4">
+            <Button onClick={() => router.push(`/profile/${recipientProfileId}`)} className="w-full text-lg font-black h-16 rounded-2xl shadow-lg mt-4">
                Return to Profile
             </Button>
          </motion.div>

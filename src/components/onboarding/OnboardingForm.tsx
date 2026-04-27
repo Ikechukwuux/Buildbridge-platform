@@ -399,7 +399,7 @@ export function OnboardingForm() {
               <Button
                 onClick={nextStep}
                 disabled={!formData.name.trim()}
-                className="h-16 rounded-full text-lg shadow-lg mt-4"
+                className="h-16 rounded-2xl text-lg font-black shadow-lg mt-4"
               >
                 Continue
               </Button>
@@ -454,7 +454,7 @@ export function OnboardingForm() {
                 </div>
               )}
 
-              <Button disabled={amt === 0} onClick={nextStep} className="h-16 rounded-full text-lg shadow-lg hover:shadow-xl mt-4">
+              <Button disabled={amt === 0} onClick={nextStep} className="h-16 rounded-2xl text-lg font-black shadow-lg hover:shadow-xl mt-4">
                 Continue →
               </Button>
             </div>
@@ -470,7 +470,7 @@ export function OnboardingForm() {
             <p className="text-body-large text-on-surface-variant font-medium mb-10">Save your progress and get your need in front of backers.</p>
 
             <div className="flex flex-col gap-4">
-              <Button onClick={handleGoogleAuth} className="h-16 rounded-2xl bg-surface border-2 border-outline-variant text-on-surface hover:bg-surface-variant justify-center gap-3 font-bold text-lg shadow-sm">
+              <Button variant="secondary" onClick={handleGoogleAuth} className="w-full h-16 rounded-2xl justify-center gap-3 font-black text-lg">
                 <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
                 Continue with Google
               </Button>
@@ -482,11 +482,11 @@ export function OnboardingForm() {
 
               {authMethod === null ? (
                 <div className="grid grid-cols-2 gap-4">
-                  <Button onClick={() => setAuthMethod("phone")} variant="secondary" className="h-14 rounded-2xl justify-center gap-2 border-2 border-outline-variant bg-transparent">
-                    <Phone className="h-5 w-5" /> Continue with phone →
+                  <Button onClick={() => setAuthMethod("phone")} variant="secondary" className="h-14 rounded-2xl justify-center gap-2 border-2 border-outline-variant bg-transparent font-bold text-sm">
+                    <Phone className="h-4 w-4" /> Continue with phone →
                   </Button>
-                  <Button onClick={() => setAuthMethod("email")} variant="secondary" className="h-14 rounded-2xl justify-center gap-2 border-2 border-outline-variant bg-transparent">
-                    <Mail className="h-5 w-5" /> Continue with email →
+                  <Button onClick={() => setAuthMethod("email")} variant="secondary" className="h-14 rounded-2xl justify-center gap-2 border-2 border-outline-variant bg-transparent font-bold text-sm">
+                    <Mail className="h-4 w-4" /> Continue with email →
                   </Button>
                 </div>
               ) : (
@@ -599,13 +599,13 @@ export function OnboardingForm() {
                   onClick={prevCarouselSlide}
                   disabled={carouselSlide === 0}
                   variant="secondary"
-                  className="flex-1 h-14 rounded-full"
+                  className="flex-1 h-14 rounded-2xl font-bold text-base"
                 >
-                  <ChevronLeft className="h-5 w-5" /> Back
+                  <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
                 <Button
                   onClick={nextCarouselSlide}
-                  className="flex-1 h-14 rounded-full"
+                  className="flex-1 h-14 rounded-2xl font-black text-base"
                 >
                   {carouselSlide < 2 ? "Next" : "Get started →"}
                 </Button>
@@ -653,7 +653,7 @@ export function OnboardingForm() {
                   onChange={(e) => setFormData({ ...formData, custom_trade: e.target.value })}
                   className="h-16 rounded-2xl border-2 border-outline-variant text-center text-lg"
                 />
-                <Button onClick={nextStep} disabled={!formData.custom_trade.trim()} className="h-16 rounded-full text-lg w-full mt-6">
+                <Button onClick={nextStep} disabled={!formData.custom_trade.trim()} className="h-16 rounded-2xl text-lg font-black w-full mt-6">
                   Continue
                 </Button>
               </motion.div>
@@ -682,7 +682,7 @@ export function OnboardingForm() {
                   <option key={lga} value={lga}>{lga}</option>
                 ))}
               </select>
-              <Button disabled={!formData.location_state || !formData.location_lga} onClick={nextStep} className="h-16 rounded-full text-lg w-full mt-4">Continue</Button>
+              <Button disabled={!formData.location_state || !formData.location_lga} onClick={nextStep} className="h-16 rounded-2xl text-lg font-black w-full mt-4">Continue</Button>
             </div>
           </motion.div>
         )
@@ -711,7 +711,7 @@ export function OnboardingForm() {
               </div>
             </div>
             <div className="flex flex-col gap-4">
-              <Button onClick={nextStep} disabled={!formData.photo_url} className="h-16 rounded-full text-lg w-full">Continue</Button>
+              <Button onClick={nextStep} disabled={!formData.photo_url} className="h-16 rounded-2xl text-lg font-black w-full">Continue</Button>
               <button onClick={nextStep} className="text-sm font-bold text-on-surface-variant uppercase tracking-widest hover:text-primary">Skip for now</button>
             </div>
           </motion.div>
@@ -783,7 +783,7 @@ export function OnboardingForm() {
                       onClick={generateAIStory}
                       disabled={!formData.ai_prompts.experience || !formData.ai_prompts.product || !formData.ai_prompts.community || !formData.ai_prompts.equipment}
                       isLoading={isGeneratingStory}
-                      className="h-16 rounded-2xl mt-4 font-black"
+                      className="h-16 rounded-2xl text-lg font-black mt-4"
                     >
                       <Sparkles className="mr-2 h-5 w-5" /> Generate My Story
                     </Button>
@@ -792,7 +792,7 @@ export function OnboardingForm() {
               </div>
             </div>
             {(storyMethod === "write" || formData.story) && (
-              <Button onClick={nextStep} disabled={!formData.story} className="h-16 rounded-full text-lg w-full mt-6 shadow-xl">
+              <Button onClick={nextStep} disabled={!formData.story} className="h-16 rounded-2xl text-lg font-black w-full mt-6 shadow-xl">
                 Review Profile
               </Button>
             )}
@@ -880,7 +880,7 @@ export function OnboardingForm() {
 
             {/* Actions */}
             <div className="flex flex-col gap-4 mt-8">
-              <Button onClick={nextStep} className="h-16 rounded-full text-lg w-full shadow-xl">
+              <Button onClick={nextStep} className="h-16 rounded-2xl text-lg font-black w-full shadow-xl">
                 Looks good — continue →
               </Button>
               <button
@@ -914,7 +914,7 @@ export function OnboardingForm() {
                 <span className="font-black text-sm uppercase tracking-widest">I Accept and Commit</span>
               </label>
             </div>
-            <Button onClick={() => { localStorage.removeItem("onboarding_state"); nextStep() }} disabled={!formData.agreed_to_terms} className="h-16 rounded-full text-lg w-full mt-8 shadow-xl bg-primary"><Rocket className="mr-2 h-5 w-5" /> Launch My Goal</Button>
+            <Button onClick={() => { localStorage.removeItem("onboarding_state"); nextStep() }} disabled={!formData.agreed_to_terms} className="h-16 rounded-2xl text-lg font-black w-full mt-8 shadow-xl bg-primary"><Rocket className="mr-2 h-5 w-5" /> Launch My Goal</Button>
           </motion.div>
         )
 
@@ -990,10 +990,10 @@ export function OnboardingForm() {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={() => router.push("/dashboard/create-need")} className="h-16 rounded-full text-lg flex-1">
+              <Button onClick={() => router.push("/dashboard/create-need")} className="h-16 rounded-2xl text-lg font-black flex-1">
                 Create your first need →
               </Button>
-              <Button variant="secondary" className="h-16 rounded-full text-lg flex-1">
+              <Button variant="secondary" className="h-16 rounded-2xl text-lg font-black flex-1">
                 Get vouches first
               </Button>
             </div>

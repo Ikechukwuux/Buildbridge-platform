@@ -102,14 +102,14 @@ export function PledgeSuccess({ amount, tradespersonName, needId }: PledgeSucces
               `/needs/${needId}`
             )
           }}
-          className="w-full gap-2 h-12 text-sm font-black shadow-sm"
+          className="w-full gap-2 h-14 text-base font-black shadow-sm"
           variant="secondary"
         >
           <Share2 className="h-4 w-4" />
           Share the Impact
         </Button>
         <Link href="/browse" className="w-full">
-          <Button className="w-full gap-2 h-12 text-sm font-black shadow-lg bg-primary text-white">
+          <Button className="w-full gap-2 h-14 text-base font-black shadow-lg bg-primary text-white">
             Support Someone Else
             <ArrowRight className="h-4 w-4" />
           </Button>

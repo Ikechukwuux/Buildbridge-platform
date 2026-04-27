@@ -1,4 +1,4 @@
-﻿import * as React from "react"
+import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Badge, type BadgeLevelType } from "@/components/ui/Badge"
 import { Card } from "@/components/ui/Card"
@@ -104,24 +104,24 @@ export function TrustTracker({ currentLevel, vouches, deliveries, onVerifyClick,
          
          <div className="flex flex-col gap-2 pt-1">
             {next?.isAction ? (
-              <Button onClick={onVerifyClick} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 shadow-lg shadow-primary/20">
-                 <Lock className="h-3.5 w-3.5" />
+              <Button onClick={onVerifyClick} className="w-full h-14 text-base font-black rounded-2xl gap-2 shadow-lg shadow-primary/20">
+                 <Lock className="h-4 w-4" />
                  {next.cta}
               </Button>
             ) : next?.cta === "Edit Profile" ? (
-               <Button onClick={() => router.push('/profile')} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
+               <Button onClick={() => router.push('/profile')} className="w-full h-14 text-base font-black rounded-2xl gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
                  {next.cta}
-                 <ArrowRight className="h-3.5 w-3.5" />
+                 <ArrowRight className="h-4 w-4" />
                </Button>
             ) : (
-               <Button onClick={onVouchRequest} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
+               <Button onClick={onVouchRequest} className="w-full h-14 text-base font-black rounded-2xl gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
                  {next?.cta}
-                 <ArrowRight className="h-3.5 w-3.5" />
+                 <ArrowRight className="h-4 w-4" />
                </Button>
             )}
-            <Button variant="ghost" className="w-full h-8 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 hover:text-primary transition-colors">
+            <Button variant="ghost" className="w-full h-10 text-sm font-bold rounded-xl text-on-surface-variant/40 hover:text-primary transition-colors">
                Trust Logic Specs
-               <ExternalLink className="h-3 w-3 ml-1.5" />
+               <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
             </Button>
          </div>
       </div>

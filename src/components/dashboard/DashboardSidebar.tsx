@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,11 +10,9 @@ import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   ListChecks,
-  PlusCircle,
   ShieldCheck,
   Sparkles,
   Search,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -27,7 +24,7 @@ import {
 ───────────────────────────────────────────── */
 const NAV_ITEMS = [
   {
-    label: "Overview",
+    label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
     exact: true,
@@ -36,12 +33,6 @@ const NAV_ITEMS = [
     label: "Active Needs",
     href: "/dashboard/needs",
     icon: ListChecks,
-    exact: false,
-  },
-  {
-    label: "Create Need",
-    href: "/dashboard/create-need",
-    icon: PlusCircle,
     exact: false,
   },
   {
@@ -168,7 +159,11 @@ function SidebarContent({
 
       {/* ── User block ── */}
       <div className="px-4 pb-6 pt-4 border-t border-white/10">
-        <div className="flex items-center gap-3 px-3 py-3 rounded-[14px] bg-white/8 hover:bg-white/12 transition-colors">
+        <Link
+          href="/profile"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-3 rounded-[14px] bg-white/8 hover:bg-white/12 transition-colors group"
+        >
           {/* Avatar */}
           <div className="w-9 h-9 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-inner overflow-hidden">
             {photoUrl ? (
@@ -179,30 +174,22 @@ function SidebarContent({
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate leading-none mb-0.5">
+            <p className="text-sm font-bold text-white truncate leading-none mb-0.5 group-hover:text-white">
               {displayName}
             </p>
             <p className="text-[11px] text-white/50 truncate">{userEmail}</p>
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <Link
-              href="/dashboard/account"
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-              aria-label="Account settings"
-            >
-              <Settings className="w-4 h-4" />
-            </Link>
             <button
-              onClick={onSignOut}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSignOut(); }}
               className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
               aria-label="Log out"
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );

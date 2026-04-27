@@ -1,8 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { Search, Mail, Bell, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import {
+  Search,
+  Mail,
+  Bell,
+  ChevronDown,
+  User,
+  Settings,
+  MessageCircle,
+  LogOut,
+  LayoutDashboard,
+} from "lucide-react";
 
 interface DashboardHeaderProps {
   userName: string;

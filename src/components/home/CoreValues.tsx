@@ -29,7 +29,7 @@ const values: any[] = [
   {
     icon: Eye,
     title: "Total Transparency",
-    desc: "Get real-time updates and proof-of-use photos for every kobo funded.",
+    desc: "Get live updates and usage photos for every kobo funded.",
     color: "bg-primary",
     iconColor: "text-white"
   },

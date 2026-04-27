@@ -209,7 +209,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
 
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">Condition</h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       {['Brand New', 'Refurbished', 'Used'].map(c => {
                         const val = c.toLowerCase().replace(' ', '_');
                         return (
@@ -217,7 +217,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                             key={c}
                             onClick={() => updateData({ condition: val })}
                             className={cn(
-                              "p-3 rounded-xl border-2 font-bold text-sm transition-all",
+                              "flex-1 p-3 rounded-xl border-2 font-bold text-sm transition-all",
                               formData.condition === val
                                 ? "bg-primary border-primary text-white"
                                 : "bg-white border-outline-variant hover:border-primary/30"

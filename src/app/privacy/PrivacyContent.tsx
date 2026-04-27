@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 export function PrivacyContent() {
   const sections = [
     { title: "What we collect", content: "We collect basic identity information (NIN, Phone Number, Name) to verify accounts and professional data to facilitate trust-building. We do not sell your personal data." },
-    { title: "How we use your data", content: "Your data is used to verify your identity, process pledges, track proof-of-use, and prevent fraud on the platform. Public profiles only show verified trust signals." },
+    { title: "How we use your data", content: "Your data is used to verify your identity, process pledges, track proof of use, and prevent fraud on the platform. Public profiles only show verified trust signals." },
     { title: "Data Protection (NDPR)", content: "BuildBridge is fully compliant with the Nigeria Data Protection Regulation (NDPR). Your information is encrypted and stored securely within protected environments." },
     { title: "Your Rights", content: "You have the right to access, correct, or request the deletion of your data at any time. You can manage your privacy settings from your account dashboard." }
   ];

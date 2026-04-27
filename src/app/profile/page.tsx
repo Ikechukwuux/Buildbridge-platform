@@ -4,7 +4,8 @@ import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { User, Mail, Briefcase, Calendar, MapPin, Camera, Edit2, X, Check, Plus, Image as ImageIcon, Sparkles, Trash2, ArrowLeft, Shield, CreditCard, Building2, Hash, AlertCircle, CheckCircle2 } from "lucide-react";
+import { User, Mail, Briefcase, Calendar, MapPin, Camera, Edit2, X, Check, Plus, Image as ImageIcon, Sparkles, Trash2, ArrowLeft, Shield, CreditCard, Building2, Hash, AlertCircle, CheckCircle2, Settings, MessageCircle, LogOut } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -433,7 +434,10 @@ export default function ProfilePage() {
   const [showBankModal, setShowBankModal] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [impactStories, setImpactStories] = useState<any[]>([]);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
   const fetchProfile = async () => {
@@ -533,6 +537,55 @@ export default function ProfilePage() {
     setGalleryImages((prev) => [...prev, ...newImages]);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setUploadError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(filePath);
+
+      await supabase
+        .from('profiles')
+        .update({ photo_url: publicUrl })
+        .eq('user_id', user.id);
+
+      setProfile((prev: any) => ({ ...prev, photo_url: publicUrl }));
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      setUploadError(err.message || 'Failed to upload avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const removeGalleryImage = (index: number) => {
     setGalleryImages((prev) => prev.filter((_, i) => i !== index));
   };
@@ -565,6 +618,34 @@ export default function ProfilePage() {
         </div>
         Back
       </motion.button>
+
+      <div className="flex items-center justify-end gap-2">
+        <Link 
+          href="/dashboard/account"
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface hover:bg-primary/5 text-on-surface-variant hover:text-primary font-bold transition-colors"
+        >
+          <Settings className="w-4 h-4" />
+          Settings
+        </Link>
+        <button 
+          onClick={() => window.location.href = 'mailto:support@buildbridge.com'}
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface hover:bg-primary/5 text-on-surface-variant hover:text-primary font-bold transition-colors"
+        >
+          <MessageCircle className="w-4 h-4" />
+          Contact Support
+        </button>
+        <button 
+          onClick={async () => {
+            await supabase.auth.signOut();
+            router.push('/');
+          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface hover:bg-error/5 text-on-surface-variant hover:text-error font-bold transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Log out
+        </button>
+      </div>
+
       {/* Hero Profile Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -576,12 +657,35 @@ export default function ProfilePage() {
 
         <div className="absolute -bottom-1 left-0 right-0 p-8 flex flex-col sm:flex-row items-end gap-6 text-white">
           <div className="relative group">
-            <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[2.5rem] bg-white text-primary flex items-center justify-center text-5xl font-black border-8 border-primary shadow-2xl">
-              {initial.toUpperCase()}
-            </div>
-            <button className="absolute bottom-2 right-2 p-2 bg-yellow-400 text-[#121212] rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all">
-              <Camera className="w-5 h-5" />
+            {profile?.photo_url ? (
+              <img
+                src={profile.photo_url}
+                alt={profile.full_name || 'Profile'}
+                className="w-32 h-32 sm:w-40 sm:h-40 rounded-[2.5rem] object-cover border-8 border-primary shadow-2xl"
+              />
+            ) : (
+              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[2.5rem] bg-white text-primary flex items-center justify-center text-5xl font-black border-8 border-primary shadow-2xl">
+                {initial.toUpperCase()}
+              </div>
+            )}
+            <button 
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+              className="absolute bottom-2 right-2 p-2 bg-yellow-400 text-[#121212] rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {isUploadingAvatar ? (
+                <div className="w-5 h-5 animate-spin border-2 border-[#121212] border-t-transparent rounded-full" />
+              ) : (
+                <Camera className="w-5 h-5" />
+              )}
             </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
           </div>
 
           <div className="flex-grow pb-4">

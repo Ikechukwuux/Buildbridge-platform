@@ -177,6 +177,12 @@ export default function LoginForm() {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-sm font-bold text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           {errorMsg && <p className="text-sm font-bold text-error text-center bg-error/5 py-2 rounded-xl border border-error/10">{errorMsg}</p>}
@@ -187,7 +193,7 @@ export default function LoginForm() {
             className="h-16 rounded-full text-lg font-black shadow-xl shadow-primary/20"
             disabled={!email || password.length < 6}
           >
-            <span>Login</span>
+            <span>Sign In</span>
             {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
           </Button>
         </form>

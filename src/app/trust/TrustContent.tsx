@@ -33,7 +33,7 @@ export function TrustContent() {
     },
     {
       icon: FileText,
-      title: "Proof-of-Use",
+      title: "Proof of Use",
       description: "Funds are released incrementally, and tradespeople must upload receipts and photos of their tools."
     }
   ];

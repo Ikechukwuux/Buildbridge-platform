@@ -10,7 +10,7 @@ export function TermsContent() {
     { icon: Handshake, title: "Our Commitment", text: "We provide a secure, verified platform for tradespeople and backers. We commit to transparency in fees and disbursements." },
     { icon: CheckCircle, title: "Your Accountability", text: "As a tradesperson, you agree to provide truthful information and use funds only for the stated business needs." },
     { icon: Scale, title: "Vouching Ethics", text: "Vouchers must have first-hand knowledge of a tradesperson's skills. Opaque or fraudulent vouching leads to account suspension." },
-    { icon: Gavel, title: "Dispute Resolution", text: "In the rare case of a dispute, we act as a neutral mediator based on proof-of-use records and community standards." }
+    { icon: Gavel, title: "Dispute Resolution", text: "In the rare case of a dispute, we act as a neutral mediator based on proof of use records and community standards." }
   ];
 
   return (

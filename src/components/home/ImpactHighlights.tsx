@@ -13,7 +13,7 @@ const sections = [
     features: [
       "No management fees on direct pledges",
       "100% of capital reaches the tradesperson",
-      "Real-time funding progress tracking"
+      "Live funding progress tracking"
     ],
     image: "/images/hero/tailor.png",
     imageFirst: true
@@ -25,7 +25,7 @@ const sections = [
     features: [
       "Biometric and Govt ID verification",
       "Community leader endorsement system",
-      "Proof-of-trade physical verification"
+      "Physical trade verification"
     ],
     image: "/images/hero/carpenter.png",
     imageFirst: false

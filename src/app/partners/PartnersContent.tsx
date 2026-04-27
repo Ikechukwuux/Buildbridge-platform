@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 export function PartnersContent() {
   const partnerTypes = [
     { icon: Store, title: "Market Associations", description: "Onboard your members in bulk and provide collective vouching for artisans in your market." },
-    { icon: Users2, title: "NGOs & Foundations", description: "Direct your empowerment funds to verified individuals with transparent proof-of-use tracking." },
+    { icon: Users2, title: "NGOs & Foundations", description: "Direct your empowerment funds to verified individuals with transparent usage tracking." },
     { icon: Building2, title: "Financial Institutions", description: "Reach the unbanked and informal sector using our alternative credit and trust scoring." },
     { icon: BarChart4, title: "Governmental Bodies", description: "Execute large-scale social investment programs with digital-first verification and reporting." }
   ];

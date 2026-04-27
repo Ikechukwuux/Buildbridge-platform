@@ -54,7 +54,7 @@ export function HowItWorksContent() {
       number: "04",
       icon: Camera,
       title: "Share Your Proof",
-      description: "Buy your tools, upload proof-of-use, and share your growth story. This completes the trust circle.",
+      description: "Buy your tools, upload proof of use, and share your growth story. This completes the trust circle.",
       example: "Amina purchases the machine, uploads a photo of her using it, and unlocks a Level 2 badge for future needs.",
       color: "text-orange-600",
       bgColor: "bg-orange-500/10"

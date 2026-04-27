@@ -46,9 +46,9 @@ const NAV_ITEMS = [
   },
   {
     label: "Trust & Badges",
-    href: "/dashboard#trust",
+    href: "/dashboard/trust",
     icon: ShieldCheck,
-    exact: false,
+    exact: true,
   },
 ] as const;
 

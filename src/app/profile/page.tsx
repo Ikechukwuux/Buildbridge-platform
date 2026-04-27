@@ -488,6 +488,19 @@ export default function ProfilePage() {
         .maybeSingle();
       setProfile(data);
 
+      // Fetch verification status
+      if (data?.id) {
+        const { data: verification } = await supabase
+          .from("verifications")
+          .select("verified, nin_verified_at, manual_review_required, manual_review_completed")
+          .eq("profile_id", data.id)
+          .maybeSingle();
+        setProfile((prev: any) => ({
+          ...prev,
+          nin_verified: verification,
+        }));
+      }
+
       // Fetch impact stories
       if (data?.id) {
         const { data: stories } = await supabase
@@ -537,15 +550,20 @@ export default function ProfilePage() {
   };
 
   const handleNinSubmit = async (nin: string) => {
-    // Simulate network latency
-    await new Promise(r => setTimeout(r, 1000));
+    const res = await fetch("/api/identity/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "nin", documentId: nin }),
+    });
 
-    // In a real flow, this would call an API like Dojah/Prembly to verify NIN.
-    // Since columns don't exist in DB schema yet, we just update local state to reflect UI changes
-    setProfile((prev: any) => ({
-      ...prev,
-      nin_verified: 'pending' // custom state
-    }));
+    const result = await res.json();
+
+    if (!result.success) {
+      throw new Error(result.error || "Verification submission failed");
+    }
+
+    // Refresh profile data to get updated verification status
+    await fetchProfile();
   };
 
   const handleBankDetailsSubmit = async (data: { bvn: string; accountNumber: string; accountName: string; bankName: string }) => {
@@ -850,16 +868,16 @@ export default function ProfilePage() {
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest opacity-40">National ID (NIN)</p>
                       <p className="text-sm font-bold text-on-surface">
-                        {profile?.nin_verified ? "Verified" : "Not verified"}
+                        {profile?.nin_verified?.verified ? "Verified" : profile?.nin_verified ? "Pending Review" : "Not verified"}
                       </p>
                     </div>
                   </div>
-                  {profile?.nin_verified === true ? (
+                  {profile?.nin_verified?.verified ? (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
                     </div>
-                  ) : profile?.nin_verified === 'pending' ? (
+                  ) : profile?.nin_verified ? (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600">
                       <AlertCircle className="w-3.5 h-3.5" />
                       <span className="text-[10px] font-black uppercase tracking-widest">Pending</span>

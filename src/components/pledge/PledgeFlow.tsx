@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -12,7 +12,6 @@ import {
   ChevronRight, ChevronLeft, CheckCircle2, ArrowRight, Heart, Lock, Zap
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import Script from "next/script"
 import { PledgeSuccess } from "./PledgeSuccess"
 import { createClient } from "@/lib/supabase/client"
 
@@ -43,8 +42,27 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
   })
 
   const [loading, setLoading] = useState(false)
+  const [paystackReady, setPaystackReady] = useState(false)
+  const [paystackError, setPaystackError] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [showFlow, setShowFlow] = useState(alwaysShow)
+  const scriptFormRef = useRef<HTMLFormElement>(null)
+
+  // Load Paystack script into a hidden form (script requires a parent form element)
+  useEffect(() => {
+    if (!scriptFormRef.current) return
+    const script = document.createElement("script")
+    script.src = "https://js.paystack.co/v1/inline.js"
+    script.onload = () => {
+      console.log("[Paystack] Script loaded")
+      setPaystackReady(true)
+    }
+    script.onerror = () => console.error("Failed to load Paystack script")
+    scriptFormRef.current.appendChild(script)
+    return () => {
+      if (script.parentNode) script.parentNode.removeChild(script)
+    }
+  }, [])
 
   // Auth check
   useEffect(() => {
@@ -85,38 +103,75 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
     }).format(kobo / 100)
 
   const handlePaystackPayment = () => {
+    setPaystackError(null)
+
     if (!(window as any).PaystackPop) {
-      alert("Payment service is still loading. Please try again.")
+      setPaystackError("Payment service not loaded yet. Please wait a moment and try again.")
       return
     }
 
+    const key = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder"
+    const email = user?.email || "anonymous_backer@buildbridge.org"
+
+    console.log("[Paystack] Opening with key:", key.substring(0, 15) + "...", "amount:", totalChargeKobo, "email:", email)
+
     setLoading(true)
 
-    const handler = (window as any).PaystackPop.setup({
-      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder",
-      email: user?.email || "anonymous_backer@buildbridge.org",
-      amount: totalChargeKobo,
-      currency: "NGN",
-      metadata: {
-        need_id: needId,
-        backer_user_id: user?.id || 'guest',
-        custom_fields: [
-          { display_name: "Need Name", variable_name: "need_name", value: needName },
-          { display_name: "Tradesperson", variable_name: "tradesperson", value: tradespersonName },
-          { display_name: "Tip Amount", variable_name: "tip_amount", value: formatNGN(tipKobo) },
-          { display_name: "Anonymous", variable_name: "is_anonymous", value: prefs.anonymous ? 'yes' : 'no' }
-        ]
-      },
-      callback: (response: any) => {
-        setStep(3)
-        setLoading(false)
-      },
-      onClose: () => {
-        setLoading(false)
-      }
-    })
+    // Safety timeout — reset loading if popup doesn't respond within 60s
+    const timeout = setTimeout(() => {
+      setLoading(false)
+      setPaystackError("Payment window timed out. Please try again.")
+    }, 60000)
 
-    handler.openIframe()
+    try {
+      const handler = (window as any).PaystackPop.setup({
+        key,
+        email,
+        amount: totalChargeKobo,
+        ref: `bb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        currency: "NGN",
+        channels: ["card"],
+        metadata: {
+          need_id: needId,
+          backer_user_id: user?.id || 'guest',
+        },
+        callback: function (response: any) {
+          clearTimeout(timeout)
+          console.log("[Paystack] Payment successful, ref:", response.reference)
+          setStep(3)
+          setLoading(false)
+
+          if (response.reference) {
+            fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                reference: response.reference,
+                need_id: needId,
+                message: message.slice(0, 500) || undefined,
+                tip_kobo: tipKobo,
+              }),
+            }).catch(function (err) {
+              console.error("Pledge verification fallback failed:", err)
+            })
+          }
+        },
+        onClose: function () {
+          clearTimeout(timeout)
+          console.log("[Paystack] Payment window closed by user")
+          setLoading(false)
+        }
+      })
+
+      console.log("[Paystack] Calling openIframe...")
+      handler.openIframe()
+      console.log("[Paystack] openIframe called successfully")
+    } catch (err: any) {
+      clearTimeout(timeout)
+      console.error("[Paystack] Setup failed:", err)
+      setLoading(false)
+      setPaystackError(err?.message || "Could not open payment window. Please try again.")
+    }
   }
 
   if (!showFlow) {
@@ -133,8 +188,9 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
   const STEP_LABELS = ["Amount", "Breakdown", "Details"]
 
   return (
-    <div className="relative">
-      <Script src="https://js.paystack.co/v1/inline.js" strategy="lazyOnload" />
+    <>
+      <form ref={scriptFormRef} style={{ display: "none" }} />
+      <div className="relative">
 
       <AnimatePresence mode="wait">
         {step === 3 ? (
@@ -376,11 +432,22 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
                     ))}
                   </div>
 
+                  {paystackError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 bg-error/5 border border-error/20 rounded-2xl text-sm font-bold text-error text-center"
+                    >
+                      {paystackError}
+                    </motion.div>
+                  )}
+
                   {/* Pay button */}
                   <Button
                     onClick={handlePaystackPayment}
                     isLoading={loading}
-                    className="w-full h-16 text-lg font-black rounded-[1.75rem] flex items-center justify-center gap-3 bg-on-surface text-surface hover:bg-on-surface/90 shadow-2xl active:scale-95"
+                    disabled={!paystackReady}
+                    className="w-full h-16 text-lg font-black rounded-[1.75rem] flex items-center justify-center gap-3 bg-on-surface text-surface hover:bg-on-surface/90 shadow-2xl active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Lock className="h-5 w-5" />
                     Pay {formatNGN(totalChargeKobo)} Securely
@@ -396,6 +463,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   )
 }

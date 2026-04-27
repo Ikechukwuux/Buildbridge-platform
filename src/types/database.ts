@@ -103,6 +103,10 @@ export interface Need {
   photo_geotag_lng: number | null;
   photo_uploaded_at: string | null;
   story: string;
+  /** Denormalized from profiles for direct display */
+  location_state: string | null;
+  /** Denormalized from profiles for direct display */
+  location_lga: string | null;
   impact_statement: string | null;
   impact_statement_source: string;
   deadline: string; // DATE

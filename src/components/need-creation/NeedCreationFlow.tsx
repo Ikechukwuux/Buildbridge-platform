@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/Input"
 import { NIGERIA_LOCATIONS } from "@/lib/data/nigeria"
 import { ChevronLeft, ChevronRight, Camera, Mic, Loader2, ShieldCheck, CheckCircle, X, Copy, Share2, ExternalLink, ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn, formatStateName } from "@/lib/utils"
 import Link from "next/link"
 import { adminSyncPhoneUser, syncUserRecord } from "@/app/actions/auth"
 
@@ -315,16 +315,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
     }
     return mapping[categoryId] || "Other"
   }
-  
-  // Format state name from DB format back to display
-  const formatStateName = (dbState: string): string => {
-    if (!dbState) return ""
-    // Convert e.g. "lagos" -> "Lagos", "cross_river" -> "Cross River"
-    return dbState.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
-  }
-  
+   
   // Map trade category label to enum ID
   const getTradeCategoryId = (label: string): string => {
     const mapping: Record<string, string> = {
@@ -885,6 +876,8 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
         published_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        location_state: formData.state.toLowerCase().replace(/\s+/g, '_'),
+        location_lga: formData.lga,
       }
       
       const { data: createdNeed, error: needError } = await supabase

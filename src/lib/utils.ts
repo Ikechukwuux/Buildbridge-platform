@@ -25,3 +25,12 @@ export async function handleShare(title: string, text: string, url: string) {
     }
   }
 }
+
+export function formatStateName(dbState: string | null | undefined): string {
+  if (!dbState) return ""
+  return dbState.split('_').map(word => {
+    const upper = word.toUpperCase()
+    if (upper === 'FCT') return 'FCT'
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  }).join(' ')
+}

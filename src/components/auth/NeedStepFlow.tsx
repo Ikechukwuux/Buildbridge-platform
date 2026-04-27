@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { 
-  Hammer, ShoppingBag, Target, ArrowRight, ArrowLeft, 
-  MapPin, Sparkles, Camera, Clock, Users, CheckCircle2, Loader2 
+import {
+  Hammer, ShoppingBag, Target, ArrowRight, ArrowLeft,
+  MapPin, Sparkles, Camera, Clock, Users, CheckCircle2, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NIGERIA_LOCATIONS } from "@/lib/data/nigeria";
@@ -64,7 +64,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
-      
+
       updateData({ photoUrl: data.url });
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -86,7 +86,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center px-1">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Step {step} of {totalSteps}</span>
-          <button 
+          <button
             onClick={onSkip}
             className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 hover:text-primary transition-colors cursor-pointer"
           >
@@ -94,7 +94,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
           </button>
         </div>
         <div className="h-1.5 w-full bg-primary/5 rounded-full overflow-hidden">
-          <motion.div 
+          <motion.div
             initial={false}
             animate={{ width: `${(step / totalSteps) * 100}%` }}
             className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]"
@@ -134,8 +134,8 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                           onClick={() => updateData({ category: cat.label })}
                           className={cn(
                             "flex items-center gap-3 p-3 rounded-2xl border-2 transition-all active:scale-[0.98]",
-                            formData.category === cat.label 
-                              ? "bg-primary border-primary text-white shadow-md shadow-primary/20" 
+                            formData.category === cat.label
+                              ? "bg-primary border-primary text-white shadow-md shadow-primary/20"
                               : "bg-white border-outline-variant hover:border-primary/30"
                           )}
                         >
@@ -146,7 +146,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                     </div>
                     {formData.category === 'Other' && (
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3">
-                        <Input 
+                        <Input
                           placeholder="Please specify your trade..."
                           value={formData.otherCategory}
                           onChange={(e) => updateData({ otherCategory: e.target.value })}
@@ -155,7 +155,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                       </motion.div>
                     )}
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">2. Type of Need</h3>
                     <div className="grid grid-cols-1 gap-2">
@@ -165,7 +165,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                         { id: 'equipment', label: 'Heavy Equipment', icon: Target },
                         { id: 'other', label: 'Other Support', icon: Sparkles },
                       ].map(type => (
-                        <SelectionCard 
+                        <SelectionCard
                           key={type.id}
                           label={type.label}
                           icon={type.icon}
@@ -185,19 +185,19 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                 <div className="flex flex-col gap-6">
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">Item Name</h3>
-                    <Input 
+                    <Input
                       placeholder="e.g. Industrial Sewing Machine (Singer)"
                       value={formData.itemName}
                       onChange={(e) => updateData({ itemName: e.target.value })}
                       className="h-14 text-lg font-semibold rounded-2xl border-2 focus:border-primary"
                     />
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">Estimated Cost (₦)</h3>
                     <div className="relative group">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-black text-primary">₦</span>
-                      <input 
+                      <input
                         type="number"
                         placeholder="50,000"
                         value={formData.cost}
@@ -218,8 +218,8 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                             onClick={() => updateData({ condition: val })}
                             className={cn(
                               "p-3 rounded-xl border-2 font-bold text-sm transition-all",
-                              formData.condition === val 
-                                ? "bg-primary border-primary text-white" 
+                              formData.condition === val
+                                ? "bg-primary border-primary text-white"
                                 : "bg-white border-outline-variant hover:border-primary/30"
                             )}
                           >
@@ -239,7 +239,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                 <div className="flex flex-col gap-6">
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">State</h3>
-                    <select 
+                    <select
                       value={formData.state}
                       onChange={(e) => updateData({ state: e.target.value, lga: "" })}
                       className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-4 pr-10 text-lg font-bold bg-white outline-none appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_16px_center] cursor-pointer"
@@ -252,7 +252,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
 
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">Local Government Area (LGA)</h3>
-                    <select 
+                    <select
                       value={formData.lga}
                       onChange={(e) => updateData({ lga: e.target.value })}
                       className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-4 pr-10 text-lg font-bold bg-white outline-none appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_16px_center] cursor-pointer"
@@ -310,7 +310,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                         </button>
                       )}
                     </h3>
-                    <Textarea 
+                    <Textarea
                       placeholder="Share your journey and how this will help you grow..."
                       value={formData.story}
                       onChange={(e) => updateData({ story: e.target.value })}
@@ -322,7 +322,7 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">Expected Impact (Optional)</h3>
                     <div className="relative">
                       <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-                      <input 
+                      <input
                         placeholder="e.g. Training 2 apprentices"
                         value={formData.impact}
                         onChange={(e) => updateData({ impact: e.target.value })}
@@ -330,29 +330,29 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                       />
                     </div>
                     <div className="mt-2 text-right">
-                       <button 
-                          type="button"
-                          disabled={isGenerating || !formData.category || !formData.itemName || !formData.story}
-                          onClick={async () => {
-                            const trade = formData.category === 'Other' ? formData.otherCategory : formData.category;
-                            const result = await generateImpactStatement(trade, formData.itemName, formData.story);
-                            if (result) {
-                              updateData({ impact: result });
-                            }
-                          }}
-                          className={cn(
-                            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all",
-                            isGenerating 
-                              ? "bg-slate-100 border border-slate-200 text-slate-400 opacity-70 cursor-not-allowed" 
-                              : "bg-primary/10 text-primary hover:bg-primary/20"
-                          )}
-                        >
-                          {isGenerating ? (
-                            <><Loader2 className="h-3 w-3 animate-spin" /> Generating...</>
-                          ) : (
-                            <>✨ Generate with AI</>
-                          )}
-                        </button>
+                      <button
+                        type="button"
+                        disabled={isGenerating || !formData.category || !formData.itemName || !formData.story}
+                        onClick={async () => {
+                          const trade = formData.category === 'Other' ? formData.otherCategory : formData.category;
+                          const result = await generateImpactStatement(trade, formData.itemName, formData.story);
+                          if (result) {
+                            updateData({ impact: result });
+                          }
+                        }}
+                        className={cn(
+                          "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                          isGenerating
+                            ? "bg-slate-100 border border-slate-200 text-slate-400 opacity-70 cursor-not-allowed"
+                            : "bg-primary/10 text-primary hover:bg-primary/20"
+                        )}
+                      >
+                        {isGenerating ? (
+                          <><Loader2 className="h-3 w-3 animate-spin" /> Generating...</>
+                        ) : (
+                          <>✨ Generate with AI</>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -378,8 +378,8 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                           onClick={() => updateData({ timeline: t.id })}
                           className={cn(
                             "p-3 rounded-xl border-2 font-bold text-sm transition-all",
-                            formData.timeline === t.id 
-                              ? "bg-primary border-primary text-white" 
+                            formData.timeline === t.id
+                              ? "bg-primary border-primary text-white"
                               : "bg-white border-outline-variant hover:border-primary/30"
                           )}
                         >
@@ -393,18 +393,18 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
                     <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3">Workspace Photo (Optional)</h3>
                     <label className={cn(
                       "flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-[1.5rem] transition-all cursor-pointer relative overflow-hidden",
-                      formData.photoUrl 
-                        ? "border-green-500 bg-green-50" 
+                      formData.photoUrl
+                        ? "border-green-500 bg-green-50"
                         : "border-primary/20 bg-primary/5 hover:border-primary/40"
                     )}>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleFileUpload} 
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
                         className="absolute inset-0 opacity-0 cursor-pointer z-20"
                         disabled={isUploading}
                       />
-                      
+
                       {isUploading ? (
                         <div className="flex flex-col items-center gap-2">
                           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -463,8 +463,8 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
       {/* Navigation Buttons */}
       <div className="flex gap-4">
         {step > 1 && (
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={prevStep}
             className="h-16 px-6 rounded-full font-black text-on-surface-variant"
           >
@@ -472,9 +472,9 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
             Back
           </Button>
         )}
-        
+
         {step < totalSteps ? (
-          <Button 
+          <Button
             onClick={nextStep}
             disabled={!isStepValid(step, formData) || isUploading}
             className="h-16 flex-1 rounded-full text-lg font-black shadow-xl shadow-primary/20"
@@ -483,12 +483,12 @@ export function NeedStepFlow({ onComplete, onSkip }: NeedStepFlowProps) {
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
         ) : (
-          <Button 
+          <Button
             onClick={handleFinalSubmit}
             className="h-16 flex-1 rounded-full text-lg font-black shadow-xl shadow-primary/20 bg-green-600 hover:bg-green-700 text-white"
           >
-            <span>Complete & Signup</span>
-            <CheckCircle2 className="ml-2 w-5 h-5" />
+            <span>Proceed</span>
+            <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
         )}
       </div>
@@ -514,8 +514,8 @@ function SelectionCard({ label, icon: Icon, selected, onClick }: { label: string
       onClick={onClick}
       className={cn(
         "w-full p-4 rounded-2xl border-2 transition-all flex items-center gap-4 text-left active:scale-[0.98]",
-        selected 
-          ? "bg-primary border-primary text-white shadow-md shadow-primary/20" 
+        selected
+          ? "bg-primary border-primary text-white shadow-md shadow-primary/20"
           : "bg-white border-outline-variant hover:border-primary/30 text-on-surface"
       )}
     >

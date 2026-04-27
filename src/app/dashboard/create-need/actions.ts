@@ -72,6 +72,13 @@ export async function createNeedAction(formData: FormData) {
   deadlineDate.setDate(deadlineDate.getDate() + deadlineDays)
 
   // 6. Insert into Database
+  // Get profile location for need denormalization
+  const { data: fullProfile } = await supabase
+    .from("profiles")
+    .select("location_state, location_lga")
+    .eq("id", profile.id)
+    .single()
+
   const { error: dbError } = await supabase
     .from("needs")
     .insert({
@@ -84,7 +91,9 @@ export async function createNeedAction(formData: FormData) {
       story: story,
       impact_statement: impact,
       deadline: deadlineDate.toISOString().split('T')[0], // DATE format
-      status: "pending_review"
+      status: "pending_review",
+      location_state: fullProfile?.location_state || null,
+      location_lga: fullProfile?.location_lga || null,
     })
 
   if (dbError) {

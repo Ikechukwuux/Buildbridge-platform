@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Textarea } from "@/components/ui/Textarea"
 import { Avatar } from "@/components/ui/Avatar"
+import { cn, formatStateName } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import {
   Scissors, Hammer, ChefHat, Flame, Watch,
@@ -811,14 +812,6 @@ export function OnboardingForm() {
           : "0"
 
         // Format state name (snake_case to Title Case)
-        const formatStateName = (state: string) => {
-          if (!state) return ""
-          return state
-            .replace(/_/g, " ")
-            .split(" ")
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(" ")
-        }
         const formattedState = formData.location_state ? formatStateName(formData.location_state) : ""
 
         return (

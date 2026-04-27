@@ -68,6 +68,8 @@ export function EditNeedForm({ need }: { need: any }) {
           item_cost: costInKobo,
           story: story,
           photo_url: photoUrl,
+          location_state: need.location_state || null,
+          location_lga: need.location_lga || null,
         })
         .eq('id', need.id)
 
@@ -170,7 +172,7 @@ export function EditNeedForm({ need }: { need: any }) {
           className="flex-1"
           disabled={loading}
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Changes"}
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save"}
         </Button>
       </div>
     </form>

@@ -26,7 +26,7 @@ import {
   ImageOff
 } from "lucide-react"
 import { motion } from "framer-motion"
-import { cn, handleShare } from "@/lib/utils"
+import { cn, handleShare, formatStateName } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 
 export default function NeedDetailPage() {
@@ -110,8 +110,8 @@ export default function NeedDetailPage() {
 
   const artisanName = profile?.full_name || "Artisan"
   const tradeCategory = profile?.trade_category?.replace(/_/g, ' ') || "Trade"
-  const locationState = profile?.location_state?.replace(/_/g, ' ') || ""
-  const locationLga = profile?.location_lga || ""
+  const locationState = formatStateName(need.location_state || profile?.location_state)
+  const locationLga = need.location_lga || profile?.location_lga || ""
   const locationDisplay = locationLga ? `${locationLga}, ${locationState}` : locationState
 
   return (

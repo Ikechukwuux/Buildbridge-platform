@@ -153,6 +153,8 @@ CREATE TABLE needs (
   photo_geotag_lat DECIMAL(10, 8),
   photo_geotag_lng DECIMAL(11, 8),
   photo_uploaded_at TIMESTAMPTZ,
+  location_state text,
+  location_lga text,
   story TEXT NOT NULL CHECK (char_length(story) <= 150),
   impact_statement TEXT CHECK (char_length(impact_statement) <= 200),
   impact_statement_source VARCHAR(20) DEFAULT 'ai_generated',

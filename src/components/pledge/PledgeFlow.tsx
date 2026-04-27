@@ -130,7 +130,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
         amount: totalChargeKobo,
         ref: `bb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         currency: "NGN",
-        channels: ["card"],
+        channels: ["card", "bank", "ussd", "bank_transfer"],
         metadata: {
           need_id: needId,
           backer_user_id: user?.id || 'guest',

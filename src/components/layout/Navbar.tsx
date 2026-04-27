@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Logo } from "../ui/Logo"
-import { Menu, User, LogOut, ChevronDown, LayoutDashboard, Settings, Sparkles, PlusCircle, MessageCircle } from "lucide-react"
+import { Menu, User, LogOut, ChevronDown, LayoutDashboard, Settings, MessageCircle } from "lucide-react"
 import { MobileNav } from "./MobileNav"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter, usePathname } from "next/navigation"
@@ -165,6 +165,7 @@ function UserMenu({
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -216,18 +217,28 @@ function UserMenu({
             </div>
 
             <Link
-              href="/dashboard/create-need"
+              href="/dashboard"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors text-sm font-black group mb-2 shadow-lg shadow-primary/20"
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-sm font-bold",
+                pathname === "/dashboard"
+                  ? "bg-primary/10 text-primary"
+                  : "text-on-surface-variant hover:text-primary hover:bg-primary/5"
+              )}
             >
-              <PlusCircle className="w-4 h-4" />
-              Create Need
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
             </Link>
 
             <Link
               href="/profile"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/5 text-on-surface-variant hover:text-primary transition-colors text-sm font-bold group"
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-sm font-bold",
+                pathname === "/profile"
+                  ? "bg-primary/10 text-primary"
+                  : "text-on-surface-variant hover:text-primary hover:bg-primary/5"
+              )}
             >
               <User className="w-4 h-4" />
               Profile

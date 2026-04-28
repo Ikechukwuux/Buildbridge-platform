@@ -1,74 +1,68 @@
 import { Metadata } from "next"
+import { createClient } from "@/lib/supabase/server"
 import { ChevronLeft, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { PledgeFlow } from "@/components/pledge/PledgeFlow"
+import { DEMO_NEEDS } from "@/lib/data/demo-needs"
 
 interface PaymentPageProps {
   params: Promise<{ needId: string }>
 }
 
-// Mock need data for demo - same as in need detail page
-const MOCK_NEEDS: Record<string, any> = {
-  "demo-need-001": {
-    id: "demo-need-001",
-    item_name: "Industrial Overlock Machine",
-    item_cost: 35000000,
-    funded_amount: 21500000,
-    pledge_count: 14,
-    status: "active",
-    photo_url: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&q=80&w=800",
-    story: "I've been a tailor in Surulere for 8 years, specializing in school uniforms and traditional attire. My current machine breaks down every other week, costing me clients and income.\n\nWith an industrial overlock machine, I can take on bulk uniform contracts for 3 local schools and hire two apprentices from my community. This is not just a machine — it's the foundation of a workshop.",
-    impact_statement: "This machine will allow me to hire 2 apprentices and fulfill bulk contracts for 3 local schools, growing my output by 300%.",
-    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    created_at: new Date().toISOString(),
-    profile: {
-      name: "Amina S.",
-      location_lga: "Surulere",
-      location_state: "Lagos",
-      trade_category: "tailor",
-      badge_level: "level_3_established",
-      vouch_count: 8,
-      photo_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=400",
-    },
-  },
-  "demo-browse-001": {
-    id: "demo-browse-001",
-    item_name: "Industrial Overlock Machine",
-    item_cost: 35000000,
-    funded_amount: 21500000,
-    funding_percentage: 61,
-    pledge_count: 14,
-    status: "active",
-    photo_url: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&q=80&w=800",
-    story: "I need an overlock machine to take on more uniform contracts.",
-    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    profile: {
-      name: "Amina S.",
-      location_lga: "Surulere",
-      location_state: "Lagos",
-      trade_category: "tailor",
-      badge_level: "level_3_established",
-      vouch_count: 8,
-      photo_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=400",
-    },
-  },
-}
-
 export async function generateMetadata({ params }: PaymentPageProps): Promise<Metadata> {
   const { needId } = await params
-  const need = MOCK_NEEDS[needId] || MOCK_NEEDS["demo-need-001"]
+  const need = await getNeed(needId)
   return {
     title: `Back ${need.profile.name} - ${need.item_name} | BuildBridge`,
     description: `Support ${need.profile.name}'s need for a ${need.item_name}.`,
   }
 }
 
+async function getNeed(needId: string) {
+  // Try Supabase first
+  try {
+    const supabase = await createClient()
+    if (supabase) {
+      const { data: dbNeed } = await supabase
+        .from('needs')
+        .select(`*, profile:profiles(full_name, location_lga, location_state, trade_category, badge_level, vouch_count, photo_url)`)
+        .eq('id', needId)
+        .single()
+
+      if (dbNeed) {
+        return {
+          id: dbNeed.id,
+          item_name: dbNeed.item_name,
+          item_cost: dbNeed.item_cost,
+          funded_amount: dbNeed.funded_amount || 0,
+          pledge_count: dbNeed.pledge_count || 0,
+          status: dbNeed.status,
+          photo_url: dbNeed.photo_url,
+          story: dbNeed.story,
+          impact_statement: dbNeed.impact_statement,
+          deadline: dbNeed.deadline,
+          created_at: dbNeed.created_at,
+          profile: {
+            name: dbNeed.profile?.full_name || "Artisan",
+            location_lga: dbNeed.location_lga || dbNeed.profile?.location_lga || "Local",
+            location_state: dbNeed.location_state || dbNeed.profile?.location_state || "Nigeria",
+            trade_category: dbNeed.profile?.trade_category || "trade",
+            badge_level: dbNeed.profile?.badge_level || "level_1_community_member",
+            vouch_count: dbNeed.profile?.vouch_count || 0,
+            photo_url: dbNeed.profile?.photo_url || "",
+          },
+        }
+      }
+    }
+  } catch {}
+
+  // Fall back to demo data
+  return DEMO_NEEDS[needId] || DEMO_NEEDS["demo-need-001"]
+}
 
 export default async function PaymentPage({ params }: PaymentPageProps) {
   const { needId } = await params
-  const need = MOCK_NEEDS[needId] || MOCK_NEEDS["demo-need-001"]
-  const fundedPct = Math.round((need.funded_amount / need.item_cost) * 100)
+  const need = await getNeed(needId)
 
   const formatNGN = (kobo: number) =>
     new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(kobo / 100)
@@ -112,11 +106,8 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
           </p>
         </div>
 
-        {/* Single-column layout: artisan context + pledge flow */}
+        {/* Single-column layout: pledge flow */}
         <div className="flex flex-col gap-8">
-
-
-          {/* Pledge flow */}
           <div className="w-full">
             <div className="bg-surface rounded-[2.5rem] border border-outline-variant/30 shadow-[0_20px_60px_rgba(0,0,0,0.07)] overflow-hidden">
               <PledgeFlow
@@ -129,7 +120,6 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
             </div>
           </div>
         </div>
-
 
       </div>
     </main>

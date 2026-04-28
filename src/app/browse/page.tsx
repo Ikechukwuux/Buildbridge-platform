@@ -204,7 +204,7 @@ export default function BrowsePage() {
       filtered = filtered.filter(n => n.profile.location_state === filters.state.toLowerCase())
     }
     if (filters.badgeLevel !== null) {
-      const levels = ['level_1_community_member', 'level_2_trusted_tradesperson', 'level_3_established', 'level_4_platform_verified']
+      const levels = ['level_1_community_member']
       filtered = filtered.filter(n => n.profile.badge_level === levels[filters.badgeLevel! - 1])
     }
     if (debouncedSearch) {

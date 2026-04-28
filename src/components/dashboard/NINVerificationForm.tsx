@@ -103,7 +103,7 @@ export function NINVerificationForm({ onSuccess, onClose }: NINVerificationFormP
                </p>
             </div>
 
-            <Button onClick={handleVerify} isLoading={loading} className="w-full text-headline-small py-8 rounded-2xl">
+            <Button onClick={handleVerify} isLoading={loading} className="w-full h-16 text-lg font-black rounded-2xl">
                Start Biometric Match
             </Button>
           </motion.div>
@@ -156,7 +156,7 @@ export function NINVerificationForm({ onSuccess, onClose }: NINVerificationFormP
                 </p>
              </div>
 
-             <Button onClick={() => {onSuccess(); onClose();}} className="w-full text-headline-small py-8 rounded-2xl">
+             <Button onClick={() => {onSuccess(); onClose();}} className="w-full h-16 text-lg font-black rounded-2xl">
                 Go to Dashboard
              </Button>
           </motion.div>

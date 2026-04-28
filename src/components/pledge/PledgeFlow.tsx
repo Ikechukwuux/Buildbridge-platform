@@ -4,7 +4,6 @@ import * as React from "react"
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Textarea } from "@/components/ui/Textarea"
@@ -176,11 +175,12 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
 
   if (!showFlow) {
     return (
-      <Link href={`/payment/${needId}`} className="block">
-        <Button className="w-full h-16 text-lg font-black rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-white bg-primary">
-          Back This Tradesperson
-        </Button>
-      </Link>
+      <Button
+        onClick={() => router.push(`/payment/${needId}`)}
+        className="w-full text-headline-small py-8 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-white bg-primary"
+      >
+        Back This Tradesperson
+      </Button>
     )
   }
 

@@ -173,7 +173,8 @@ function DashboardContent() {
 
   const handleVouchRequest = () => {
     if (!profile?.id) return
-    const vouchUrl = `${window.location.origin}/profile/${profile.id}/vouch`
+    const name = encodeURIComponent(userName || "this tradesperson")
+    const vouchUrl = `${window.location.origin}/profile/${profile.id}/vouch?name=${name}`
     navigator.clipboard.writeText(vouchUrl)
     setShowCopied(true)
     setTimeout(() => setShowCopied(false), 3000)
@@ -219,9 +220,6 @@ function DashboardContent() {
   const badgeEnumMapping: any = {
     'level_0_unverified': 0,
     'level_1_community_member': 1,
-    'level_2_trusted_tradesperson': 2,
-    'level_3_established': 3,
-    'level_4_platform_verified': 4
   }
 
   const firstName = userName.split(' ')[0]
@@ -377,8 +375,6 @@ function DashboardContent() {
                <TrustTracker 
                  currentLevel={badgeEnumMapping[profile?.badge_level || 'level_0_unverified']}
                  vouches={profile?.vouch_count || 0}
-                 deliveries={profile?.delivered_count || 0}
-                 onVerifyClick={() => setIsVerifying(true)}
                  onVouchRequest={handleVouchRequest}
                />
             </div>

@@ -128,10 +128,7 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
 
   const TradeIcon = (need.profile?.trade_category && TRADE_ICONS_MAP[need.profile.trade_category]) || MoreHorizontal;
 
-  const badgeLevel = need.profile?.badge_level === 'level_4_platform_verified' ? 4
-    : need.profile?.badge_level === 'level_3_established' ? 3
-      : need.profile?.badge_level === 'level_2_trusted_tradesperson' ? 2
-        : need.profile?.badge_level === 'level_1_community_member' ? 1 : 0;
+  const badgeLevel = need.profile?.badge_level === 'level_1_community_member' ? 1 : 0;
 
   const [imageError, setImageError] = React.useState(false);
 
@@ -258,7 +255,7 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
               alt={need.profile?.full_name || need.profile?.name || "Tradesperson"}
               className="h-12 w-12 rounded-2xl object-cover border-2 border-white shadow-md"
             />
-            {need.profile?.badge_level === 'level_4_platform_verified' && (
+            {need.profile?.badge_level === 'level_1_community_member' && (
               <div className="absolute -bottom-1 -right-1 rounded-full p-1 bg-green-500 border-2 border-white shadow-lg">
                 <ShieldCheck className="h-3 w-3 text-white" />
               </div>
@@ -336,7 +333,7 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
         {/* Divider & Actions */}
         <div className="pt-6 border-t border-outline-variant/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Badge level={badgeLevel as 0 | 1 | 2 | 3 | 4} />
+            <Badge level={badgeLevel as 0 | 1} />
           </div>
           <Button
             className={cn(

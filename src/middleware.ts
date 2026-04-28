@@ -52,6 +52,9 @@ export default async function middleware(request: NextRequest) {
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
 
+  // Allow unauthenticated access to vouch pages (e.g., /profile/123/vouch)
+  const isVouchPage = /^\/profile\/[^/]+\/vouch$/.test(pathname);
+
   const isAuthOnly = AUTH_ONLY_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
@@ -65,8 +68,8 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
-  // CASE 2: Unauthenticated user hitting a protected path
-  if (isProtected && !user) {
+  // CASE 2: Unauthenticated user hitting a protected path (excluding vouch pages)
+  if (isProtected && !isVouchPage && !user) {
     if (process.env.NODE_ENV === 'development') {
       console.warn("Dev mode: bypassing middleware auth check to allow UI testing.");
       return response;

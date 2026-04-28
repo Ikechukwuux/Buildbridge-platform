@@ -458,7 +458,7 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
                        </div>
                     </div>
                  </div>
-                 <Badge level={need.profile.badge_level === 'level_4_platform_verified' ? 4 : need.profile.badge_level === 'level_3_established' ? 3 : need.profile.badge_level === 'level_2_trusted_tradesperson' ? 2 : need.profile.badge_level === 'level_1_community_member' ? 1 : 0} />
+                  <Badge level={need.profile.badge_level === 'level_1_community_member' ? 1 : 0} />
               </div>
 
               {/* Recent Support */}

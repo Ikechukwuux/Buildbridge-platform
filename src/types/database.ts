@@ -2,10 +2,7 @@ export type UserRole = 'tradesperson' | 'backer' | 'community_leader' | 'admin';
 
 export enum BadgeLevel {
   LEVEL_0_UNVERIFIED = 'level_0_unverified',
-  LEVEL_1_COMMUNITY_MEMBER = 'level_1_community_member',
-  LEVEL_2_TRUSTED_TRADESPERSON = 'level_2_trusted_tradesperson',
-  LEVEL_3_ESTABLISHED = 'level_3_established',
-  LEVEL_4_PLATFORM_VERIFIED = 'level_4_platform_verified',
+  LEVEL_1_COMMUNITY_VOUCHED = 'level_1_community_member',
 }
 
 export enum NeedStatus {
@@ -28,11 +25,9 @@ export enum NotificationChannel {
 export type TradeCategory = 'tailor' | 'carpenter' | 'welder' | 'cobbler' | 'food_processor' | 'market_trader' | 'baker' | 'mechanic' | 'electrician' | 'plumber' | 'hair_stylist' | 'blacksmith' | 'other';
 export type VerificationProvider = 'dojah' | 'prembly' | 'manual';
 export type NotificationType = 'pledge_received' | 'first_pledge_celebration' | 'milestone_50' | 'milestone_80' | 'milestone_100' | 'proof_nudge_day3' | 'proof_nudge_day7' | 'proof_nudge_day14' | 'proof_submitted' | 'zero_pledge_24h' | 'disbursement_complete' | 'vouch_received' | 'need_approved' | 'need_rejected' | 'account_flagged';
-export type RelationshipType = 'customer' | 'neighbor' | 'market_colleague' | 'apprentice_master' | 'family' | 'cooperative_member' | 'association_member' | 'other';
-export type ModerationStatus = 'pending' | 'approved' | 'rejected' | 'revision_requested' | 'flagged_fraud';
 
 export interface User {
-  id: string; // UUID
+  id: string;
   phone: string;
   phone_verified_at: string | null;
   email: string | null;
@@ -57,8 +52,8 @@ export interface User {
 }
 
 export interface Profile {
-  id: string; // UUID
-  user_id: string; // UUID
+  id: string;
+  user_id: string;
   trade_category: TradeCategory | null;
   trade_other_description: string | null;
   years_experience: number | null;
@@ -77,39 +72,29 @@ export interface Profile {
   vouch_count: number;
   contact_info_visible: boolean;
   pledge_history_visible: boolean;
-  vouch_details_visible: boolean;
-  income_visible: boolean;
-  trust_score: number;
-  fraud_flags: number;
-  last_fraud_review_at: string | null;
   notify_via_sms: boolean;
   notify_via_whatsapp: boolean;
   notify_via_email: boolean;
-  can_vouch: boolean;
-  vouching_suspended_until: string | null;
   can_create_needs: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export interface Need {
-  id: string; // UUID
-  profile_id: string; // UUID
+  id: string;
+  profile_id: string;
   item_name: string;
-  /** Amount in kobo (NGN minor units) */
   item_cost: number;
   photo_url: string;
   photo_geotag_lat: number | null;
   photo_geotag_lng: number | null;
   photo_uploaded_at: string | null;
   story: string;
-  /** Denormalized from profiles for direct display */
   location_state: string | null;
-  /** Denormalized from profiles for direct display */
   location_lga: string | null;
   impact_statement: string | null;
   impact_statement_source: string;
-  deadline: string; // DATE
+  deadline: string;
   created_at: string;
   published_at: string | null;
   completed_at: string | null;
@@ -119,12 +104,10 @@ export interface Need {
   moderated_by: string | null;
   moderated_at: string | null;
   rejection_reason: string | null;
-  /** Amount in kobo (NGN minor units) */
   funded_amount: number;
   pledge_count: number;
   funding_percentage: number;
   disbursed_at: string | null;
-  /** Amount in kobo (NGN minor units) */
   disbursement_amount: number | null;
   disbursement_reference: string | null;
   proof_photo_url: string | null;
@@ -142,23 +125,21 @@ export interface Need {
 }
 
 export interface Pledge {
-  id: string; // UUID
-  need_id: string; // UUID
-  backer_user_id: string; // UUID
-  /** Amount in kobo (NGN minor units) */
+  id: string;
+  need_id: string;
+  backer_user_id: string;
   amount: number;
   currency: string;
   fee_breakdown_json: {
-    platform_fee: number; // in kobo
-    processing_fee: number; // in kobo
-    tradesperson_receives: number; // in kobo
+    platform_fee: number;
+    processing_fee: number;
+    tradesperson_receives: number;
   };
   payment_provider: string | null;
   payment_reference: string | null;
   payment_status: string;
   paid_at: string | null;
   original_currency: string | null;
-  /** Amount in minor units of original_currency */
   original_amount: number | null;
   exchange_rate: number | null;
   message: string | null;
@@ -170,27 +151,19 @@ export interface Pledge {
 }
 
 export interface Vouch {
-  id: string; // UUID
-  voucher_user_id: string;
+  id: string;
+  voucher_user_id: string | null;
+  voucher_name: string | null;
+  voucher_phone: string | null;
   recipient_profile_id: string;
-  relationship_type: RelationshipType;
-  relationship_duration_years: number | null;
   statement: string;
-  vouch_weight: number;
-  is_community_leader_vouch: boolean;
-  status: ModerationStatus;
-  disputed: boolean;
-  dispute_reason: string | null;
-  disputed_at: string | null;
-  flagged_as_fraud: boolean;
-  fraud_review_notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface Verification {
-  id: string; // UUID
-  profile_id: string; // UUID
+  id: string;
+  profile_id: string;
   nin_hash: string | null;
   bvn_hash: string | null;
   nin_verified_at: string | null;
@@ -214,16 +187,16 @@ export interface Verification {
 }
 
 export interface ImpactWallSubmission {
-  id: string; // UUID
-  need_id: string; // UUID
-  profile_id: string; // UUID
+  id: string;
+  need_id: string;
+  profile_id: string;
   photo_url: string | null;
   video_url: string | null;
   video_thumbnail_url: string | null;
   caption: string;
   opted_in_at: string;
   public_display_consent: boolean;
-  moderation_status: ModerationStatus;
+  moderation_status: string;
   moderated_by: string | null;
   moderation_notes: string | null;
   moderated_at: string | null;

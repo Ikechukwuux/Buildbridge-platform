@@ -1,59 +1,33 @@
 ﻿import * as React from "react"
-import { useRouter } from "next/navigation"
 import { Badge, type BadgeLevelType } from "@/components/ui/Badge"
 import { Card } from "@/components/ui/Card"
 import { ProgressBar } from "@/components/ui/ProgressBar"
 import { Button } from "@/components/ui/Button"
-import { ArrowRight, CheckCircle2, ShieldCheck, Star, User, Lock, ExternalLink } from "lucide-react"
+import { ArrowRight, CheckCircle2, ShieldCheck, ExternalLink } from "lucide-react"
 
 interface TrustTrackerProps {
   currentLevel: BadgeLevelType;
   vouches: number;
-  deliveries: number;
-  onVerifyClick: () => void;
   onVouchRequest: () => void;
 }
 
-export function TrustTracker({ currentLevel, vouches, deliveries, onVerifyClick, onVouchRequest }: TrustTrackerProps) {
-  const router = useRouter()
+export function TrustTracker({ currentLevel, vouches, onVouchRequest }: TrustTrackerProps) {
   
   const getNextMilestone = () => {
     switch (currentLevel) {
       case 0:
-        return { 
-          title: "Level 1: Community Member", 
-          task: "Complete your profile details", 
-          progress: 100, // Onboarding usually means they are at least Level 1
-          cta: "Edit Profile" 
+        return {
+          title: "Level 1: Community Vouched",
+          task: `${3 - vouches} more community vouches needed`,
+          progress: Math.min(100, (vouches / 3) * 100),
+          cta: "Copy Vouch Link"
         }
       case 1:
-        return { 
-          title: "Level 2: Trusted Tradesperson", 
-          task: `${2 - vouches} more community vouches needed`, 
-          progress: (vouches / 2) * 100, 
-          cta: "Request Vouches" 
-        }
-      case 2:
-        return { 
-          title: "Level 3: Established", 
-          task: "Fully fund and deliver 1 need", 
-          progress: (deliveries / 1) * 100, 
-          cta: "Track Delivery" 
-        }
-      case 3:
-        return { 
-          title: "Level 4: Platform Verified", 
-          task: "Verify your Government ID (NIN)", 
-          progress: 0, 
-          cta: "Verify NIN",
-          isAction: true
-        }
-      case 4:
-        return { 
-          title: "Top Tier: Platform Verified", 
-          task: "You've reached the highest trust level!", 
-          progress: 100, 
-          cta: "Share Badge" 
+        return {
+          title: "Community Vouched",
+          task: "Your profile is trusted by the community!",
+          progress: 100,
+          cta: "Copy Vouch Link"
         }
       default:
         return null
@@ -102,23 +76,11 @@ export function TrustTracker({ currentLevel, vouches, deliveries, onVerifyClick,
             </div>
          </div>
          
-         <div className="flex flex-col gap-2 pt-1">
-            {next?.isAction ? (
-              <Button onClick={onVerifyClick} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 shadow-lg shadow-primary/20">
-                 <Lock className="h-3.5 w-3.5" />
-                 {next.cta}
-              </Button>
-            ) : next?.cta === "Edit Profile" ? (
-               <Button onClick={() => router.push('/profile')} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
-                 {next.cta}
-                 <ArrowRight className="h-3.5 w-3.5" />
-               </Button>
-            ) : (
-               <Button onClick={onVouchRequest} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
-                 {next?.cta}
-                 <ArrowRight className="h-3.5 w-3.5" />
-               </Button>
-            )}
+          <div className="flex flex-col gap-2 pt-1">
+             <Button onClick={onVouchRequest} className="w-full rounded-xl py-5 h-auto text-xs font-black uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10 border border-primary/10 shadow-none">
+               {next?.cta}
+               <ArrowRight className="h-3.5 w-3.5" />
+             </Button>
             <Button variant="ghost" className="w-full h-8 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 hover:text-primary transition-colors">
                Trust Logic Specs
                <ExternalLink className="h-3 w-3 ml-1.5" />

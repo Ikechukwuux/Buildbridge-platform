@@ -15,10 +15,7 @@ interface ImpactCardProps {
 export function ImpactCard({ submission }: ImpactCardProps) {
   const { profile, caption, photo_url } = submission
 
-  const badgeLevel = profile.badge_level === 'level_4_platform_verified' ? 4 
-    : profile.badge_level === 'level_3_established' ? 3 
-    : profile.badge_level === 'level_2_trusted_tradesperson' ? 2 
-    : profile.badge_level === 'level_1_community_member' ? 1 : 0;
+  const badgeLevel = profile.badge_level === 'level_1_community_member' ? 1 : 0;
 
   const profileName = (profile as any).name || "Verified Artisan"
   const profilePhoto = profile.photo_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e9ddff' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-size='40' font-weight='bold' fill='%236750A4'%3E${profileName.charAt(0)}%3C/text%3E%3C/svg%3E`

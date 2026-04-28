@@ -296,39 +296,84 @@ function AddBankDetailsModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { bvn: string; accountNumber: string; accountName: string; bankName: string }) => Promise<void>;
+  onSubmit: (data: { accountNumber: string; accountName: string; bankName: string }) => Promise<void>;
 }) {
-  const [bvn, setBvn] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
   const [bankName, setBankName] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (bvn.length !== 11 || !/^\d+$/.test(bvn)) {
-      setError("BVN must be exactly 11 digits.");
-      return;
-    }
     if (accountNumber.length !== 10 || !/^\d+$/.test(accountNumber)) {
       setError("Account Number must be exactly 10 digits.");
       return;
     }
-    if (!accountName.trim() || !bankName.trim()) {
-      setError("All fields are required.");
+    if (!bankName.trim()) {
+      setError("Please select a bank.");
       return;
     }
 
-    setIsLoading(true);
+    setIsVerifying(true);
     setError(null);
+
     try {
-      await onSubmit({ bvn, accountNumber, accountName, bankName });
+      const bankCodeMatch = bankName.match(/^(\d{3})/);
+      const code = bankCodeMatch?.[1] || "";
+      
+      if (!code) {
+        throw new Error("Invalid bank code. Please select a valid bank.");
+      }
+
+      let response;
+      let data;
+      
+      try {
+        response = await fetch('/api/verify-bank', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bank_code: code, account_number: accountNumber }),
+        });
+      } catch (fetchErr: any) {
+        console.error("Fetch network error:", fetchErr);
+        throw new Error("Network error: " + fetchErr.message);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        const text = await response.text();
+        console.log("Non-JSON response:", text);
+        throw new Error("Server error: " + text.slice(0, 100));
+      }
+
+      data = await response.json();
+      console.log("Verify response:", data);
+
+      if (!response.ok) {
+        throw new Error(data.message || `Server error: ${response.status}`);
+      }
+
+      if (data.status === false || data.success === false) {
+        throw new Error(data.message || "Account verification failed");
+      }
+      
+      if (!data.account_name) {
+        console.log("API response data:", data);
+        throw new Error("No account name returned. Response: " + JSON.stringify(data));
+      }
+      
+      const verifiedAccountName = data.account_name;
+      
+      setAccountName(verifiedAccountName);
+      await onSubmit({ accountNumber, accountName: verifiedAccountName, bankName });
       onClose();
     } catch (err: any) {
-      setError(err.message || "Failed to save bank details.");
+      console.error("Bank verification error:", err);
+      setError(err.message || "Failed to verify account. Please check your details and try again.");
     } finally {
-      setIsLoading(false);
+      setIsVerifying(false);
     }
   };
 
@@ -358,20 +403,6 @@ function AddBankDetailsModal({
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant/60 ml-1">Bank Verification Number (BVN)</label>
-                <input
-                  type="text"
-                  value={bvn}
-                  onChange={(e) => setBvn(e.target.value.replace(/\D/g, '').slice(0, 11))}
-                  placeholder="e.g. 12345678901"
-                  className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-5 font-bold text-on-surface transition-all outline-none"
-                  required
-                  maxLength={11}
-                  minLength={11}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
                 <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant/60 ml-1">Account Number</label>
                 <input
                   type="text"
@@ -387,14 +418,32 @@ function AddBankDetailsModal({
 
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant/60 ml-1">Bank Name</label>
-                <input
-                  type="text"
+                <select
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  placeholder="e.g. Guaranty Trust Bank"
-                  className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-5 font-bold text-on-surface transition-all outline-none"
+                  className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-5 font-bold text-on-surface transition-all outline-none bg-white appearance-none"
                   required
-                />
+                >
+                  <option value="">Select Bank</option>
+                  <option value="044|Access Bank">Access Bank</option>
+                  <option value="023|Citi Bank">Citi Bank</option>
+                  <option value="063|Diamond Trust Bank">Diamond Trust Bank</option>
+                  <option value="050|Ecobank">Ecobank</option>
+                  <option value="025|Fidelity Bank">Fidelity Bank</option>
+                  <option value="011|First Bank of Nigeria">First Bank of Nigeria</option>
+                  <option value="058|Guaranty Trust Bank (GTBank)">Guaranty Trust Bank (GTBank)</option>
+                  <option value="030|Heritage Bank">Heritage Bank</option>
+                  <option value="082|Keystone Bank">Keystone Bank</option>
+                  <option value="014|Polarisco Bank">Polarisco Bank</option>
+                  <option value="039|Stanbic IBTC Bank">Stanbic IBTC Bank</option>
+                  <option value="076|Standard Chartered Bank">Standard Chartered Bank</option>
+                  <option value="068|Sterling Bank">Sterling Bank</option>
+                  <option value="032|Union Bank of Nigeria">Union Bank of Nigeria</option>
+                  <option value="033|United Bank for Africa (UBA)">United Bank for Africa (UBA)</option>
+                  <option value="215|Unity Bank">Unity Bank</option>
+                  <option value="035|Wema Bank">Wema Bank</option>
+                  <option value="057|Zenith Bank">Zenith Bank</option>
+                </select>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -403,9 +452,9 @@ function AddBankDetailsModal({
                   type="text"
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
-                  placeholder="e.g. Kolawole Segun"
-                  className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-5 font-bold text-on-surface transition-all outline-none"
-                  required
+                  placeholder={isVerifying ? "Verifying..." : "Will be auto-verified"}
+                  className="w-full h-14 rounded-2xl border-2 border-outline-variant focus:border-primary px-5 font-bold text-on-surface transition-all outline-none bg-gray-50"
+                  readOnly
                 />
               </div>
 
@@ -511,16 +560,30 @@ export default function ProfilePage() {
     }));
   };
 
-  const handleBankDetailsSubmit = async (data: { bvn: string; accountNumber: string; accountName: string; bankName: string }) => {
-    // Simulate network latency
-    await new Promise(r => setTimeout(r, 1000));
+  const handleBankDetailsSubmit = async (data: { accountNumber: string; accountName: string; bankName: string }) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const bankNameMatch = data.bankName.match(/\|(.+)$/);
+    const displayBankName = bankNameMatch?.[1] || data.bankName;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        account_number: data.accountNumber,
+        account_name: data.accountName,
+        bank_name: displayBankName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", user.id);
+
+    if (error) throw error;
 
     setProfile((prev: any) => ({
       ...prev,
-      bvn: data.bvn,
       account_number: data.accountNumber,
       account_name: data.accountName,
-      bank_name: data.bankName
+      bank_name: displayBankName
     }));
   };
 
@@ -849,7 +912,7 @@ export default function ProfilePage() {
             <Card className="p-8 rounded-[2rem] border-outline-variant/30 space-y-6">
               <div className="flex items-center justify-between gap-4">
                 <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant/60">Payment Information</h3>
-                {(!profile?.bvn || !profile?.account_number) && (
+                {(!profile?.account_number) && (
                   <button
                     onClick={() => setShowBankModal(true)}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-variant/50 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all whitespace-nowrap shrink-0"
@@ -862,13 +925,13 @@ export default function ProfilePage() {
 
               <div className="space-y-4">
                 <div className="flex items-center gap-4 group">
-                  <div className="p-3 rounded-2xl bg-green-500/5 text-green-600 group-hover:bg-green-500 group-hover:text-white transition-all">
-                    <Hash className="w-5 h-5" />
+                  <div className="p-3 rounded-2xl bg-blue-500/5 text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                    <Building2 className="w-5 h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">BVN</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Bank Name</p>
                     <p className="text-sm font-bold text-on-surface truncate">
-                      {profile?.bvn ? "••••••" + profile.bvn.slice(-4) : "Not provided"}
+                      {profile?.bank_name || "Not provided"}
                     </p>
                   </div>
                 </div>

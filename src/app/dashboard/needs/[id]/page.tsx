@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button"
 import { ProgressBar } from "@/components/ui/ProgressBar"
 import { Badge } from "@/components/ui/Badge"
 import { Card } from "@/components/ui/Card"
+import { ProofOfUseModal } from "@/components/dashboard/ProofOfUseModal"
+import { SubmitImpactModal } from "@/components/dashboard/SubmitImpactModal"
 import { 
   ChevronLeft, 
   MapPin, 
@@ -21,11 +23,13 @@ import {
   TrendingUp,
   Award,
   Sparkles,
-  Settings,
   Loader2,
-  ImageOff
+  ImageOff,
+  Camera,
+  AlertCircle,
+  Star
 } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { cn, handleShare, formatStateName } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 
@@ -39,6 +43,8 @@ export default function NeedDetailPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [imageError, setImageError] = useState(false)
+  const [isSubmittingProof, setIsSubmittingProof] = useState(false)
+  const [isSubmittingImpact, setIsSubmittingImpact] = useState(false)
 
   useEffect(() => {
     const fetchNeedDetail = async () => {
@@ -80,6 +86,19 @@ export default function NeedDetailPage() {
     if (id) fetchNeedDetail()
   }, [id])
 
+  const refreshNeed = async () => {
+    if (!id) return
+    const { data } = await supabase
+      .from('needs')
+      .select(`*, profiles:profile_id (id, full_name, trade_category, location_state, location_lga, badge_level, vouch_count)`)
+      .eq('id', id)
+      .single()
+    if (data) {
+      setNeed(data)
+      setProfile(data.profiles)
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-surface pt-24 pb-20 flex items-center justify-center">
@@ -100,7 +119,17 @@ export default function NeedDetailPage() {
   }
 
   const percentage = need.item_cost > 0 ? ((need.funded_amount || 0) / need.item_cost) * 100 : 0
-  const isCompleted = need.status === 'completed' || percentage >= 100
+  const isCompleted = need.status === 'completed'
+  const isFunded = percentage >= 100
+  const proofSubmitted = !!need.proof_submitted_at
+
+  // Calculate days since funded (approximate from created_at as proxy until disbursed_at is set)
+  const daysSinceFunded = React.useMemo(() => {
+    if (!isFunded || proofSubmitted) return 0
+    const fundedDate = need.disbursed_at ? new Date(need.disbursed_at) : new Date(need.updated_at || need.created_at)
+    const now = new Date()
+    return Math.floor((now.getTime() - fundedDate.getTime()) / (1000 * 60 * 60 * 24))
+  }, [isFunded, proofSubmitted, need])
 
   const deadlineDate = new Date(need.deadline)
   const today = new Date()
@@ -216,6 +245,93 @@ export default function NeedDetailPage() {
                    <p className="text-base font-medium text-on-surface-variant leading-relaxed">
                      {need.impact_statement}
                    </p>
+                </section>
+              )}
+
+              {/* ── Proof-of-Use Section ── */}
+              {isFunded && (
+                <section>
+                  {proofSubmitted ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-gradient-to-br from-primary/5 to-badge-2/5 border border-primary/15 rounded-[2.5rem] p-8 flex flex-col gap-6"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/30">
+                          <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-on-surface">Proof Submitted</h3>
+                          <p className="text-xs text-on-surface-variant font-medium">
+                            {new Date(need.proof_submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </p>
+                        </div>
+                        <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
+                          <Star className="h-3.5 w-3.5 fill-primary" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Delivered</span>
+                        </div>
+                      </div>
+                      {need.proof_photo_url && (
+                        <div className="rounded-2xl overflow-hidden">
+                          <img src={need.proof_photo_url} alt="Proof of purchase" className="w-full object-cover max-h-64" />
+                        </div>
+                      )}
+                      {need.proof_caption && (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Success Story</p>
+                          <p className="text-base font-medium text-on-surface-variant leading-relaxed italic">&ldquo;{need.proof_caption}&rdquo;</p>
+                        </div>
+                      )}
+                      <button onClick={() => setIsSubmittingImpact(true)} className="text-sm font-black text-primary hover:underline flex items-center gap-1 self-start">
+                        <Sparkles className="h-4 w-4" />
+                        Share on the Impact Wall
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={cn(
+                        "rounded-[2.5rem] p-8 border flex flex-col gap-5",
+                        daysSinceFunded >= 14 ? "bg-error/5 border-error/30"
+                          : daysSinceFunded >= 7 ? "bg-amber-500/5 border-amber-500/30"
+                          : "bg-primary/5 border-primary/20"
+                      )}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0",
+                          daysSinceFunded >= 14 ? "bg-error/10 text-error" : "bg-primary/10 text-primary"
+                        )}>
+                          {daysSinceFunded >= 14 ? <AlertCircle className="h-6 w-6" /> : <Camera className="h-6 w-6" />}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <h3 className="text-lg font-black text-on-surface">
+                            {daysSinceFunded >= 14 ? "Final reminder — submit your proof!"
+                              : daysSinceFunded >= 7 ? "Week 1 passed — backers are waiting!"
+                              : "Disbursement sent — share your proof! 🎉"}
+                          </h3>
+                          <p className="text-sm text-on-surface-variant font-medium">
+                            {daysSinceFunded >= 14
+                              ? "Not submitting proof by Day 21 will flag your account and require manual admin approval for future needs."
+                              : daysSinceFunded >= 7
+                              ? "A week has passed since your funds were disbursed. Your backers want to see what their pledge enabled."
+                              : "Upload a photo of your purchased item and write a short caption for your backers. It takes 2 minutes."}
+                          </p>
+                          {daysSinceFunded > 0 && <p className="text-xs font-black text-on-surface-variant/60 mt-1">Day {daysSinceFunded} of 21</p>}
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => setIsSubmittingProof(true)}
+                        className={cn("h-14 rounded-2xl text-title-medium flex items-center gap-2",
+                          daysSinceFunded >= 14 ? "bg-error text-white shadow-error/20" : "bg-primary text-white shadow-primary/20"
+                        )}
+                      >
+                        <Camera className="h-5 w-5" />
+                        Submit Proof Now
+                      </Button>
+                    </motion.div>
+                  )}
                 </section>
               )}
 
@@ -337,6 +453,65 @@ export default function NeedDetailPage() {
         </div>
 
       </div>
+
+      {/* ── Proof Modal ── */}
+      <AnimatePresence>
+        {isSubmittingProof && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-on-surface/80 backdrop-blur-md"
+              onClick={() => setIsSubmittingProof(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-surface rounded-3xl p-8 shadow-2xl overflow-hidden"
+            >
+              <ProofOfUseModal
+                needId={need.id}
+                itemName={need.item_name}
+                daysSinceFunded={daysSinceFunded}
+                onSuccess={() => { refreshNeed(); setIsSubmittingProof(false) }}
+                onClose={() => setIsSubmittingProof(false)}
+                onReadyForImpactWall={() => setIsSubmittingImpact(true)}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Impact Wall Modal ── */}
+      <AnimatePresence>
+        {isSubmittingImpact && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-on-surface/80 backdrop-blur-md"
+              onClick={() => setIsSubmittingImpact(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-surface rounded-3xl p-10 shadow-2xl overflow-hidden"
+            >
+              <SubmitImpactModal
+                needId={need.id}
+                itemName={need.item_name}
+                onSuccess={() => { refreshNeed(); setIsSubmittingImpact(false) }}
+                onClose={() => setIsSubmittingImpact(false)}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </main>
   )
 }

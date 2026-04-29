@@ -31,8 +31,8 @@ export async function submitToImpactWallAction(formData: FormData) {
       return { success: false, error: "Funding request not found." }
     }
 
-    if (need.status !== 'completed' || !need.proof_photo_url) {
-      return { success: false, error: "Only completed needs with proof media can be added to the wall." }
+    if (need.status !== 'completed') {
+      return { success: false, error: "Only completed needs can be added to the Impact Wall. Please submit your proof of use first." }
     }
 
     // 2. Create the impact wall submission

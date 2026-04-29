@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { TrustTracker } from "@/components/dashboard/TrustTracker"
 import { NINVerificationForm } from "@/components/dashboard/NINVerificationForm"
 import { SubmitImpactModal } from "@/components/dashboard/SubmitImpactModal"
+import { ProofOfUseModal } from "@/components/dashboard/ProofOfUseModal"
 import { Button } from "@/components/ui/Button"
 import { NeedCard, NeedCardSkeleton } from "@/components/ui/NeedCard"
 import { EmptyState } from "@/components/ui/EmptyState"
@@ -20,7 +21,8 @@ import {
   CheckCircle2,
   Trash2,
   PencilLine,
-  AlertTriangle
+  AlertTriangle,
+  Camera
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -41,7 +43,9 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true)
   const [isVerifying, setIsVerifying] = useState(false)
   const [isSubmittingImpact, setIsSubmittingImpact] = useState(false)
+  const [isSubmittingProof, setIsSubmittingProof] = useState(false)
   const [selectedNeedForImpact, setSelectedNeedForImpact] = useState<any>(null)
+  const [selectedNeedForProof, setSelectedNeedForProof] = useState<any>(null)
   const [showCopied, setShowCopied] = useState(false)
   const [userName, setUserName] = useState("Artisan")
   const [isCreatingNeed, setIsCreatingNeed] = useState(false)
@@ -291,7 +295,7 @@ function DashboardContent() {
             {needs.length > 0 ? (
               <div className="flex flex-col gap-6">
                 {/* Success Story Banner */}
-                {needs.some(n => n.status === 'completed') && (
+                {needs.some(n => n.status === 'completed' && n.proof_submitted_at) && (
                   <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-full bg-primary text-white flex items-center justify-center shrink-0 shadow-inner">
@@ -304,13 +308,38 @@ function DashboardContent() {
                     </div>
                     <Button 
                       onClick={() => {
-                        const readyNeed = needs.find(n => n.status === 'completed');
+                        const readyNeed = needs.find(n => n.status === 'completed' && n.proof_submitted_at);
                         setSelectedNeedForImpact(readyNeed);
                         setIsSubmittingImpact(true);
                       }}
                       className="rounded-[1.5rem] px-8 font-black shadow-lg hover:scale-105 transition-all"
                     >
                       Share Story
+                    </Button>
+                  </div>
+                )}
+
+                {/* Proof submission nudge — funded but no proof yet */}
+                {needs.some(n => (n.funded_amount || 0) >= n.item_cost && !n.proof_submitted_at && n.item_cost > 0) && (
+                  <div className="p-6 bg-amber-500/5 border border-amber-500/30 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-inner">
+                        <Camera className="h-6 w-6" />
+                      </div>
+                      <div className="flex flex-col">
+                        <h4 className="text-sm font-black text-on-surface">Your backers are waiting!</h4>
+                        <p className="text-xs text-on-surface-variant font-medium">Submit your proof of purchase to complete your funded need.</p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        const proofNeed = needs.find(n => (n.funded_amount || 0) >= n.item_cost && !n.proof_submitted_at && n.item_cost > 0);
+                        setSelectedNeedForProof(proofNeed);
+                        setIsSubmittingProof(true);
+                      }}
+                      className="rounded-[1.5rem] px-8 font-black shadow-lg hover:scale-105 transition-all bg-amber-500 text-white hover:bg-amber-500/90 border-none"
+                    >
+                      Submit Proof
                     </Button>
                   </div>
                 )}
@@ -494,6 +523,37 @@ function DashboardContent() {
                   itemName={selectedNeedForImpact.item_name}
                   onSuccess={handleImpactSuccess} 
                   onClose={() => setIsSubmittingImpact(false)} 
+               />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isSubmittingProof && selectedNeedForProof && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               className="absolute inset-0 bg-on-surface/80 backdrop-blur-md"
+               onClick={() => setIsSubmittingProof(false)}
+            />
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+               className="relative w-full max-w-lg bg-surface rounded-3xl p-8 shadow-2xl overflow-hidden"
+            >
+               <ProofOfUseModal 
+                  needId={selectedNeedForProof.id}
+                  itemName={selectedNeedForProof.item_name}
+                  onSuccess={() => { fetchDashboardData(); setIsSubmittingProof(false); }}
+                  onClose={() => setIsSubmittingProof(false)}
+                  onReadyForImpactWall={() => {
+                    setSelectedNeedForImpact(selectedNeedForProof);
+                    setIsSubmittingImpact(true);
+                  }}
                />
             </motion.div>
           </div>

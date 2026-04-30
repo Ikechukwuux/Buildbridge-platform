@@ -99,6 +99,19 @@ export default function NeedDetailPage() {
     }
   }
 
+  // ── All hooks must be called before any early returns ──
+  // Calculate days since funded (stable hook call, null-safe)
+  const daysSinceFunded = React.useMemo(() => {
+    if (!need) return 0
+    const pct = need.item_cost > 0 ? ((need.funded_amount || 0) / need.item_cost) * 100 : 0
+    if (pct < 100 || need.proof_submitted_at) return 0
+    const fundedDate = need.disbursed_at
+      ? new Date(need.disbursed_at)
+      : new Date(need.updated_at || need.created_at)
+    const now = new Date()
+    return Math.floor((now.getTime() - fundedDate.getTime()) / (1000 * 60 * 60 * 24))
+  }, [need])
+
   if (loading) {
     return (
       <main className="min-h-screen bg-surface pt-24 pb-20 flex items-center justify-center">
@@ -122,14 +135,6 @@ export default function NeedDetailPage() {
   const isCompleted = need.status === 'completed'
   const isFunded = percentage >= 100
   const proofSubmitted = !!need.proof_submitted_at
-
-  // Calculate days since funded (approximate from created_at as proxy until disbursed_at is set)
-  const daysSinceFunded = React.useMemo(() => {
-    if (!isFunded || proofSubmitted) return 0
-    const fundedDate = need.disbursed_at ? new Date(need.disbursed_at) : new Date(need.updated_at || need.created_at)
-    const now = new Date()
-    return Math.floor((now.getTime() - fundedDate.getTime()) / (1000 * 60 * 60 * 24))
-  }, [isFunded, proofSubmitted, need])
 
   const deadlineDate = new Date(need.deadline)
   const today = new Date()
@@ -380,6 +385,7 @@ export default function NeedDetailPage() {
                        </div>
 
                        <Button 
+                          onClick={() => router.push(`/payment/${need.id}`)}
                           className={cn(
                              "w-full h-16 rounded-[2rem] text-lg font-black shadow-xl transition-all hover:scale-[1.02]",
                              isCompleted ? "bg-success text-white shadow-success/20" : "bg-primary text-white shadow-primary/20"

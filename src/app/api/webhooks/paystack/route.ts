@@ -59,15 +59,24 @@ export async function POST(req: NextRequest) {
     const userMessage = extractMessage(metadata)
 
     // 3. Financial Arithmetic (Kobo)
-    const totalPledgeKobo = amount // Already in kobo from Paystack
-    const platformFeeKobo = Math.floor(totalPledgeKobo * 0.05) // 5% BuildBridge fee
-    const processingFeeKobo = Math.floor(totalPledgeKobo * 0.015) + (totalPledgeKobo > 250000 ? 10000 : 0) // Paystack 1.5% + N100 if > N2500
-    const tradespersonReceivesKobo = totalPledgeKobo - platformFeeKobo - processingFeeKobo
+    const totalChargedKobo = amount // Already in kobo from Paystack
+    const pledgeKobo: number =
+      typeof metadata?.pledge_kobo === "number" && metadata.pledge_kobo > 0
+        ? metadata.pledge_kobo
+        : totalChargedKobo // fallback: no tip was added, full amount goes to artisan
+
+    // Sanity check — pledge portion should never exceed total charged
+    const safePledgeKobo = Math.min(pledgeKobo, totalChargedKobo)
+
+    const platformFeeKobo = Math.floor(safePledgeKobo * 0.05) // 5% BuildBridge fee on pledge
+    const processingFeeKobo = Math.floor(totalChargedKobo * 0.015) + (totalChargedKobo > 250000 ? 10000 : 0) // Paystack 1.5% + N100 if > N2500
+    const tradespersonReceivesKobo = safePledgeKobo - platformFeeKobo - processingFeeKobo
 
     const feeBreakdown = {
       platform_fee: platformFeeKobo,
       processing_fee: processingFeeKobo,
-      tradesperson_receives: tradespersonReceivesKobo
+      tradesperson_receives: tradespersonReceivesKobo,
+      tip: totalChargedKobo - safePledgeKobo
     }
 
     // 4. Escrow Orchestration (Database Transaction)
@@ -97,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     if (fetchError || !need) throw fetchError || new Error("Need not found")
 
-    const newFundedAmount = (need.funded_amount || 0) + totalPledgeKobo
+    const newFundedAmount = (need.funded_amount || 0) + safePledgeKobo
     const isFullyFunded = newFundedAmount >= need.item_cost
 
     const updateData: any = {

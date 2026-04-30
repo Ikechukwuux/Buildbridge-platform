@@ -78,10 +78,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 5. Amount arithmetic — everything in KOBO (same as item_cost)
-    const pledgeKobo = tx.amount // Paystack always returns kobo
+    // 5. Amount arithmetic
+    // tx.amount = total charged by Paystack (pledge + tip)
+    // tx.metadata.pledge_kobo = artisan's portion only (excludes BuildBridge tip)
+    // We only credit the artisan's portion to funded_amount.
+    const totalChargedKobo = tx.amount
+    const pledgeKobo: number =
+      typeof tx.metadata?.pledge_kobo === "number" && tx.metadata.pledge_kobo > 0
+        ? tx.metadata.pledge_kobo
+        : totalChargedKobo // fallback: no tip was added, full amount goes to artisan
 
-    const newFundedAmount = (need.funded_amount || 0) + pledgeKobo
+    // Sanity check — pledge portion should never exceed total charged
+    const safePledgeKobo = Math.min(pledgeKobo, totalChargedKobo)
+
+    const newFundedAmount = (need.funded_amount || 0) + safePledgeKobo
     const isFullyFunded = newFundedAmount >= need.item_cost
 
     const updateData: Record<string, any> = {

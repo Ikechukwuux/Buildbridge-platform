@@ -134,6 +134,8 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
         metadata: {
           need_id: needId,
           backer_user_id: user?.id || 'guest',
+          pledge_kobo: amountKobo,   // artisan's portion — excludes tip
+          tip_kobo: tipKobo,         // BuildBridge tip
         },
         callback: function (response: any) {
           clearTimeout(timeout)

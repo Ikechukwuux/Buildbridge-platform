@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
-import { revalidatePath } from "next/cache"
 
 /**
  * submitProofOfUseAction
@@ -135,10 +134,8 @@ export async function submitProofOfUseAction(formData: FormData) {
         .eq("id", profile.id)
     }
 
-    // 6. Revalidate
-    revalidatePath("/dashboard")
-    revalidatePath(`/dashboard/needs/${needId}`)
-
+    // 6. Return success — the client calls fetchDashboardData() itself after the modal closes,
+    // so we intentionally skip revalidatePath here to avoid unmounting the modal mid-success-screen.
     return {
       success: true,
       message: "Proof submitted! Your backers have been notified.",

@@ -55,6 +55,7 @@ export default function NeedDetailPage() {
           .from('needs')
           .select(`
             *,
+            impact_wall_submissions(id),
             profiles:profile_id (
               id,
               full_name,
@@ -288,10 +289,17 @@ export default function NeedDetailPage() {
                           <p className="text-base font-medium text-on-surface-variant leading-relaxed italic">&ldquo;{need.proof_caption}&rdquo;</p>
                         </div>
                       )}
-                      <button onClick={() => setIsSubmittingImpact(true)} className="text-sm font-black text-primary hover:underline flex items-center gap-1 self-start">
-                        <Sparkles className="h-4 w-4" />
-                        Share on the Impact Wall
-                      </button>
+                      {need.impact_wall_submissions && (Array.isArray(need.impact_wall_submissions) ? need.impact_wall_submissions.length > 0 : !!need.impact_wall_submissions) ? (
+                        <a href="/impact" className="text-sm font-black text-success flex items-center gap-1 self-start bg-success/10 px-3 py-1.5 rounded-full hover:bg-success/20 transition-colors">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Shared on Impact Wall — View it →
+                        </a>
+                      ) : (
+                        <button onClick={() => setIsSubmittingImpact(true)} className="text-sm font-black text-primary hover:underline flex items-center gap-1 self-start">
+                          <Sparkles className="h-4 w-4" />
+                          Share on the Impact Wall
+                        </button>
+                      )}
                     </motion.div>
                   ) : (
                     <motion.div
@@ -481,7 +489,7 @@ export default function NeedDetailPage() {
                 needId={need.id}
                 itemName={need.item_name}
                 daysSinceFunded={daysSinceFunded}
-                onSuccess={() => { refreshNeed(); setIsSubmittingProof(false) }}
+                onSuccess={() => { setIsSubmittingProof(false); setTimeout(() => refreshNeed(), 400); }}
                 onClose={() => setIsSubmittingProof(false)}
               />
             </motion.div>
@@ -509,7 +517,7 @@ export default function NeedDetailPage() {
               <SubmitImpactModal
                 needId={need.id}
                 itemName={need.item_name}
-                onSuccess={() => { refreshNeed(); setIsSubmittingImpact(false) }}
+                onSuccess={() => { setIsSubmittingImpact(false); setTimeout(() => refreshNeed(), 400); }}
                 onClose={() => setIsSubmittingImpact(false)}
               />
             </motion.div>

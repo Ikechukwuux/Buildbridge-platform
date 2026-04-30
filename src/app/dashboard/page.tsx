@@ -117,7 +117,7 @@ function DashboardContent() {
         // 3. Get needs for this profile
         const { data: needsData, error: needsError } = await supabase
           .from('needs')
-          .select('*')
+          .select('*, impact_wall_submissions(id)')
           .eq('profile_id', profileData.id)
           .order('created_at', { ascending: false })
 
@@ -294,8 +294,8 @@ function DashboardContent() {
 
             {needs.length > 0 ? (
               <div className="flex flex-col gap-6">
-                {/* Success Story Banner */}
-                {needs.some(n => n.status === 'completed' && n.proof_submitted_at) && (
+                {/* Impact Wall Prompt Banner */}
+                {needs.filter(n => n.status === 'completed' && n.proof_submitted_at && !(n.impact_wall_submissions && (Array.isArray(n.impact_wall_submissions) ? n.impact_wall_submissions.length > 0 : !!n.impact_wall_submissions))).length > 0 && (
                   <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-full bg-primary text-white flex items-center justify-center shrink-0 shadow-inner">
@@ -308,7 +308,7 @@ function DashboardContent() {
                     </div>
                     <Button 
                       onClick={() => {
-                        const readyNeed = needs.find(n => n.status === 'completed' && n.proof_submitted_at);
+                        const readyNeed = needs.find(n => n.status === 'completed' && n.proof_submitted_at && !(n.impact_wall_submissions && (Array.isArray(n.impact_wall_submissions) ? n.impact_wall_submissions.length > 0 : !!n.impact_wall_submissions)));
                         setSelectedNeedForImpact(readyNeed);
                         setIsSubmittingImpact(true);
                       }}
@@ -548,7 +548,7 @@ function DashboardContent() {
                <ProofOfUseModal 
                   needId={selectedNeedForProof.id}
                   itemName={selectedNeedForProof.item_name}
-                  onSuccess={() => { fetchDashboardData(); setIsSubmittingProof(false); }}
+                  onSuccess={() => { setIsSubmittingProof(false); setTimeout(() => fetchDashboardData(), 400); }}
                   onClose={() => setIsSubmittingProof(false)}
                />
             </motion.div>
@@ -599,3 +599,4 @@ export default function DashboardPage() {
     </React.Suspense>
   )
 }
+

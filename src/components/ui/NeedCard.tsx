@@ -109,12 +109,14 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
   let buttonIcon: React.ReactNode = null;
   let buttonHref: string | null = null;
 
+  const hasImpactWallSubmission = need.impact_wall_submissions && (Array.isArray(need.impact_wall_submissions) ? need.impact_wall_submissions.length > 0 : !!need.impact_wall_submissions);
+
   if (isDashboard && !isFullyFunded && !isCompleted && !isPartiallyFundedDeadline && !isZeroPledgesDeadline) {
     // Owner dashboard: active need
     buttonText = "Share Need";
     buttonClassName = "bg-primary text-white shadow-primary/20";
     buttonIcon = <Share2 className="h-3.5 w-3.5" />;
-  } else if (isFullyFunded) {
+  } else if (isFullyFunded && !isCompleted) {
     buttonText = "View Story";
     buttonClassName = "bg-primary/10 text-primary shadow-none";
   } else if (isPartiallyFundedDeadline || isZeroPledgesDeadline) {
@@ -122,8 +124,14 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
     buttonDisabled = true;
     buttonClassName = "bg-surface-variant/20 text-on-surface-variant shadow-none cursor-not-allowed";
   } else if (isCompleted) {
-    buttonText = "View Impact";
-    buttonClassName = "bg-primary/10 text-primary shadow-none";
+    if (hasImpactWallSubmission) {
+      buttonText = "View Impact Wall";
+      buttonClassName = "bg-primary/10 text-primary shadow-none";
+      buttonHref = "/impact";
+    } else {
+      buttonText = "Share Story";
+      buttonClassName = "bg-primary/10 text-primary shadow-none";
+    }
   }
 
   const TradeIcon = (need.profile?.trade_category && TRADE_ICONS_MAP[need.profile.trade_category]) || MoreHorizontal;

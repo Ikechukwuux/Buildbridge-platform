@@ -138,6 +138,7 @@ export interface Need {
   featured_until: string | null;
   reverse_image_search_flagged: boolean;
   duplicate_detection_flagged: boolean;
+  impact_wall_submissions?: any; // Added for relation checking
   updated_at: string;
 }
 

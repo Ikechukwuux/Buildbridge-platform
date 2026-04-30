@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
 
 export async function submitToImpactWallAction(formData: FormData) {
   try {
@@ -35,8 +34,16 @@ export async function submitToImpactWallAction(formData: FormData) {
       return { success: false, error: "Only completed needs can be added to the Impact Wall. Please submit your proof of use first." }
     }
 
+    // Use admin client to bypass RLS for inserting the impact wall submission
+    // Ensure we import it dynamically or use the env vars
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
+    const supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
     // 2. Create the impact wall submission
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseAdmin
       .from('impact_wall_submissions')
       .insert({
         need_id: need.id,
@@ -53,12 +60,11 @@ export async function submitToImpactWallAction(formData: FormData) {
       if (insertError.code === '23505') {
         return { success: false, error: "This story is already submitted to the Impact Wall." }
       }
-      console.error(insertError)
-      return { success: false, error: "Failed to submit to Impact Wall." }
+      console.error("Impact Wall Insert Error:", insertError)
+      return { success: false, error: `Failed to submit to Impact Wall: ${insertError.message || insertError.details || JSON.stringify(insertError)}` }
     }
 
-    revalidatePath('/impact')
-    revalidatePath('/dashboard')
+    // Skip revalidatePath — client-side refresh handles data reload after the modal closes.
     
     return { success: true, message: "Story submitted for moderation! It will appear on the wall soon." }
     

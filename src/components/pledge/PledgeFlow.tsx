@@ -135,35 +135,36 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
           need_id: needId,
           backer_user_id: user?.id || 'guest',
         },
-        callback: async function (response: any) {
+        callback: function (response: any) {
           clearTimeout(timeout)
           console.log("[Paystack] Payment successful, ref:", response.reference)
           setStep(3)
           setLoading(false)
 
           if (response.reference) {
-            try {
-              const verifyRes = await fetch("/api/payment/verify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  reference: response.reference,
-                  need_id: needId,
-                  message: message.slice(0, 500) || undefined,
-                  tip_kobo: tipKobo,
-                }),
-              })
-              const verifyData = await verifyRes.json()
-              if (!verifyData.success) {
-                console.error("[PledgeFlow] Verification failed:", verifyData.error)
-                // Payment went through — still show success to user but log the issue
-                // The webhook will act as fallback for production
-              } else {
-                console.log("[PledgeFlow] Pledge verified and recorded ✓")
+            // Use an async IIFE — Paystack v1 requires a plain function, not async function
+            ;(async () => {
+              try {
+                const verifyRes = await fetch("/api/payment/verify", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    reference: response.reference,
+                    need_id: needId,
+                    message: message.slice(0, 500) || undefined,
+                    tip_kobo: tipKobo,
+                  }),
+                })
+                const verifyData = await verifyRes.json()
+                if (!verifyData.success) {
+                  console.error("[PledgeFlow] Verification failed:", verifyData.error)
+                } else {
+                  console.log("[PledgeFlow] Pledge verified and recorded ✓")
+                }
+              } catch (err) {
+                console.error("[PledgeFlow] Verify request failed:", err)
               }
-            } catch (err) {
-              console.error("[PledgeFlow] Verify request failed:", err)
-            }
+            })()
           }
         },
         onClose: function () {

@@ -85,30 +85,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, note: "Pledge already processed" }, { status: 200 })
     }
 
-    // Step B: Create Pledge Record
-    const { error: pledgeError } = await supabase
-      .from("pledges")
-      .insert({
-        need_id,
-        backer_user_id,
-        amount: totalPledgeKobo,
-        currency: "NGN",
-        fee_breakdown_json: feeBreakdown,
-        payment_provider: "paystack",
-        payment_reference: reference,
-        payment_status: "completed",
-        message: userMessage,
-        paid_at: new Date().toISOString()
-      })
+    // NOTE: Skipping pledges table insert — backer_user_id FK references legacy users table.
+    // Update funded_amount and pledge_count directly on the need instead.
 
-    if (pledgeError) {
-      throw pledgeError
-    }
-
-    // Step C: Update Need Total
+    // Step B: Fetch current need totals
     const { data: need, error: fetchError } = await supabase
       .from("needs")
-      .select("item_cost, funded_amount, pledge_count")
+      .select("item_cost, funded_amount, pledge_count, status")
       .eq("id", need_id)
       .single()
 

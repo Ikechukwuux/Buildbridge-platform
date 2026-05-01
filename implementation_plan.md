@@ -1,74 +1,65 @@
-# BuildBridge Implementation Plan: Fixing the Core Flow
+# Performance Audit & Redis Caching Implementation Plan
 
-## Goal Description
-The previous implementations were mistakenly applied to `NeedCreationFlow.tsx`, which is deprecated/dead code. The platform currently uses two distinct flows for Need creation:
-1. **Onboarding Flow:** `HighVelocityAuth.tsx` + `NeedStepFlow.tsx` + `AccountCreationView.tsx`
-2. **Dashboard Create Flow:** `CreateNeedForm.tsx` + `actions.ts`
-
-This plan addresses all 9 user issues by migrating the fixed logic (AI features, photo upload, timeline, Google Auth state, and data truncation) to these active files.
+This plan details a platform-wide performance enhancement strategy for BuildBridge. It addresses the Next.js caching issues we experienced earlier by replacing heavy, opaque framework caching with a precise, Redis-backed caching layer. It also includes front-end optimization techniques to reduce load times.
 
 ## User Review Required
-> [!WARNING]
-> This plan targets the correct files (`HighVelocityAuth`, `NeedStepFlow`, `CreateNeedForm`). I will remove the old `NeedCreationFlow.tsx` to prevent future confusion. Please confirm if you want me to proceed with these changes.
 
-## Open Questions
-- **Email Verification:** To prevent "random emails" from signing up (Issue #8), we can either enforce email confirmation in Supabase (which requires users to click a link in their email), or we can add strict regex/domain validation on the frontend. Which do you prefer? For this plan, I'll add strict frontend validation.
+> [!IMPORTANT]
+> To implement Redis, we will use **Upstash Redis** (which is already in your `package.json`). 
+> You will need to create a free Redis database at [upstash.com](https://upstash.com/) and provide the following environment variables:
+> `UPSTASH_REDIS_REST_URL`
+> `UPSTASH_REDIS_REST_TOKEN`
+> 
+> **Are you okay with creating an Upstash account for this, or do you already have one?**
 
 ## Proposed Changes
 
-### 1. Google Auth State Loss (Issue #1)
-During onboarding, if a user fills out their Need and clicks "Sign up with Google", the `discoveryData` is lost because it's not saved before the redirect.
-#### [MODIFY] `src/components/auth/HighVelocityAuth.tsx`
-- Before calling `signInWithOAuth`, serialize `discoveryData` and save it to a cookie (`discovery_data`).
-#### [MODIFY] `src/app/auth/callback/route.ts`
-- Read the `discovery_data` cookie. If it exists, parse it and insert the Need into the database for the newly authenticated user, then clear the cookie.
+### 1. Redis Caching Layer (`@upstash/redis`)
 
-### 2. AI Enhance Feature (Issue #2)
-#### [MODIFY] `src/components/auth/NeedStepFlow.tsx`
-- Add the "✨ AI Enhance" button to the Story step.
-- Call the `/api/generate-story` endpoint to enhance the user's raw input.
-#### [MODIFY] `src/components/dashboard/CreateNeedForm.tsx`
-- Replace the "TODO: Integrate DeepSeek AI" comment with the actual API call to `/api/impact-statement` to generate 3 impact options.
-- Add AI enhance to the Story step.
+We will introduce a dedicated caching utility to handle high-traffic, read-heavy pages. This replaces `revalidate = 0` with a smart cache that guarantees speed without sacrificing freshness.
 
-### 3. Timeline Formatting (Issue #3)
-#### [MODIFY] `src/components/auth/NeedStepFlow.tsx` & `HighVelocityAuth.tsx`
-- Update the timeline options to map exactly to days (e.g., 7, 14, 30, 60, 90).
-- Ensure `HighVelocityAuth.tsx` calculates the exact deadline date based on the chosen timeline, rather than hardcoding 30 days.
+#### [NEW] `src/lib/redis.ts`
+- Create a Redis client singleton using `@upstash/redis`.
+- Implement wrapper functions: `getCachedData(key, fetcher, ttl)` and `invalidateCache(key)`.
 
-### 4. Photo Upload Failures (Issue #6 & 4)
-#### [MODIFY] `src/components/auth/NeedStepFlow.tsx`
-- The current `handleFileUpload` tries to upload directly to Supabase storage. This fails because the user is unauthenticated during onboarding.
-- Update it to send a `FormData` POST request to the secure `/api/upload-photo` endpoint.
-#### [MODIFY] `src/app/dashboard/create-need/actions.ts`
-- The server action currently relies on the user's session to upload to storage. Update it to use the `SUPABASE_SERVICE_ROLE_KEY` to completely bypass any RLS issues, ensuring "Submit for Review" works every time.
+#### [MODIFY] `src/app/browse/page.tsx` (Browse Needs)
+- Wrap the Supabase `needs` fetch inside the Redis caching utility.
+- Set a Time-to-Live (TTL) of 60 seconds.
 
-### 5. Congratulatory Page (Issue #5)
-#### [MODIFY] `src/components/dashboard/CreateNeedForm.tsx`
-- Instead of immediately calling `router.push("/dashboard")`, render a celebratory Step 7 (using `framer-motion`) with a "View on Dashboard" button.
+#### [MODIFY] `src/app/impact/page.tsx` (Impact Wall)
+- Remove `export const revalidate = 0;` (which currently forces a slow database query on every single page load).
+- Wrap the `impact_wall_submissions` fetch inside the Redis caching utility with a TTL of 30 seconds.
 
-### 6. Nickname Allowed Label (Issue #7)
-#### [MODIFY] `src/components/auth/AccountCreationView.tsx`
-- Update the Full Name input label to include: "This can be a nickname".
+#### [MODIFY] `src/app/actions/impact.ts` & `src/app/dashboard/create-need/actions.ts`
+- Integrate `invalidateCache()` calls. When a user submits a new need or impact story, the server action will automatically delete the corresponding Redis key. This ensures the user instantly sees their submission on the next page load, while still maintaining high performance for all other visitors.
 
-### 7. Email Validation (Issue #8)
-#### [MODIFY] `src/components/auth/AccountCreationView.tsx`
-- Add strict email regex validation to ensure only properly formatted emails can proceed.
+---
 
-### 8. Need Data Corruption & Truncation (Issue #9)
-#### [MODIFY] `src/components/auth/HighVelocityAuth.tsx`
-- **Cost Parsing:** Fix the bug where `parseFloat(discoveryData.cost)` returns `NaN` because the cost string includes "₦" or commas. Parse it correctly.
-- **Truncation:** Remove the `.substring(0, 150)` and `.substring(0, 200)` limits on the `story` and `impact_statement` fields so the full text is saved.
-#### [MODIFY] `src/app/dashboard/create-need/actions.ts`
-- Remove the `.slice(0, 150)` truncation for the dashboard create flow as well.
+### 2. Front-End Performance & Asset Optimization
+
+The platform currently loads heavy libraries and raw images, which slows down the Initial Page Load (LCP).
+
+#### [MODIFY] All Image Components (`ImpactCard`, `NeedCard`, `OnboardingForm`)
+- Replace standard HTML `<img>` tags with Next.js `<Image>` components.
+- This will automatically compress, resize, and convert images to WebP format, drastically reducing data usage on mobile devices.
+
+#### [MODIFY] Heavy Third-Party Libraries
+- Ensure `framer-motion` features are properly optimized (using `LazyMotion` if the bundle size is too large).
+- Verify that `lottie-react` (used for success confetti) is strictly lazy-loaded via `next/dynamic` to prevent it from blocking the main JavaScript thread during initial page load.
+
+---
+
+### 3. Database Query Optimization (Supabase)
+
+#### [MODIFY] Supabase Queries
+- Analyze the queries in `/browse` and `/impact`. Currently, we are pulling nested relations (e.g., `profiles(full_name, location_lga)`). We will ensure we only select the explicit columns required for the UI, minimizing payload size over the network.
 
 ## Verification Plan
 
 ### Automated Tests
-- Build verification via `npm run build`.
+- Run `npm run build` to verify bundle sizes (specifically checking if the JavaScript payload for `/browse` and `/impact` has decreased).
+- Monitor Next.js server console logs to verify that Redis cache hits and misses are functioning properly.
 
 ### Manual Verification
-- Walk through the entire Onboarding flow with a new user. 
-- Upload a photo while unauthenticated to verify the `/api/upload-photo` bypass works.
-- Click "Sign up with Google" and verify the Need is created correctly upon redirect.
-- Ensure the AI features load seamlessly.
+- **Speed Test**: Open the network tab and simulate Fast 3G throttling to observe the loading speed of images and JSON payloads.
+- **Cache Invalidation Test**: Submit a new story on the Impact Wall and verify it appears immediately (triggering a Redis cache purge), while subsequent reloads hit the fast Redis cache.

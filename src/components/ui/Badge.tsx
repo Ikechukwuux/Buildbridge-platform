@@ -1,14 +1,8 @@
 import * as React from "react"
-import { 
-  Shield, 
-  Star, 
-  User, 
-  ShieldCheck, 
-  BadgeCheck
-} from "lucide-react"
+import { Shield, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export type BadgeLevelType = 0 | 1 | 2 | 3 | 4;
+export type BadgeLevelType = 0 | 1;
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   level: BadgeLevelType;
@@ -23,37 +17,19 @@ const levelConfig: Record<number, { bg: string; color: string; icon: React.Eleme
     label: "Unverified",
   },
   1: {
-    bg: 'var(--color-primary-container)',
-    color: 'var(--color-on-primary-container)',
-    icon: User,
-    label: "Community",
-  },
-  2: {
     bg: '#dcfce7',
     color: '#166534',
     icon: ShieldCheck,
-    label: "Trusted",
+    label: "Community Vouched",
   },
-  3: {
-    bg: '#fef3c7',
-    color: '#92400e',
-    icon: Star,
-    label: "Established",
-  },
-  4: {
-    bg: '#ffffff',
-    color: 'var(--color-primary)',
-    icon: BadgeCheck,
-    label: "Verified",
-  }
 }
 
 const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
   ({ className, level, children, showLabel = true, ...props }, ref) => {
-    
+
     const config = levelConfig[level] || levelConfig[0];
     const Icon = config.icon;
-    
+
     return (
       <div
         ref={ref}

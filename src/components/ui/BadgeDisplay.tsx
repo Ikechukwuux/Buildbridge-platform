@@ -4,48 +4,33 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { Badge, type BadgeLevelType } from "./Badge"
 import { Card } from "./Card"
-import { Info, ShieldCheck, Star, User, Lock, ArrowRight } from "lucide-react"
+import { Info, ArrowRight } from "lucide-react"
 
 export function BadgeDisplay() {
   const levels: { level: BadgeLevelType; criteria: string; impact: string }[] = [
-    { 
-      level: 0, 
-      criteria: "Signed up to BuildBridge.", 
-      impact: "Can browse needs and follow tradespeople." 
+    {
+      level: 0,
+      criteria: "Signed up and verified phone number.",
+      impact: "Can create needs up to NGN 20,000."
     },
-    { 
-      level: 1, 
-      criteria: "Onboarding & Profile photo added.", 
-      impact: "Can create first funding request (Need)." 
-    },
-    { 
-      level: 2, 
-      criteria: "2 Community vouches verified.", 
-      impact: "Higher visibility in the Browse feed." 
-    },
-    { 
-      level: 3, 
-      criteria: "1 Need fully funded & Proof-of-use uploaded.", 
-      impact: "Eligible for larger grant amounts." 
-    },
-    { 
-      level: 4, 
-      criteria: "Biometric Government ID (NIN) verified.", 
-      impact: "Priority funding & Instant payout status." 
+    {
+      level: 1,
+      criteria: "Backed by 3 community vouches.",
+      impact: "Higher funding cap, better visibility, trusted badge."
     },
   ]
 
   return (
     <div className="flex flex-col gap-12">
       {/* Section Header */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
         className="text-center flex flex-col items-center gap-4"
       >
-        <div 
+        <div
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest"
           style={{ background: 'var(--color-primary-container)', color: 'var(--color-on-primary-container)' }}
         >
@@ -56,7 +41,7 @@ export function BadgeDisplay() {
           The Trust Ladder
         </h2>
         <p className="text-lg font-medium max-w-2xl" style={{ color: 'var(--color-on-surface-variant)' }}>
-          Every person on this wall has been verified across multiple trust tiers. Here&apos;s how the system works.
+          Every tradesperson on BuildBridge is verified across these trust tiers.
         </p>
       </motion.div>
 
@@ -82,7 +67,7 @@ export function BadgeDisplay() {
                   <p className="text-[10px] uppercase font-black tracking-widest" style={{ color: 'var(--color-on-surface-variant)' }}>Criteria</p>
                   <p className="text-sm font-bold leading-snug" style={{ color: 'var(--color-on-surface)' }}>{item.criteria}</p>
                </div>
-               <div 
+               <div
                  className="p-3 rounded-xl mt-auto"
                  style={{ background: 'var(--color-surface-container)' }}
                >

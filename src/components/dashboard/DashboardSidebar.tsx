@@ -35,12 +35,6 @@ const NAV_ITEMS = [
     icon: ListChecks,
     exact: false,
   },
-  {
-    label: "Trust & Badges",
-    href: "/dashboard#trust",
-    icon: ShieldCheck,
-    exact: false,
-  },
 ] as const;
 
 const EXTERNAL_NAV_ITEMS = [
@@ -53,6 +47,11 @@ const EXTERNAL_NAV_ITEMS = [
     label: "Browse Needs",
     href: "/browse",
     icon: Search,
+  },
+  {
+    label: "Trust & Badges",
+    href: "/trust",
+    icon: ShieldCheck,
   },
 ] as const;
 

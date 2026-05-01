@@ -2,6 +2,7 @@
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
+import { invalidateCache } from "@/lib/redis"
 
 export async function createNeedAction(formData: FormData) {
   const supabase = await createClient()
@@ -98,8 +99,11 @@ export async function createNeedAction(formData: FormData) {
 
   if (dbError) {
     console.error("DB Error:", dbError)
-    throw new Error(dbError.message)
+    throw new Error(`Database error: ${dbError.message}`)
   }
+
+  // Clear the active needs cache just in case we switch to auto-approve later
+  await invalidateCache('browse:needs:active')
 
   // NOTE: Do NOT call revalidatePath("/dashboard") here.
   // It forces Next.js to remount the create-need layout, resetting

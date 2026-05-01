@@ -69,7 +69,7 @@ export function ImpactTeaser() {
               {/* Overlay Content */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-10">
                 <div className="mb-6">
-                  <Badge level={4} className="mb-4">Verified Impact</Badge>
+                  <Badge level={1} className="mb-4">Verified Impact</Badge>
                   <h3 className="text-3xl font-black text-white mb-4 leading-tight">
                     Helping {story.name}'s workshop in {story.location}
                   </h3>

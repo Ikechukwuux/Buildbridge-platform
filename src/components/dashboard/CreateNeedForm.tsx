@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
@@ -61,6 +61,8 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
   const [isGeneratingImpact, setIsGeneratingImpact] = useState(false)
   const [impactOptions, setImpactOptions] = useState<string[]>([])
   
+  const topRef = useRef<HTMLDivElement>(null)
+  
   // Form State
   const [formData, setFormData] = useState({
     item_name: "",
@@ -80,6 +82,19 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
   const voiceInput = useVoiceInput()
   const { isGenerating, generateImpactStatement } = useAIGenerator()
 
+  // Scroll to top when step changes, accounting for sticky header and Framer Motion exit animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (topRef.current) {
+        const y = topRef.current.getBoundingClientRect().top + window.scrollY - 120; // 120px offset for sticky navbar
+        window.scrollTo({ top: y, behavior: "smooth" })
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      }
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [currentStep])
+
   const steps = [
     "Item",
     "Cost",
@@ -95,14 +110,12 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
-      window.scrollTo(0, 0)
     }
   }
 
   const prevStep = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
-      window.scrollTo(0, 0)
     }
   }
 
@@ -673,7 +686,10 @@ export function CreateNeedForm({ tradeCategory }: CreateNeedFormProps) {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 py-8">
+    <div ref={topRef} className="w-full max-w-3xl mx-auto px-4 py-8 relative">
+        {/* Invisible anchor for scrolling */}
+        <div className="absolute top-[-100px]" />
+        
         <div className="mb-8 flex items-center gap-4">
             {currentStep > 0 && currentStep < 7 && (
                 <button onClick={prevStep} className="p-2 text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors">

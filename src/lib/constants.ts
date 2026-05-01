@@ -36,5 +36,9 @@ export const TRADE_ICONS_MAP: Record<string, any> = TRADE_CATEGORIES.reduce((acc
 }), {})
 
 export const NIGERIAN_STATES = [
-  'Lagos', 'Oyo', 'Anambra', 'Rivers', 'Kano', 'Kaduna', 'Abuja FCT', 'Ogun', 'Enugu', 'Delta', 'Edo', 'Imo', 'Kwara', 'Osun', 'Ondo', 'Abia', 'Ekiti', 'Plateau', 'Bayelsa', 'Cross River'
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
+  'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu',
+  'FCT Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina',
+  'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo',
+  'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
 ]

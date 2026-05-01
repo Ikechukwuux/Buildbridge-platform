@@ -59,15 +59,24 @@ export async function POST(req: NextRequest) {
     const userMessage = extractMessage(metadata)
 
     // 3. Financial Arithmetic (Kobo)
-    const totalPledgeKobo = amount // Already in kobo from Paystack
-    const platformFeeKobo = Math.floor(totalPledgeKobo * 0.05) // 5% BuildBridge fee
-    const processingFeeKobo = Math.floor(totalPledgeKobo * 0.015) + (totalPledgeKobo > 250000 ? 10000 : 0) // Paystack 1.5% + N100 if > N2500
-    const tradespersonReceivesKobo = totalPledgeKobo - platformFeeKobo - processingFeeKobo
+    const totalChargedKobo = amount // Already in kobo from Paystack
+    const pledgeKobo: number =
+      typeof metadata?.pledge_kobo === "number" && metadata.pledge_kobo > 0
+        ? metadata.pledge_kobo
+        : totalChargedKobo // fallback: no tip was added, full amount goes to artisan
+
+    // Sanity check — pledge portion should never exceed total charged
+    const safePledgeKobo = Math.min(pledgeKobo, totalChargedKobo)
+
+    const platformFeeKobo = Math.floor(safePledgeKobo * 0.05) // 5% BuildBridge fee on pledge
+    const processingFeeKobo = Math.floor(totalChargedKobo * 0.015) + (totalChargedKobo > 250000 ? 10000 : 0) // Paystack 1.5% + N100 if > N2500
+    const tradespersonReceivesKobo = safePledgeKobo - platformFeeKobo - processingFeeKobo
 
     const feeBreakdown = {
       platform_fee: platformFeeKobo,
       processing_fee: processingFeeKobo,
-      tradesperson_receives: tradespersonReceivesKobo
+      tradesperson_receives: tradespersonReceivesKobo,
+      tip: totalChargedKobo - safePledgeKobo
     }
 
     // 4. Escrow Orchestration (Database Transaction)
@@ -85,36 +94,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, note: "Pledge already processed" }, { status: 200 })
     }
 
-    // Step B: Create Pledge Record
-    const { error: pledgeError } = await supabase
-      .from("pledges")
-      .insert({
-        need_id,
-        backer_user_id,
-        amount: totalPledgeKobo,
-        currency: "NGN",
-        fee_breakdown_json: feeBreakdown,
-        payment_provider: "paystack",
-        payment_reference: reference,
-        payment_status: "completed",
-        message: userMessage,
-        paid_at: new Date().toISOString()
-      })
+    // NOTE: Skipping pledges table insert — backer_user_id FK references legacy users table.
+    // Update funded_amount and pledge_count directly on the need instead.
 
-    if (pledgeError) {
-      throw pledgeError
-    }
-
-    // Step C: Update Need Total
+    // Step B: Fetch current need totals
     const { data: need, error: fetchError } = await supabase
       .from("needs")
-      .select("item_cost, funded_amount, pledge_count")
+      .select("item_cost, funded_amount, pledge_count, status")
       .eq("id", need_id)
       .single()
 
     if (fetchError || !need) throw fetchError || new Error("Need not found")
 
-    const newFundedAmount = (need.funded_amount || 0) + totalPledgeKobo
+    const newFundedAmount = (need.funded_amount || 0) + safePledgeKobo
     const isFullyFunded = newFundedAmount >= need.item_cost
 
     const updateData: any = {
@@ -149,7 +141,7 @@ export async function POST(req: NextRequest) {
         const { notifyPledgeReceived } = await import("@/lib/notifications")
         const { checkAndTriggerMilestones } = await import("@/lib/milestones")
 
-        await notifyPledgeReceived(profile.user_id, totalPledgeKobo, need_id, reference)
+        await notifyPledgeReceived(profile.user_id, safePledgeKobo, need_id, reference)
         await checkAndTriggerMilestones(need_id)
       }
     } catch (notifErr) {

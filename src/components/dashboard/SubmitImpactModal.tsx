@@ -105,7 +105,7 @@ export function SubmitImpactModal({ needId, itemName, onSuccess, onClose }: Subm
              </span>
           </label>
 
-          <Button onClick={() => setStep(1)} disabled={!consent} className="h-14 rounded-2xl text-title-medium">
+          <Button onClick={() => setStep(1)} disabled={!consent} className="h-14 rounded-2xl text-base font-black">
              Continue to Story
           </Button>
         </motion.div>
@@ -144,7 +144,7 @@ export function SubmitImpactModal({ needId, itemName, onSuccess, onClose }: Subm
              <Button variant="ghost" onClick={() => setStep(0)} className="flex-1 h-14 rounded-2xl">
                 Back
              </Button>
-             <Button onClick={handleSubmit} isLoading={loading} className="flex-[2] h-14 rounded-2xl text-title-medium">
+             <Button onClick={handleSubmit} isLoading={loading} className="flex-[2] h-14 rounded-2xl text-base font-black">
                 Submit Story
              </Button>
           </div>

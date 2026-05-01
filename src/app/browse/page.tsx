@@ -6,19 +6,11 @@ import { NeedCard, NeedCardSkeleton } from "@/components/ui/NeedCard"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { BrowseFilters } from "@/components/browse/BrowseFilters"
 import { BrowseSort, type SortOption } from "@/components/browse/BrowseSort"
+import { getNeeds } from "./actions"
 import { Search, MapPin, Sparkles, ArrowRight, X } from "lucide-react"
 import Link from "next/link"
 
-/**
- * DEMO MODE: Uses mock needs data with client-side filtering/sorting.
- * No Supabase queries.
- *
- * To re-enable Supabase:
- *   1. Import createClient from "@/lib/supabase/client"
- *   2. Restore the Supabase query builder in fetchNeeds
- */
-
-// Rich mock needs for the browse page
+// Rich mock needs for the browse page (always shown as padding)
 const MOCK_BROWSE_NEEDS = [
   {
     id: "demo-browse-001",
@@ -34,6 +26,7 @@ const MOCK_BROWSE_NEEDS = [
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     profile: {
       name: "Amina S.",
+      full_name: "Amina S.",
       location_lga: "Surulere",
       location_state: "lagos",
       trade_category: "tailor",
@@ -56,6 +49,7 @@ const MOCK_BROWSE_NEEDS = [
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     profile: {
       name: "Chidi O.",
+      full_name: "Chidi O.",
       location_lga: "Enugu North",
       location_state: "enugu",
       trade_category: "carpenter",
@@ -78,6 +72,7 @@ const MOCK_BROWSE_NEEDS = [
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     profile: {
       name: "Fatima B.",
+      full_name: "Fatima B.",
       location_lga: "Kano Municipal",
       location_state: "kano",
       trade_category: "baker",
@@ -100,6 +95,7 @@ const MOCK_BROWSE_NEEDS = [
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     profile: {
       name: "Ibrahim K.",
+      full_name: "Ibrahim K.",
       location_lga: "Wuse",
       location_state: "abuja",
       trade_category: "welder",
@@ -122,6 +118,7 @@ const MOCK_BROWSE_NEEDS = [
     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     profile: {
       name: "Grace N.",
+      full_name: "Grace N.",
       location_lga: "Ikeja",
       location_state: "lagos",
       trade_category: "hair_stylist",
@@ -144,6 +141,7 @@ const MOCK_BROWSE_NEEDS = [
     created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     profile: {
       name: "Emeka A.",
+      full_name: "Emeka A.",
       location_lga: "Port Harcourt",
       location_state: "rivers",
       trade_category: "plumber",
@@ -187,58 +185,74 @@ export default function BrowsePage() {
     setFilters({ category: null, state: null, badgeLevel: null, search: "" })
   }
 
-  // Client-side filtering & sorting of mock data
+  // Fetch real needs from DB and merge with mock data
   const fetchNeeds = React.useCallback(async () => {
     setLoading(true)
-    
-    // Simulate network delay for visual fidelity
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    let filtered = [...MOCK_BROWSE_NEEDS]
 
-    // Apply Filters
+    // 1. Fetch real active needs via Server Action (which uses Redis caching)
+    let realNeeds: any[] = []
+    try {
+      realNeeds = await getNeeds()
+    } catch (err) {
+      console.error("Failed to fetch real needs:", err)
+    }
+
+    // 2. Tag mock needs
+    const mockNeeds = MOCK_BROWSE_NEEDS.map(n => ({ ...n, _isReal: false }))
+
+    // 3. Merge: real needs first, then mock padding
+    let merged = [...realNeeds, ...mockNeeds]
+
+    // 4. Apply filters
     if (filters.category) {
-      filtered = filtered.filter(n => n.profile.trade_category === filters.category)
+      merged = merged.filter(n => n.profile?.trade_category === filters.category)
     }
     if (filters.state) {
-      filtered = filtered.filter(n => n.profile.location_state === filters.state.toLowerCase())
+      merged = merged.filter(n => (n.profile?.location_state || "").toLowerCase() === filters.state!.toLowerCase())
     }
     if (filters.badgeLevel !== null) {
       const levels = ['level_1_community_member', 'level_2_trusted_tradesperson', 'level_3_established', 'level_4_platform_verified']
-      filtered = filtered.filter(n => n.profile.badge_level === levels[filters.badgeLevel! - 1])
+      merged = merged.filter(n => n.profile?.badge_level === levels[filters.badgeLevel! - 1])
     }
     if (debouncedSearch) {
       const search = debouncedSearch.toLowerCase()
-      filtered = filtered.filter(n => 
+      merged = merged.filter(n => 
         n.item_name.toLowerCase().includes(search) || 
         n.story.toLowerCase().includes(search) ||
-        n.profile.name.toLowerCase().includes(search)
+        (n.profile?.name || n.profile?.full_name || "").toLowerCase().includes(search)
       )
     }
 
-    // Apply Sorting
-    switch (sort) {
-      case 'urgent':
-        filtered.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-        break
-      case 'newest':
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        break
-      case 'nearly_funded':
-        filtered.sort((a, b) => b.funding_percentage - a.funding_percentage)
-        break
-      case 'most_pledged':
-        filtered.sort((a, b) => b.funded_amount - a.funded_amount)
-        break
-    }
+    // 5. Sort — real needs always rank above mock needs within the same sort order
+    merged.sort((a, b) => {
+      // Real needs always come first
+      if (a._isReal && !b._isReal) return -1
+      if (!a._isReal && b._isReal) return 1
 
-    setNeeds(filtered)
+      // Within the same tier, apply the selected sort
+      switch (sort) {
+        case 'urgent':
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+        case 'newest':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        case 'nearly_funded':
+          return (b.funded_amount / b.item_cost) - (a.funded_amount / a.item_cost)
+        case 'most_pledged':
+          return b.funded_amount - a.funded_amount
+        default:
+          return 0
+      }
+    })
+
+    setNeeds(merged)
     setLoading(false)
   }, [filters.category, filters.state, filters.badgeLevel, debouncedSearch, sort])
 
   React.useEffect(() => {
     fetchNeeds()
   }, [fetchNeeds])
+
+  const totalCount = needs.length
 
   return (
     <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
@@ -260,7 +274,7 @@ export default function BrowsePage() {
               style={{ background: 'var(--color-primary-container)', color: 'var(--color-on-primary-container)' }}
             >
               <Sparkles className="h-3.5 w-3.5" />
-              {loading ? "Loading..." : `${MOCK_BROWSE_NEEDS.length} Active Needs Across Nigeria`}
+              {loading ? "Loading..." : `${totalCount} Active Needs Across Nigeria`}
             </motion.div>
 
             <motion.h1 
@@ -307,7 +321,7 @@ export default function BrowsePage() {
               <div className="flex items-center gap-3">
                 <p className="text-sm font-bold" style={{ color: 'var(--color-on-surface-variant)' }}>
                   Showing{" "}
-                  <span className="text-on-surface font-black">{loading ? "..." : needs.length}</span>{" "}
+                  <span className="text-on-surface font-black">{loading ? "..." : totalCount}</span>{" "}
                   active needs
                 </p>
                 {hasActiveFilters && (

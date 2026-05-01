@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { motion } from "framer-motion"
+import Image from "next/image"
 import Link from "next/link"
 import { Share2, ExternalLink, Quote, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
@@ -15,10 +16,7 @@ interface ImpactCardProps {
 export function ImpactCard({ submission }: ImpactCardProps) {
   const { profile, caption, photo_url } = submission
 
-  const badgeLevel = profile.badge_level === 'level_4_platform_verified' ? 4 
-    : profile.badge_level === 'level_3_established' ? 3 
-    : profile.badge_level === 'level_2_trusted_tradesperson' ? 2 
-    : profile.badge_level === 'level_1_community_member' ? 1 : 0;
+  const badgeLevel = profile.badge_level === 'level_1_community_member' ? 1 : 0;
 
   const profileName = (profile as any).name || "Verified Artisan"
   const profilePhoto = profile.photo_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e9ddff' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-size='40' font-weight='bold' fill='%236750A4'%3E${profileName.charAt(0)}%3C/text%3E%3C/svg%3E`
@@ -32,10 +30,12 @@ export function ImpactCard({ submission }: ImpactCardProps) {
     >
       {/* Background Media */}
       <div className="absolute inset-0">
-        <img 
+        <Image 
           src={photo_url || "https://images.unsplash.com/photo-1541888946425-d81bb19480c5?auto=format&fit=crop&q=80&w=800"} 
           alt={caption} 
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
@@ -43,8 +43,14 @@ export function ImpactCard({ submission }: ImpactCardProps) {
 
       {/* Profile & Badge (Top Left) */}
       <div className="absolute top-5 left-5 flex items-center gap-3">
-         <div className="h-11 w-11 rounded-full border-2 border-white/60 overflow-hidden bg-surface shadow-md">
-            <img src={profilePhoto} alt={profileName} className="h-full w-full object-cover" />
+         <div className="relative h-11 w-11 rounded-full border-2 border-white/60 overflow-hidden bg-surface shadow-md">
+            <Image 
+              src={profilePhoto} 
+              alt={profileName} 
+              fill
+              sizes="44px"
+              className="object-cover" 
+            />
          </div>
          <div className="flex flex-col">
            <span className="text-sm font-black text-white drop-shadow-sm">{profileName}</span>

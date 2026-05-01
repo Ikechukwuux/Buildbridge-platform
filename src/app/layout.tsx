@@ -13,6 +13,7 @@ import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { Providers } from "@/components/Providers";
 import { NetworkFailureBanner } from "@/components/ui/NetworkFailureBanner";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 
 export default function RootLayout({
   children,
@@ -28,6 +29,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen flex flex-col bg-white font-sans" style={{ fontFamily: "'Roboto', sans-serif" }} suppressHydrationWarning>
          <Providers>
+            <ScrollToTop />
             <ConditionalNavbar />
             <NetworkFailureBanner />
             <main className="flex-grow">

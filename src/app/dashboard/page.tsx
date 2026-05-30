@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button"
 import { NeedCard, NeedCardSkeleton } from "@/components/ui/NeedCard"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { BadgeDisplay } from "@/components/ui/BadgeDisplay"
+import { TrustBadges } from "@/components/ui/TrustBadges"
+import { deriveTrustBadges } from "@/lib/trust-badges"
 import {
   Plus,
   Settings,
@@ -32,6 +34,8 @@ import { cn } from "@/lib/utils"
 import { GoalGradientCard } from "@/components/dashboard/GoalGradientCard"
 import { CreateNeedFlow } from "@/components/dashboard/CreateNeedFlow"
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader"
+import { NotificationPanel } from "@/components/dashboard/NotificationPanel"
+import { TransactionHistory } from "@/components/dashboard/TransactionHistory"
 
 function DashboardContent() {
   const router = useRouter()
@@ -48,6 +52,7 @@ function DashboardContent() {
   const [selectedNeedForProof, setSelectedNeedForProof] = useState<any>(null)
   const [showCopied, setShowCopied] = useState(false)
   const [userName, setUserName] = useState("Artisan")
+  const [userId, setUserId] = useState<string | null>(null)
   const [isCreatingNeed, setIsCreatingNeed] = useState(false)
   const [needToDelete, setNeedToDelete] = useState<string | null>(null)
 
@@ -56,11 +61,24 @@ function DashboardContent() {
   const handleDeleteConfirm = async (id: string) => {
     try {
       setDeleteError(null)
+
+      // Guard: only drafts and rejected needs may be hard-deleted.
+      // Active/pending/funded/completed needs must go through a cancellation flow
+      // so backer pledges are protected.
+      const target = needs.find(n => n.id === id)
+      const safeToDelete = !target || target.status === 'draft' || target.status === 'rejected'
+      if (!safeToDelete) {
+        setDeleteError("This need has gone live and cannot be deleted. Request a cancellation from support — pledged funds need to be refunded first.")
+        setNeedToDelete(null)
+        return
+      }
+
       const { error, count } = await supabase
         .from('needs')
         .delete({ count: 'exact' })
         .eq('id', id)
         .eq('profile_id', profile?.id)
+        .in('status', ['draft', 'rejected'])
 
       if (error) {
         console.error("Error deleting need:", error)
@@ -102,6 +120,7 @@ function DashboardContent() {
       // Get display name from user metadata
       const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Artisan"
       setUserName(fullName)
+      setUserId(user.id)
 
       // Real data fetching applies to all users including demo
       // 2. Get profile
@@ -233,10 +252,19 @@ function DashboardContent() {
 
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-         <div className="flex flex-col gap-2">
-             <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tight">
-                Welcome back, <span className="text-primary italic">{firstName}!</span>
-             </h1>
+         <div className="flex flex-col gap-3">
+            <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tight">
+               Welcome back, <span className="text-primary italic">{firstName}!</span>
+            </h1>
+            <TrustBadges
+              size="sm"
+              showLocked
+              badges={deriveTrustBadges({
+                profile,
+                needs,
+                verification: { verified: profile?.badge_level && profile.badge_level !== 'level_0_unverified' },
+              })}
+            />
             <p className="text-body-large text-on-surface-variant max-w-xl">
                Manage your funding needs and build your trade reputation on BuildBridge.
             </p>
@@ -368,9 +396,18 @@ function DashboardContent() {
 
 
 
+          {/* Transaction History */}
+          <TransactionHistory needIds={needs.map(n => n.id)} />
+
           {/* Badge Display Area */}
           <div className="pt-8 border-t border-outline-variant">
-            <BadgeDisplay />
+            <BadgeDisplay
+              badges={deriveTrustBadges({
+                profile,
+                needs,
+                verification: { verified: profile?.badge_level && profile.badge_level !== 'level_0_unverified' },
+              })}
+            />
           </div>
 
         </div>
@@ -394,6 +431,9 @@ function DashboardContent() {
                 <span className="text-[10px] uppercase font-black tracking-widest text-on-surface-variant/50">Total Backers</span>
              </div>
           </div>
+
+          {/* Notification Panel */}
+          <NotificationPanel userId={userId} />
 
           {/* Trust Tracking Card */}
           <div className="flex flex-col gap-4">

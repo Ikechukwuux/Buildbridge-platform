@@ -5,7 +5,8 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { Share2, ExternalLink, Quote, MapPin } from "lucide-react"
-import { Badge } from "@/components/ui/Badge"
+import { TrustBadges } from "@/components/ui/TrustBadges"
+import { deriveTrustBadges } from "@/lib/trust-badges"
 import { type ImpactWallSubmission, type Profile } from "@/types"
 import { cn, handleShare } from "@/lib/utils"
 
@@ -16,7 +17,7 @@ interface ImpactCardProps {
 export function ImpactCard({ submission }: ImpactCardProps) {
   const { profile, caption, photo_url } = submission
 
-  const badgeLevel = profile.badge_level === 'level_1_community_member' ? 1 : 0;
+  const badges = deriveTrustBadges({ profile, verification: { verified: profile.badge_level && profile.badge_level !== 'level_0_unverified' } });
 
   const profileName = (profile as any).name || "Verified Artisan"
   const profilePhoto = profile.photo_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e9ddff' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-size='40' font-weight='bold' fill='%236750A4'%3E${profileName.charAt(0)}%3C/text%3E%3C/svg%3E`
@@ -58,9 +59,9 @@ export function ImpactCard({ submission }: ImpactCardProps) {
          </div>
       </div>
 
-      {/* Badge (Top Right) */}
+      {/* Badges (Top Right) */}
       <div className="absolute top-5 right-5">
-        <Badge level={badgeLevel as any} className="shadow-lg" />
+        <TrustBadges badges={badges} size="sm" showLabels={false} showLocked={false} />
       </div>
 
       {/* Content Overlay (Bottom) */}

@@ -4,6 +4,7 @@ import React from "react";
 import { PremiumPageLayout } from "@/components/layout/PremiumPageLayout";
 import { Lock } from "lucide-react";
 import { motion } from "framer-motion";
+import { DraftLegalBanner } from "@/components/ui/DraftLegalBanner";
 
 export function PrivacyContent() {
   const sections = [
@@ -16,6 +17,7 @@ export function PrivacyContent() {
   return (
     <PremiumPageLayout eyebrow="DATA & COMPLIANCE" titlePlain="Privacy at our" titleAccent="Core." subtitle="BuildBridge is built on transparency. We protect your data as carefully as we protect our community's trust.">
       <div className="space-y-16">
+        <DraftLegalBanner />
         <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
           <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--color-on-surface-variant)' }}>Last Updated: April 20, 2026</p>
           <p className="text-base font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>

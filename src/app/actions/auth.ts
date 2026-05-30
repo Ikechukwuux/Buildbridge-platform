@@ -1,6 +1,19 @@
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
+import { headers } from "next/headers"
+import { RateLimiters } from "@/lib/rate-limit"
+import crypto from "crypto"
+
+async function getServerActionIp(): Promise<string> {
+  const h = await headers()
+  const forwarded = h.get("x-forwarded-for")
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim()
+    if (first) return first
+  }
+  return h.get("x-real-ip") || "anonymous"
+}
 
 export async function adminSyncPhoneUser(
   phone: string,
@@ -8,6 +21,19 @@ export async function adminSyncPhoneUser(
   locationState?: string | null,
   locationLga?: string | null,
 ) {
+  // Rate-limit: 3 account creations / hour / IP
+  const limiter = RateLimiters.accountCreate()
+  if (limiter) {
+    const ip = await getServerActionIp()
+    const { success } = await limiter.limit(ip)
+    if (!success) {
+      return {
+        success: false,
+        error: "Too many account creation attempts. Please wait an hour before trying again.",
+      }
+    }
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -20,7 +46,7 @@ export async function adminSyncPhoneUser(
   })
 
   const email = `${phone.replace(/[^0-9]/g, '')}@buildbridge.app`
-  const password = `buildbridge-${phone.replace(/[^0-9]/g, '')}`
+  const password = crypto.randomBytes(32).toString("hex")
 
   try {
     const { data: user, error } = await supabaseAdmin.auth.admin.createUser({

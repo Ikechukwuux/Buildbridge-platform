@@ -33,19 +33,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 })
     }
 
-    // Generate SHA-256 Hash of the critical PII
-    // NOTE: In production, salt should be added via a secret ENV variable
-    const salt = process.env.IDENTITY_SALT || "fallback_salt_39812";
+    const salt = process.env.IDENTITY_SALT
+    if (!salt) {
+      console.error("IDENTITY_SALT env var is not set")
+      return NextResponse.json({ error: "Server configuration error." }, { status: 500 })
+    }
     const generatedHash = crypto.createHash('sha256').update(documentId + salt).digest('hex')
 
-    // Since we don't have active Prembly/Dojah keys, we simulate the validation success for MVP
-    // NOTE: Replace this block with a fetch() call to Dojah in production
-    const provider = "dojah"
-    const isMocksVerified = true // Simulate clear background check
-
-    if (!isMocksVerified) {
-       return NextResponse.json({ error: "Identity verification failed at the provider level." }, { status: 422 })
-    }
+    const provider = "manual"
 
     // Insert verification tracking record with pending admin review
     const { error: insertError } = await supabase

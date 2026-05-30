@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState"
 import { BrowseFilters } from "@/components/browse/BrowseFilters"
 import { BrowseSort, type SortOption } from "@/components/browse/BrowseSort"
 import { getNeeds } from "./actions"
-import { Search, MapPin, Sparkles, ArrowRight, X } from "lucide-react"
+import { Search, MapPin, Sparkles, ArrowRight, X, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
 // Rich mock needs for the browse page (always shown as padding)
@@ -157,13 +157,19 @@ export default function BrowsePage() {
   const [needs, setNeeds] = React.useState<any[]>([])
   const [loading, setLoading] = React.useState(true)
   
+  const PAGE_SIZE = 9
+
   // State for filters
   const [filters, setFilters] = React.useState({
     category: null as string | null,
     state: null as string | null,
     badgeLevel: null as number | null,
-    search: ""
+    search: "",
+    fundedMin: null as number | null,
+    daysMax: null as number | null,
   })
+
+  const [page, setPage] = React.useState(1)
   
   // State for sorting
   const [sort, setSort] = React.useState<SortOption>('urgent')
@@ -178,11 +184,14 @@ export default function BrowsePage() {
     return () => clearTimeout(timer)
   }, [filters.search])
 
+  // Reset to page 1 when filters change
+  React.useEffect(() => { setPage(1) }, [filters.category, filters.state, filters.badgeLevel, debouncedSearch, filters.fundedMin, filters.daysMax])
+
   // Check if any filter is active
-  const hasActiveFilters = filters.category !== null || filters.state !== null || filters.badgeLevel !== null || debouncedSearch !== ""
+  const hasActiveFilters = filters.category !== null || filters.state !== null || filters.badgeLevel !== null || debouncedSearch !== "" || filters.fundedMin !== null || filters.daysMax !== null
 
   const clearAllFilters = () => {
-    setFilters({ category: null, state: null, badgeLevel: null, search: "" })
+    setFilters({ category: null, state: null, badgeLevel: null, search: "", fundedMin: null, daysMax: null })
   }
 
   // Fetch real needs from DB and merge with mock data
@@ -216,11 +225,24 @@ export default function BrowsePage() {
     }
     if (debouncedSearch) {
       const search = debouncedSearch.toLowerCase()
-      merged = merged.filter(n => 
-        n.item_name.toLowerCase().includes(search) || 
+      merged = merged.filter(n =>
+        n.item_name.toLowerCase().includes(search) ||
         n.story.toLowerCase().includes(search) ||
         (n.profile?.name || n.profile?.full_name || "").toLowerCase().includes(search)
       )
+    }
+    if (filters.fundedMin !== null) {
+      merged = merged.filter(n => {
+        const pct = n.item_cost > 0 ? (n.funded_amount / n.item_cost) * 100 : 0
+        return pct >= filters.fundedMin!
+      })
+    }
+    if (filters.daysMax !== null) {
+      const now = Date.now()
+      merged = merged.filter(n => {
+        const diffDays = Math.ceil((new Date(n.deadline).getTime() - now) / (1000 * 60 * 60 * 24))
+        return diffDays >= 0 && diffDays <= filters.daysMax!
+      })
     }
 
     // 5. Sort — real needs always rank above mock needs within the same sort order
@@ -246,13 +268,15 @@ export default function BrowsePage() {
 
     setNeeds(merged)
     setLoading(false)
-  }, [filters.category, filters.state, filters.badgeLevel, debouncedSearch, sort])
+  }, [filters.category, filters.state, filters.badgeLevel, debouncedSearch, filters.fundedMin, filters.daysMax, sort])
 
   React.useEffect(() => {
     fetchNeeds()
   }, [fetchNeeds])
 
   const totalCount = needs.length
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
+  const pagedNeeds = needs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
@@ -297,7 +321,7 @@ export default function BrowsePage() {
               className="text-lg md:text-xl font-medium max-w-3xl leading-relaxed"
               style={{ color: 'var(--color-on-surface-variant)' }}
             >
-              Back verified tradespeople building their futures. Every pledge is held in escrow and only deployed once goals are reached.
+              Donate to verified tradespeople building their futures. Your pledge is held securely and released in stages as artisans hit milestones and upload proof.
             </motion.p>
           </div>
         </div>
@@ -344,13 +368,13 @@ export default function BrowsePage() {
               Array.from({ length: 6 }).map((_, i) => (
                 <NeedCardSkeleton key={i} />
               ))
-            ) : needs.length > 0 ? (
-              needs.map((need, index) => (
+            ) : pagedNeeds.length > 0 ? (
+              pagedNeeds.map((need, index) => (
                 <motion.div
                   key={need.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.08 }}
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
                 >
                   <NeedCard need={need} />
                 </motion.div>
@@ -375,7 +399,7 @@ export default function BrowsePage() {
                        <EmptyState 
                          icon={MapPin}
                          title="No needs in this area yet"
-                         description="Know a tradesperson here who needs backing? Help them get started."
+                         description="Know a tradesperson here who needs support? Help them get started."
                          actionLabel="Create a Need"
                          onAction={() => window.location.href = "/onboarding"}
                          className="bg-transparent border-none"
@@ -388,7 +412,7 @@ export default function BrowsePage() {
                          title="No needs match your search"
                          description="Try a different trade category, location, or remove some filters."
                          actionLabel="Clear all filters"
-                         onAction={() => setFilters({ category: null, state: null, badgeLevel: null, search: "" })}
+                         onAction={() => setFilters({ category: null, state: null, badgeLevel: null, search: "", fundedMin: null, daysMax: null })}
                          className="bg-transparent border-none"
                        />
                      );
@@ -410,15 +434,54 @@ export default function BrowsePage() {
             )}
          </div>
          
-         {/* End-of-Feed CTA */}
-         {!loading && needs.length > 0 && (
+         {/* Pagination */}
+         {!loading && totalPages > 1 && (
+           <div className="flex items-center justify-center gap-3 mt-4">
+             <button
+               onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+               disabled={page === 1}
+               className="h-11 w-11 rounded-full border-2 border-outline-variant/50 flex items-center justify-center text-on-surface hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+               aria-label="Previous page"
+             >
+               <ChevronLeft className="h-5 w-5" />
+             </button>
+
+             <div className="flex items-center gap-2">
+               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                 <button
+                   key={p}
+                   onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                   className={`h-11 min-w-[44px] px-3 rounded-full text-sm font-black transition-all ${
+                     p === page
+                       ? 'bg-primary text-on-primary shadow-md shadow-primary/20'
+                       : 'border-2 border-outline-variant/50 text-on-surface hover:border-primary hover:text-primary'
+                   }`}
+                 >
+                   {p}
+                 </button>
+               ))}
+             </div>
+
+             <button
+               onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+               disabled={page === totalPages}
+               className="h-11 w-11 rounded-full border-2 border-outline-variant/50 flex items-center justify-center text-on-surface hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+               aria-label="Next page"
+             >
+               <ChevronRight className="h-5 w-5" />
+             </button>
+           </div>
+         )}
+
+         {/* End-of-Feed CTA — only on last page */}
+         {!loading && needs.length > 0 && page === totalPages && (
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
              viewport={{ once: true }}
              transition={{ duration: 0.6 }}
-             className="mt-8 rounded-[2rem] p-10 md:p-16 text-center relative overflow-hidden"
-             style={{ 
+             className="mt-4 rounded-[2rem] p-10 md:p-16 text-center relative overflow-hidden"
+             style={{
                background: 'var(--color-surface-container)',
                boxShadow: '0 8px 30px rgba(0,0,0,0.03)'
              }}
@@ -428,17 +491,17 @@ export default function BrowsePage() {
                  You&apos;ve seen all open needs.
                </p>
                <p className="text-base font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>
-                 Know a tradesperson who needs backing? Help them get started on BuildBridge.
+                 Know a tradesperson who needs support? Help them get started on BuildBridge.
                </p>
                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                 <Link 
+                 <Link
                    href="/onboarding"
                    className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3.5 rounded-full text-base font-black tracking-wide shadow-lg hover:shadow-xl transition-all"
                  >
                    Create a Need
                    <ArrowRight className="h-4 w-4" />
                  </Link>
-                 <button 
+                 <button
                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                    className="px-6 py-3 rounded-full font-bold text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
                  >

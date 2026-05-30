@@ -13,6 +13,8 @@ interface BrowseFiltersProps {
     state: string | null;
     badgeLevel: number | null;
     search: string;
+    fundedMin: number | null;   // e.g. 25, 50, 75 (%)
+    daysMax: number | null;     // e.g. 7, 14 (days remaining)
   };
 }
 
@@ -193,23 +195,23 @@ export function BrowseFilters({ onFilterChange, activeFilters }: BrowseFiltersPr
         </p>
         <div className="flex flex-wrap gap-3">
           {[1, 2, 3, 4].map((level) => (
-            <button 
-              key={level} 
+            <button
+              key={level}
               onClick={() => handleBadgeToggle(level)}
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-full border-2 transition-all",
-                activeFilters.badgeLevel === level 
-                  ? "border-primary bg-primary/5 shadow-sm" 
+                activeFilters.badgeLevel === level
+                  ? "border-primary bg-primary/5 shadow-sm"
                   : "border-outline-variant/50 bg-white opacity-70 hover:opacity-100 hover:border-primary/30"
               )}
             >
-               <Badge 
-                  level={level as any} 
+               <Badge
+                  level={level as any}
                   showLabel={false}
                   className={cn(
                       "cursor-pointer transition-all",
                       activeFilters.badgeLevel === level ? "scale-105" : "grayscale-[0.3]"
-                  )} 
+                  )}
                />
                <span className={cn(
                  "text-xs font-bold uppercase tracking-wider",
@@ -219,6 +221,55 @@ export function BrowseFilters({ onFilterChange, activeFilters }: BrowseFiltersPr
                </span>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Funding Progress & Days Remaining */}
+      <div className="flex flex-col sm:flex-row gap-6">
+        {/* % Funded */}
+        <div className="flex flex-col gap-3 flex-1">
+          <p className="text-[10px] uppercase font-black tracking-widest pl-1" style={{ color: 'var(--color-on-surface-variant)' }}>
+            % Funded (at least)
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {([25, 50, 75] as const).map(pct => (
+              <button
+                key={pct}
+                onClick={() => onFilterChange({ ...activeFilters, fundedMin: activeFilters.fundedMin === pct ? null : pct })}
+                className={cn(
+                  "px-4 py-2 rounded-full border-2 text-xs font-black uppercase tracking-widest transition-all",
+                  activeFilters.fundedMin === pct
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-outline-variant/50 bg-white text-on-surface-variant hover:border-primary/50"
+                )}
+              >
+                ≥{pct}%
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Days remaining */}
+        <div className="flex flex-col gap-3 flex-1">
+          <p className="text-[10px] uppercase font-black tracking-widest pl-1" style={{ color: 'var(--color-on-surface-variant)' }}>
+            Days Remaining (max)
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {([7, 14] as const).map(days => (
+              <button
+                key={days}
+                onClick={() => onFilterChange({ ...activeFilters, daysMax: activeFilters.daysMax === days ? null : days })}
+                className={cn(
+                  "px-4 py-2 rounded-full border-2 text-xs font-black uppercase tracking-widest transition-all",
+                  activeFilters.daysMax === days
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-outline-variant/50 bg-white text-on-surface-variant hover:border-primary/50"
+                )}
+              >
+                ≤{days} days
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

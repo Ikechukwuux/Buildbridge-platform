@@ -5,11 +5,9 @@ import { motion } from "framer-motion"
 
 const partners = [
   "Paystack",
-  "Supabase", 
-  "Flutterwave",
-  "Interswitch",
+  "Supabase",
   "Andela",
-  "Termii"
+  "Termii",
 ]
 
 export function PartnerLogos() {

@@ -926,7 +926,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
   const getShareMessage = () => {
     const amount = parseInt(formData.goalAmount || '0').toLocaleString()
     const item = formData.aiPrompts.equipment || formData.needTitle || "trade equipment"
-    return `Hi, I just listed a need on BuildBridge — a platform that lets people back skilled tradespeople directly. I need ₦${amount} for ${item}. Would you be able to back me, or share this with someone who might? Here's the link: ${getNeedUrl()}`
+    return `Hi, I just listed a need on BuildBridge — a platform that lets people donate to skilled tradespeople directly. I need ₦${amount} for ${item}. Would you be able to donate, or share this with someone who might? Here's the link: ${getNeedUrl()}`
   }
   
   const handleCopyMessage = () => {
@@ -1201,7 +1201,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
       
       <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl">
         <p className="text-body-large text-on-surface">
-          💡 Unlike other platforms, BuildBridge does not deduct a platform fee from what the tradesperson receives. What backers pledge is exactly what they get — no need to inflate your goal. You keep every Naira pledged, even if you don't reach your full target.
+          💡 BuildBridge deducts a small 3% platform fee from each pledge to keep the platform running. You keep 97% of every Naira pledged — even if you don't reach your full target.
         </p>
       </div>
     </div>
@@ -1439,14 +1439,14 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
         <div className="p-8 rounded-3xl bg-surface-variant/30 border-2 border-transparent">
           <h3 className="text-headline-medium font-black text-on-surface mb-4">Your community steps in</h3>
           <p className="text-body-large text-on-surface-variant">
-            Neighbours, market friends, and family abroad — anyone can back a need directly from their phone. No account needed to give.
+            Neighbours, market friends, and family abroad — anyone can donate to a need directly from their phone. No account needed to give.
           </p>
         </div>
         
         <div className="p-8 rounded-3xl bg-surface-variant/30 border-2 border-transparent">
           <h3 className="text-headline-medium font-black text-on-surface mb-4">The money goes straight to you</h3>
           <p className="text-body-large text-on-surface-variant">
-            Every Naira pledged goes directly to the tradesperson. No platform fees deducted. You keep everything — even if you don't reach your full target.
+            A small 3% platform fee keeps BuildBridge running. The remaining 97% of every pledge goes directly to the tradesperson — even if you don't reach your full target.
           </p>
           
           <div className="mt-6 p-4 bg-surface-variant/50 rounded-2xl">
@@ -1814,10 +1814,10 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
       
       <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl">
         <p className="text-body-large text-on-surface mb-2">
-          💡 Suggested: "Back [Name]'s [item] — [trade] in [location]"
+          💡 Suggested: "Donate to [Name]'s [item] — [trade] in [location]"
         </p>
         <p className="text-body-medium text-on-surface-variant mb-4">
-          Example: "Back Emeka's drill — Carpenter in Yaba, Lagos"
+          Example: "Donate to Emeka's drill — Carpenter in Yaba, Lagos"
         </p>
         <button 
           type="button"
@@ -1826,7 +1826,7 @@ export default function NeedCreationFlow({ mode: initialMode = "onboarding" }: N
             const item = formData.aiPrompts.equipment || 'equipment'
             const trade = formData.tradeCategory === "Other" ? formData.customTrade : formData.tradeCategory
             const location = formData.lga ? `${formData.lga}, ${formData.state}` : formData.state
-            const suggested = `Back ${name}'s ${item} — ${trade} in ${location}`
+            const suggested = `Donate to ${name}'s ${item} — ${trade} in ${location}`
             setFormData(prev => ({ ...prev, needTitle: suggested.slice(0, 60) }))
           }}
           className="text-primary font-bold hover:underline"

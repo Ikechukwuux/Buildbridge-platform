@@ -38,3 +38,50 @@ export async function verifyTransaction(reference: string): Promise<VerifyRespon
 
   return res.json()
 }
+
+export interface CreateRecipientResponse {
+  status: boolean
+  message: string
+  data: { recipient_code: string; id: number }
+}
+
+export async function createTransferRecipient(params: {
+  name: string
+  account_number: string
+  bank_code: string
+}): Promise<CreateRecipientResponse> {
+  const res = await fetch(`${PAYSTACK_BASE}/transferrecipient`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ type: "nuban", currency: "NGN", ...params }),
+  })
+  if (!res.ok) throw new Error(`Paystack create recipient failed: ${res.status}`)
+  return res.json()
+}
+
+export interface InitiateTransferResponse {
+  status: boolean
+  message: string
+  data: { transfer_code: string; status: string }
+}
+
+export async function initiateTransfer(params: {
+  amount: number
+  recipient: string
+  reason: string
+  reference: string
+}): Promise<InitiateTransferResponse> {
+  const res = await fetch(`${PAYSTACK_BASE}/transfer`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ source: "balance", currency: "NGN", ...params }),
+  })
+  if (!res.ok) throw new Error(`Paystack initiate transfer failed: ${res.status}`)
+  return res.json()
+}

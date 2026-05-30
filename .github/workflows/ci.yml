@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint-and-build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Type check ──────────────────────────────────────────────────────────
+      - name: Type check (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      # ── Lint ────────────────────────────────────────────────────────────────
+      - name: ESLint
+        run: npx next lint --max-warnings 0
+        env:
+          # Pass a dummy URL so the build doesn't fail on missing vars
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder_anon_key
+
+      # ── Build ────────────────────────────────────────────────────────────────
+      - name: Build (next build)
+        run: npm run build
+        env:
+          # Required at build time — real values must be set in GitHub Secrets
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+
+      # ── Smoke test against Vercel preview (optional, non-blocking) ────────
+      - name: Smoke test staging URL
+        if: github.event_name == 'pull_request' && vars.STAGING_URL != ''
+        run: |
+          curl --fail --max-time 20 "${{ vars.STAGING_URL }}" -o /dev/null -s -w "Status: %{http_code}\n"
+        continue-on-error: true

@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { verifyTransaction } from "@/lib/paystack"
+import { RateLimiters, enforceRateLimit, getClientIp } from "@/lib/rate-limit"
 
 /**
  * POST /api/payment/verify
  *
  * Called client-side after Paystack's payment popup reports success.
  * Uses the service role key to bypass RLS.
- *
- * NOTE: We skip inserting into the `pledges` table for now because it has
- * a FK constraint on backer_user_id → users(id) referencing the old legacy
- * users table (not Supabase Auth). Instead we update funded_amount and
- * pledge_count directly on the need, which is the critical path for the demo.
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate-limit per IP: 5 payment confirmations / minute
+    const limited = await enforceRateLimit(RateLimiters.payment(), getClientIp(req))
+    if (limited) return limited
+
     const body = await req.json()
-    const { reference, need_id, message, tip_kobo } = body
+    const { reference, need_id, message, fee_kobo } = body
 
     if (!reference || !need_id) {
       return NextResponse.json(
@@ -50,18 +50,27 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // 3. Check if this reference has already been applied (idempotency)
-    //    We use the needs.disbursement_reference column as a lightweight dedupe key
-    const { data: alreadyApplied } = await supabase
-      .from("needs")
-      .select("id, disbursement_reference")
-      .eq("id", need_id)
-      .single()
+    // 3. Idempotency — reject if this reference was already processed
+    const { data: existingPledge } = await supabase
+      .from("pledges")
+      .select("id")
+      .eq("payment_reference", reference)
+      .maybeSingle()
 
-    // Store processed references in a simple JSON field — check via a dedicated column
-    // For now, use a simple check: has this reference been stored before?
-    // We'll track it in the needs.updated_at / pledge_count comparison approach
-    // A cleaner solution would be a payment_events table — for MVP we just update directly.
+    if (existingPledge) {
+      const { data: need } = await supabase
+        .from("needs")
+        .select("funded_amount, pledge_count")
+        .eq("id", need_id)
+        .single()
+      return NextResponse.json({
+        success: true,
+        funded_amount: need?.funded_amount ?? 0,
+        pledge_count: need?.pledge_count ?? 0,
+        is_fully_funded: (need?.funded_amount ?? 0) >= (need?.funded_amount ?? 1),
+        note: "Already processed",
+      })
+    }
 
     // 4. Fetch the current need to compute new totals
     const { data: need, error: fetchError } = await supabase
@@ -79,14 +88,14 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Amount arithmetic
-    // tx.amount = total charged by Paystack (pledge + tip)
-    // tx.metadata.pledge_kobo = artisan's portion only (excludes BuildBridge tip)
+    // tx.amount = total charged by Paystack (full pledge)
+    // tx.metadata.pledge_kobo = artisan's portion (97% after 3% platform fee)
     // We only credit the artisan's portion to funded_amount.
     const totalChargedKobo = tx.amount
     const pledgeKobo: number =
       typeof tx.metadata?.pledge_kobo === "number" && tx.metadata.pledge_kobo > 0
         ? tx.metadata.pledge_kobo
-        : totalChargedKobo // fallback: no tip was added, full amount goes to artisan
+        : totalChargedKobo - Math.floor(totalChargedKobo * 0.03) // fallback: derive 97% if metadata missing
 
     // Sanity check — pledge portion should never exceed total charged
     const safePledgeKobo = Math.min(pledgeKobo, totalChargedKobo)
@@ -105,7 +114,7 @@ export async function POST(req: NextRequest) {
       updateData.disbursed_at = new Date().toISOString()
     }
 
-    // 6. Apply update
+    // 6. Apply need update
     const { error: updateError } = await supabase
       .from("needs")
       .update(updateData)
@@ -119,9 +128,25 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    console.log(
-      `[verify] ✓ ref=${reference} | need=${need_id} | +${pledgeKobo} kobo | new_total=${newFundedAmount} | fully_funded=${isFullyFunded}`
-    )
+    // 7. Record pledge (backer may be anonymous — backer_user_id is nullable)
+    const platformFeeKobo = totalChargedKobo - safePledgeKobo
+    const processingFeeKobo = Math.floor(totalChargedKobo * 0.015) + (totalChargedKobo > 250000 ? 10000 : 0)
+    await supabase.from("pledges").insert({
+      need_id,
+      backer_user_id: tx.metadata?.backer_user_id || null,
+      amount: safePledgeKobo,
+      currency: "NGN",
+      fee_breakdown_json: {
+        platform_fee: platformFeeKobo,
+        processing_fee: processingFeeKobo,
+        tradesperson_receives: safePledgeKobo - processingFeeKobo,
+      },
+      payment_provider: "paystack",
+      payment_reference: reference,
+      payment_status: "completed",
+      paid_at: new Date().toISOString(),
+      message: message || null,
+    })
 
     return NextResponse.json({
       success: true,

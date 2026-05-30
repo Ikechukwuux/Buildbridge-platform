@@ -69,14 +69,28 @@ export async function submitProofOfUseAction(formData: FormData) {
     let proofPhotoUrl: string | null = null
 
     if (photoFile && photoFile.size > 0) {
+      // Validate file type — JPEG, PNG, or PDF only
+      const ALLOWED_MIME = ["image/jpeg", "image/png", "image/pdf", "application/pdf"]
+      const ALLOWED_EXT = ["jpg", "jpeg", "png", "pdf"]
+      const rawExt = (photoFile.name.split(".").pop() || "").toLowerCase()
+      if (!ALLOWED_MIME.includes(photoFile.type) || !ALLOWED_EXT.includes(rawExt)) {
+        return { success: false, error: "Only JPEG, PNG, and PDF files are accepted as proof." }
+      }
+
+      // Max 10 MB per the brief
+      const MAX_SIZE = 10 * 1024 * 1024
+      if (photoFile.size > MAX_SIZE) {
+        return { success: false, error: "Proof file must be smaller than 10 MB." }
+      }
+
       const supabaseAdmin = createAdminClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       )
 
-      const fileExt = photoFile.name.split(".").pop() || "jpg"
-      const fileName = `proof-${user.id}-${needId}-${Date.now()}.${fileExt}`
-      const filePath = `proofs/${fileName}`
+      // Sanitise filename — alphanumeric + hyphens only
+      const safeName = `proof-${user.id.slice(0, 8)}-${needId.slice(0, 8)}-${Date.now()}.${rawExt}`
+      const filePath = `proofs/${safeName}`
 
       const { error: uploadError } = await supabaseAdmin.storage
         .from("needs")

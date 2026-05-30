@@ -4,6 +4,7 @@ import React from "react";
 import { PremiumPageLayout } from "@/components/layout/PremiumPageLayout";
 import { Scale, Gavel, Handshake, AlertCircle, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { DraftLegalBanner } from "@/components/ui/DraftLegalBanner";
 
 export function TermsContent() {
   const rules = [
@@ -16,6 +17,7 @@ export function TermsContent() {
   return (
     <PremiumPageLayout eyebrow="COMMUNITY STANDARDS" titlePlain="Platform" titleAccent="Standards." subtitle="BuildBridge is a community based on mutual trust. These terms ensure the platform remains fair and secure for everyone.">
       <div className="space-y-16">
+        <DraftLegalBanner />
         <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
           <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--color-on-surface-variant)' }}>Last Updated: April 20, 2026</p>
           <p className="text-base font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>

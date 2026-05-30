@@ -10,8 +10,8 @@ import { ImpactTeaser } from "@/components/home/ImpactTeaser"
 import { FinalCTA } from "@/components/home/FinalCTA"
 
 export const metadata: Metadata = {
-  title: "BuildBridge | Empower Change with Every Support",
-  description: "Direct investment in African skilled trades. Connect with verified tradespeople and fund their equipment needs with zero interest.",
+  title: "BuildBridge | Donate to the Hands That Build Nigeria",
+  description: "Community support for Nigeria's skilled artisans. Donate to a real need. See the proof. Zero interest.",
 }
 
 // Mock stats for immediate visual fidelity

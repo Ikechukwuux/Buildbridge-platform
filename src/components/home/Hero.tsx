@@ -70,8 +70,8 @@ export function Hero() {
              transition={{ delay: 0.2 }}
              className="text-lg md:text-xl font-medium text-on-surface-variant leading-relaxed max-w-2xl mx-auto mb-12"
            >
-             Join a community of thousands backing the dreams of verified tradespeople. 
-             From tailors to mechanics, your capital builds lives and legacies.
+             Join a community of thousands donating to the dreams of verified artisans.
+             From tailors to mechanics, your support builds lives and legacies.
            </motion.p>
 
            {/* Hero Buttons */}

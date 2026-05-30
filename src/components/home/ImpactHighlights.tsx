@@ -11,8 +11,8 @@ const sections = [
     title: "Foster Generosity, Build Real Futures",
     desc: "Every pledge on BuildBridge is tied to a specific piece of equipment. You aren't just giving money; you're buying a tailor's sewing machine or a welder's transformer.",
     features: [
-      "No management fees on direct pledges",
-      "100% of capital reaches the tradesperson",
+      "Just a 3% platform fee — the rest goes to the artisan",
+      "Funds released in stages as milestones are met",
       "Real-time funding progress tracking"
     ],
     image: "/images/hero/tailor.png",

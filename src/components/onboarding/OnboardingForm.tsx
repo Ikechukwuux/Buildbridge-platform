@@ -558,12 +558,12 @@ export function OnboardingForm() {
           {
             icon: Users2,
             title: "The community steps in",
-            description: "Neighbours, market friends, family abroad — anyone can back a need directly from their phone."
+            description: "Neighbours, market friends, family abroad — anyone can donate to a need directly from their phone."
           },
           {
             icon: Banknote,
             title: "The money goes straight to the tradesperson",
-            description: "Every Naira pledged goes directly to them — even if the full target isn't reached."
+            description: "A 3% platform fee keeps BuildBridge running; the remaining 97% goes directly to the artisan — even if the full target isn't reached."
           }
         ]
         return (

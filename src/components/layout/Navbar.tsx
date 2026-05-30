@@ -90,7 +90,7 @@ export function Navbar() {
             <span className="opacity-80">📣</span>
             BuildBridge: The #1 Direct Impact Platform for Nigeria's Artisans
             <Link href="/browse" className="underline hover:opacity-80 transition-opacity ml-1">
-              Back a Trade Today →
+              Donate to a Trade Today →
             </Link>
           </p>
         </div>

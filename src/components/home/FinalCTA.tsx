@@ -22,12 +22,12 @@ export function FinalCTA() {
         >
           <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center gap-6">
             <h2 className="text-3xl md:text-5xl font-black leading-tight tracking-tight text-primary">
-              Empower a Craftsman,<br className="hidden md:block" /> 
+              Empower an Artisan,<br className="hidden md:block" />
               Build a Future.
             </h2>
             
             <p className="text-base md:text-lg text-primary/70 max-w-xl font-medium leading-relaxed">
-              Join thousands of backers supporting Nigerian tradespeople. Whether you&apos;re at home or in the diaspora, your capital makes growth possible.
+              Be one of the first to donate to a Nigerian artisan. Whether you&apos;re at home or in the diaspora, your support makes growth possible.
             </p>
             
             <motion.div

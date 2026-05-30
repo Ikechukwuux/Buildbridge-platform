@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Textarea } from "@/components/ui/Textarea"
 import {
-  ChevronRight, ChevronLeft, CheckCircle2, ArrowRight, Heart, Lock, Zap
+  ChevronRight, ChevronLeft, CheckCircle2, ArrowRight, Lock, Zap
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PledgeSuccess } from "./PledgeSuccess"
@@ -28,11 +28,11 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
   const router = useRouter()
   const supabase = createClient()
 
-  const [step, setStep] = useState(0) // 0: Selection, 1: Breakdown/Tip, 2: Message/Prefs, 3: Success
+  const [step, setStep] = useState(0) // 0: Selection, 1: Breakdown, 2: Message/Prefs, 3: Success
   const [pledgeAmount, setPledgeAmount] = useState<number | null>(null)
   const [customAmount, setCustomAmount] = useState("")
   const [message, setMessage] = useState("")
-  const [tipPercentage, setTipPercentage] = useState(10)
+  const PLATFORM_FEE_RATE = 0.03
 
   const [prefs, setPrefs] = useState({
     anonymous: false,
@@ -89,10 +89,10 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
     }
   }
 
-  // Cost calculations
+  // Cost calculations — 3% platform fee deducted from pledge
   const amountKobo = pledgeAmount || 0
-  const tipKobo = Math.floor(amountKobo * (tipPercentage / 100))
-  const totalChargeKobo = amountKobo + tipKobo
+  const feeKobo = Math.floor(amountKobo * PLATFORM_FEE_RATE)
+  const artisanKobo = amountKobo - feeKobo
 
   const formatNGN = (kobo: number) =>
     new Intl.NumberFormat("en-NG", {
@@ -112,7 +112,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
     const key = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder"
     const email = user?.email || "anonymous_backer@buildbridge.org"
 
-    console.log("[Paystack] Opening with key:", key.substring(0, 15) + "...", "amount:", totalChargeKobo, "email:", email)
+    console.log("[Paystack] Opening with key:", key.substring(0, 15) + "...", "amount:", amountKobo, "email:", email)
 
     setLoading(true)
 
@@ -126,15 +126,15 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
       const handler = (window as any).PaystackPop.setup({
         key,
         email,
-        amount: totalChargeKobo,
+        amount: amountKobo,
         ref: `bb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         currency: "NGN",
         channels: ["card", "bank", "ussd", "bank_transfer"],
         metadata: {
           need_id: needId,
           backer_user_id: user?.id || 'guest',
-          pledge_kobo: amountKobo,   // artisan's portion — excludes tip
-          tip_kobo: tipKobo,         // BuildBridge tip
+          pledge_kobo: artisanKobo,  // artisan's portion (97%)
+          fee_kobo: feeKobo,         // BuildBridge platform fee (3%)
         },
         callback: function (response: any) {
           clearTimeout(timeout)
@@ -153,7 +153,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
                     reference: response.reference,
                     need_id: needId,
                     message: message.slice(0, 500) || undefined,
-                    tip_kobo: tipKobo,
+                    fee_kobo: feeKobo,
                   }),
                 })
                 const verifyData = await verifyRes.json()
@@ -192,7 +192,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
         onClick={() => router.push(`/payment/${needId}`)}
         className="w-full text-headline-small py-8 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-white bg-primary"
       >
-        Back This Tradesperson
+        Donate to This Tradesperson
       </Button>
     )
   }
@@ -270,7 +270,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
                   <div className="flex flex-col gap-1">
                     <h2 className="text-2xl font-black text-on-surface">Choose your pledge</h2>
                     <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
-                      Your contribution is held securely in active escrow.
+                      Your contribution is held securely and released in stages as milestones are met.
                     </p>
                   </div>
 
@@ -333,7 +333,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
                   <div className="flex flex-col gap-1">
                     <h2 className="text-2xl font-black text-on-surface">Pledge Breakdown</h2>
                     <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
-                      BuildBridge charges 0% fees to tradespeople. What you pledge is exactly what they get.
+                      A small 3% platform fee keeps BuildBridge running. The remainder goes directly to {tradespersonName}.
                     </p>
                   </div>
 
@@ -341,56 +341,32 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
                   <div className="p-6 bg-primary/5 border border-primary/15 rounded-[1.75rem] flex items-center justify-between">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[10px] font-black uppercase tracking-widest text-primary">
-                        To {tradespersonName}
+                        To {tradespersonName} (97%)
                       </span>
-                      <span className="text-3xl font-black text-on-surface">{formatNGN(amountKobo)}</span>
+                      <span className="text-3xl font-black text-on-surface">{formatNGN(artisanKobo)}</span>
                     </div>
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       <Zap className="h-5 w-5" />
                     </div>
                   </div>
 
-                  {/* Tip slider */}
-                  <div className="flex flex-col gap-3 p-5 bg-surface-variant/20 rounded-[1.75rem] border border-outline-variant/30">
-                    <div className="flex justify-between items-center">
-                      <p className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
-                        Support the Platform (Optional)
-                      </p>
-                      <span className="font-black text-primary text-xl">{tipPercentage}%</span>
+                  {/* Platform fee */}
+                  <div className="p-5 bg-surface-variant/20 rounded-[1.75rem] border border-outline-variant/30 flex items-center justify-between">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                        Platform fee (3%)
+                      </span>
+                      <span className="text-xs font-medium text-on-surface-variant leading-relaxed">
+                        Keeps BuildBridge running and improving.
+                      </span>
                     </div>
-                    <p className="text-xs font-medium text-on-surface-variant leading-relaxed">
-                      We rely on optional tips from backers to keep the platform free for artisans.
-                    </p>
-                    <input
-                      type="range" min="0" max="30" step="5"
-                      value={tipPercentage}
-                      onChange={(e) => setTipPercentage(parseInt(e.target.value))}
-                      className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-primary bg-outline-variant/30"
-                    />
-                    <div className="flex justify-between text-[10px] font-bold text-on-surface-variant/40">
-                      <span>0%</span>
-                      <span>15%</span>
-                      <span>30%</span>
-                    </div>
+                    <span className="text-xl font-black text-on-surface">{formatNGN(feeKobo)}</span>
                   </div>
-
-                  {tipPercentage === 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl"
-                    >
-                      <Heart className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-xs font-medium text-amber-800 leading-relaxed">
-                        We don't charge tradespeople anything. A small tip from you is the only way we cover payment processing and escrow operations. Thank you for considering it!
-                      </p>
-                    </motion.div>
-                  )}
 
                   {/* Total */}
                   <div className="p-5 bg-on-surface/5 rounded-[1.75rem] border border-outline-variant/30 flex items-center justify-between">
                     <span className="text-sm font-black uppercase tracking-widest text-on-surface">Total Charge</span>
-                    <span className="text-2xl font-black text-on-surface">{formatNGN(totalChargeKobo)}</span>
+                    <span className="text-2xl font-black text-on-surface">{formatNGN(amountKobo)}</span>
                   </div>
 
                   <Button
@@ -463,7 +439,7 @@ export function PledgeFlow({ needId, needName, tradespersonName, goalAmount, alw
                     className="w-full h-16 text-lg font-black rounded-2xl flex items-center justify-center gap-3 bg-on-surface text-surface hover:bg-on-surface/90 shadow-2xl active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Lock className="h-5 w-5" />
-                    Pay {formatNGN(totalChargeKobo)} Securely
+                    Pay {formatNGN(amountKobo)} Securely
                   </Button>
 
                   <p className="text-center text-xs text-on-surface-variant/50 font-medium">

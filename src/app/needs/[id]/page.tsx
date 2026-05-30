@@ -1,7 +1,8 @@
 import { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
-import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
+import { TrustBadges } from "@/components/ui/TrustBadges"
+import { deriveTrustBadges } from "@/lib/trust-badges"
 import { ProgressBar } from "@/components/ui/ProgressBar"
 import { 
   MapPin, 
@@ -60,17 +61,24 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
   const supabase = await createClient()
   
   let need: any = null
-  
+  let pledges: any[] = []
+
   try {
-    const { data: dbNeed, error } = await supabase
-      .from('needs')
-      .select(`
-        *,
-        profile:profiles(*)
-      `)
-      .eq('id', id)
-      .single()
-      
+    const [{ data: dbNeed, error }, { data: dbPledges }] = await Promise.all([
+      supabase
+        .from('needs')
+        .select('*, profile:profiles(*)')
+        .eq('id', id)
+        .single(),
+      supabase
+        .from('pledges')
+        .select('id, amount, message, created_at, anonymous')
+        .eq('need_id', id)
+        .eq('payment_status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(20),
+    ])
+
     if (dbNeed && !error) {
       need = {
         ...dbNeed,
@@ -85,6 +93,7 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
         }
       }
     }
+    pledges = dbPledges || []
   } catch (err) {
     console.error("Failed to fetch need details:", err)
   }
@@ -229,7 +238,7 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
                  <div className="p-4 bg-surface-variant/50 rounded-2xl flex gap-3">
                     <Info className="h-5 w-5 text-on-surface-variant flex-shrink-0" />
                     <p className="text-label-small text-on-surface-variant font-medium">
-                       BuildBridge Escrow: Pledges are only released once the tradesperson uploads proof of purchase.
+                       Your pledge is held securely. Funds are released in stages as the artisan hits milestones and uploads proof.
                     </p>
                  </div>
               </div>
@@ -258,23 +267,66 @@ export default async function NeedDetailPage({ params }: NeedPageProps) {
                        </div>
                     </div>
                  </div>
-                 <Badge level={need.profile.badge_level === 'level_1_community_member' ? 1 : 0} />
+                 <TrustBadges
+                   size="sm"
+                   showLocked={false}
+                   badges={deriveTrustBadges({
+                     profile: need.profile,
+                     needs: [{ status: need.status, proof_submitted_at: need.proof_submitted_at }],
+                     verification: { verified: need.profile.badge_level && need.profile.badge_level !== 'level_0_unverified' },
+                   })}
+                 />
               </div>
 
-              {/* Recent Support */}
+              {/* Backers list */}
               <div className="p-6 rounded-3xl bg-surface border border-outline-variant flex flex-col gap-4">
-                 <p className="text-label-small uppercase font-bold text-on-surface-variant tracking-widest flex items-center justify-between">
-                    Recent Support
-                    <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-[10px]">{need.pledge_count}</span>
-                 </p>
-                 <div className="flex flex-col items-center gap-3 py-4">
-                    <Heart className="h-8 w-8 text-primary/30" />
-                    <p className="text-body-medium font-medium text-on-surface-variant text-center">
-                       {need.pledge_count > 0 
-                         ? `${need.pledge_count} supporter${need.pledge_count !== 1 ? 's' : ''} have backed this need. Be the next one!` 
-                         : "Be the first to support this need!"}
-                    </p>
+                 <div className="flex items-center justify-between">
+                   <p className="text-label-small uppercase font-bold text-on-surface-variant tracking-widest">
+                     Recent Support
+                   </p>
+                   <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-[10px] font-black">
+                     {need.pledge_count}
+                   </span>
                  </div>
+
+                 {pledges.length > 0 ? (
+                   <ul className="flex flex-col divide-y divide-outline-variant/20">
+                     {pledges.map(p => {
+                       const amountFmt = new Intl.NumberFormat("en-NG", {
+                         style: "currency", currency: "NGN", maximumFractionDigits: 0,
+                       }).format((p.amount || 0) / 100)
+                       const daysAgo = Math.floor((Date.now() - new Date(p.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                       const timeLabel = daysAgo === 0 ? "Today" : daysAgo === 1 ? "Yesterday" : `${daysAgo}d ago`
+                       return (
+                         <li key={p.id} className="flex items-start gap-3 py-3">
+                           <div className="h-9 w-9 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                             <Heart className="h-4 w-4" />
+                           </div>
+                           <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                             <p className="text-sm font-black text-on-surface">
+                               {p.anonymous ? "Anonymous" : "A supporter"} · {amountFmt}
+                             </p>
+                             {p.message && (
+                               <p className="text-xs text-on-surface-variant font-medium italic line-clamp-2">
+                                 &ldquo;{p.message}&rdquo;
+                               </p>
+                             )}
+                             <p className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant/50">{timeLabel}</p>
+                           </div>
+                         </li>
+                       )
+                     })}
+                   </ul>
+                 ) : (
+                   <div className="flex flex-col items-center gap-3 py-4">
+                     <Heart className="h-8 w-8 text-primary/30" />
+                     <p className="text-body-medium font-medium text-on-surface-variant text-center">
+                       {need.pledge_count > 0
+                         ? `${need.pledge_count} supporter${need.pledge_count !== 1 ? 's' : ''} have donated. Be the next one!`
+                         : "Be the first to donate to this need!"}
+                     </p>
+                   </div>
+                 )}
               </div>
 
            </div>

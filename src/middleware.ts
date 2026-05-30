@@ -12,6 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Unauthenticated users hitting these routes are redirected to /login.
  */
 const PROTECTED_PATHS = ["/dashboard", "/admin", "/profile"];
+const ADMIN_PATHS = ["/admin"];
 const AUTH_ONLY_PATHS = ["/login", "/signup"];
 
 export default async function middleware(request: NextRequest) {
@@ -61,6 +62,10 @@ export default async function middleware(request: NextRequest) {
 
   const isHome = pathname === "/";
 
+  const isAdmin = ADMIN_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`)
+  );
+
   // CASE 1: Authenticated user hitting /login or /signup
   if (user && isAuthOnly) {
     const dashboardUrl = request.nextUrl.clone();
@@ -70,14 +75,17 @@ export default async function middleware(request: NextRequest) {
 
   // CASE 2: Unauthenticated user hitting a protected path (excluding vouch pages)
   if (isProtected && !isVouchPage && !user) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn("Dev mode: bypassing middleware auth check to allow UI testing.");
-      return response;
-    }
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // CASE 3: Authenticated non-admin hitting /admin
+  if (isAdmin && user && user.app_metadata?.role !== "admin") {
+    const homeUrl = request.nextUrl.clone();
+    homeUrl.pathname = "/";
+    return NextResponse.redirect(homeUrl);
   }
 
   return response;

@@ -38,8 +38,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Generate unique filename
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    // Sanitise extension — only allow known-safe values
+    const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+    const ext = ['jpg', 'jpeg', 'png', 'webp'].includes(rawExt) ? rawExt : 'jpg'
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
     const folder = (formData.get("folder") as string) || "covers"
     const filePath = `${folder}/${fileName}`

@@ -24,6 +24,7 @@ export function Footer() {
     ],
     Support: [
       { name: "Contact Us", href: "/contact" },
+      { name: "How Payments Work", href: "/payment-processing" },
       { name: "Privacy", href: "/privacy" },
       { name: "Terms", href: "/terms" },
       { name: "Trust & Safety", href: "/trust" },
@@ -85,7 +86,7 @@ export function Footer() {
           ))}
         </div>
 
-        {/* Newsletter Section - Unified integrated layout */}
+        {/* Newsletter Section — coming soon while email service is being set up */}
         <div className="pt-16 pb-10 border-t border-white/20">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-12">
             <div className="max-w-md text-center lg:text-left">
@@ -96,21 +97,18 @@ export function Footer() {
             </div>
 
             <div className="w-full max-w-md">
-              <form className="relative group" onSubmit={(e) => e.preventDefault()}>
-                <div className="relative">
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email address" 
-                    className="w-full h-14 bg-white/10 border border-white/20 rounded-full px-8 pr-32 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all text-sm"
-                  />
-                  <button 
-                    type="submit"
-                    className="absolute right-1.5 top-1.5 h-11 px-6 rounded-full bg-yellow-400 text-[#121212] font-black text-xs uppercase tracking-widest hover:bg-yellow-300 active:scale-[0.98] transition-all shadow-lg whitespace-nowrap"
-                  >
-                    Sign Up
-                  </button>
-                </div>
-              </form>
+              <div
+                className="w-full rounded-3xl border border-white/20 bg-white/5 px-7 py-6 flex flex-col gap-2"
+                role="status"
+                aria-live="polite"
+              >
+                <p className="text-xs font-black uppercase tracking-widest text-yellow-400">
+                  Newsletter — Coming Soon
+                </p>
+                <p className="text-sm text-white/70 font-medium leading-relaxed">
+                  We&apos;re wiring up our email service. In the meantime, follow us on social to hear when the first funded artisan story drops.
+                </p>
+              </div>
             </div>
           </div>
         </div>

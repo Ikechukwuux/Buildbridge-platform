@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Heart,
 } from "lucide-react";
 
 /* ─────────────────────────────────────────────
@@ -33,6 +34,12 @@ const NAV_ITEMS = [
     label: "Active Needs",
     href: "/dashboard/needs",
     icon: ListChecks,
+    exact: false,
+  },
+  {
+    label: "My Donations",
+    href: "/dashboard/donations",
+    icon: Heart,
     exact: false,
   },
 ] as const;

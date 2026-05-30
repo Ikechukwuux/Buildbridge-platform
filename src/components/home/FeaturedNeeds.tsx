@@ -79,7 +79,7 @@ export function FeaturedNeeds({ needs, isLoading = false }: FeaturedNeedsProps) 
               Active Needs
             </h2>
             <p className="text-lg max-w-xl" style={{ color: 'var(--color-on-surface-variant)' }}>
-              Real people. Real needs. Real impact. Back a tradesperson today.
+              Real people. Real needs. Real impact. Donate to a tradesperson today.
             </p>
           </div>
           <Link 

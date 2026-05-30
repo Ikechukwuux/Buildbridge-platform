@@ -1,4 +1,5 @@
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { SessionTimeoutGuard } from "@/components/ui/SessionTimeoutGuard";
 
 /**
  * Dashboard layout — wraps all /dashboard/* routes.
@@ -32,6 +33,9 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* 30-min inactivity session timeout guard */}
+      <SessionTimeoutGuard />
     </div>
   );
 }

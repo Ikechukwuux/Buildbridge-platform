@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { verifyTransaction } from "@/lib/paystack"
+
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 function extractMessage(metadata: any): string | null {
   if (!metadata?.custom_fields) return null
@@ -53,30 +60,33 @@ export async function POST(req: NextRequest) {
       // Continue anyway — the HMAC signature was valid
     }
 
-    const supabase = await createClient()
+    const supabase = getAdminClient()
 
     // Extract user message from custom_fields
     const userMessage = extractMessage(metadata)
 
-    // 3. Financial Arithmetic (Kobo)
+    // 3. Financial Arithmetic (Kobo) — 3% platform fee deducted from each pledge
     const totalChargedKobo = amount // Already in kobo from Paystack
+    const platformFeeKobo: number =
+      typeof metadata?.fee_kobo === "number" && metadata.fee_kobo > 0
+        ? metadata.fee_kobo
+        : Math.floor(totalChargedKobo * 0.03)
+
     const pledgeKobo: number =
       typeof metadata?.pledge_kobo === "number" && metadata.pledge_kobo > 0
         ? metadata.pledge_kobo
-        : totalChargedKobo // fallback: no tip was added, full amount goes to artisan
+        : totalChargedKobo - platformFeeKobo
 
     // Sanity check — pledge portion should never exceed total charged
     const safePledgeKobo = Math.min(pledgeKobo, totalChargedKobo)
 
-    const platformFeeKobo = Math.floor(safePledgeKobo * 0.05) // 5% BuildBridge fee on pledge
     const processingFeeKobo = Math.floor(totalChargedKobo * 0.015) + (totalChargedKobo > 250000 ? 10000 : 0) // Paystack 1.5% + N100 if > N2500
-    const tradespersonReceivesKobo = safePledgeKobo - platformFeeKobo - processingFeeKobo
+    const tradespersonReceivesKobo = safePledgeKobo - processingFeeKobo
 
     const feeBreakdown = {
       platform_fee: platformFeeKobo,
       processing_fee: processingFeeKobo,
       tradesperson_receives: tradespersonReceivesKobo,
-      tip: totalChargedKobo - safePledgeKobo
     }
 
     // 4. Escrow Orchestration (Database Transaction)
@@ -93,9 +103,6 @@ export async function POST(req: NextRequest) {
     if (existingPledge) {
       return NextResponse.json({ received: true, note: "Pledge already processed" }, { status: 200 })
     }
-
-    // NOTE: Skipping pledges table insert — backer_user_id FK references legacy users table.
-    // Update funded_amount and pledge_count directly on the need instead.
 
     // Step B: Fetch current need totals
     const { data: need, error: fetchError } = await supabase
@@ -127,25 +134,45 @@ export async function POST(req: NextRequest) {
 
     if (updateError) throw updateError
 
+    // Step D: Record pledge for audit trail and donor history
+    await supabase.from("pledges").insert({
+      need_id,
+      backer_user_id: backer_user_id || null,
+      amount: safePledgeKobo,
+      currency: "NGN",
+      fee_breakdown_json: feeBreakdown,
+      payment_provider: "paystack",
+      payment_reference: reference,
+      payment_status: "completed",
+      paid_at: new Date().toISOString(),
+      message: userMessage || null,
+    })
+
     // 4. Notifications & Milestones
     try {
-      // We need the profile owner's user_id
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('id', need_id === metadata.need_id ? need_id : metadata.need_id) // Safety check on IDs
+      // Resolve need → profile → user_id
+      const { data: needRecord } = await supabase
+        .from("needs")
+        .select("profile_id")
+        .eq("id", need_id)
         .single()
 
-      if (profile?.user_id) {
-        // Trigger Pledge Notification
-        const { notifyPledgeReceived } = await import("@/lib/notifications")
-        const { checkAndTriggerMilestones } = await import("@/lib/milestones")
+      if (needRecord?.profile_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", needRecord.profile_id)
+          .single()
 
-        await notifyPledgeReceived(profile.user_id, safePledgeKobo, need_id, reference)
-        await checkAndTriggerMilestones(need_id)
+        if (profile?.user_id) {
+          const { notifyPledgeReceived } = await import("@/lib/notifications")
+          const { checkAndTriggerMilestones } = await import("@/lib/milestones")
+
+          await notifyPledgeReceived(profile.user_id, safePledgeKobo, need_id, reference)
+          await checkAndTriggerMilestones(need_id)
+        }
       }
     } catch (notifErr) {
-      // We don't want to fail the webhook if notifications fail, we log them for audit anyway
       console.error("Non-critical notification error:", notifErr)
     }
 

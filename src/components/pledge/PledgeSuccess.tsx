@@ -74,19 +74,19 @@ export function PledgeSuccess({ amount, tradespersonName, needId }: PledgeSucces
             <span style={{ color: "var(--color-success)" }}>Confirmed!</span>
           </h2>
           <p className="text-sm text-on-surface-variant max-w-xs mx-auto font-medium leading-snug">
-            You just pledged <span className="text-on-surface font-black">{formattedAmount}</span> to back{" "}
+            You just donated <span className="text-on-surface font-black">{formattedAmount}</span> to support{" "}
             <span className="text-on-surface font-black">{tradespersonName}</span>
           </p>
         </div>
       </div>
 
-      {/* Middle: Escrow */}
+      {/* Middle: Milestone release */}
       <div className="p-3 bg-surface rounded-xl border border-outline-variant/40 max-w-xs w-full shadow-sm">
         <p className="text-[10px] uppercase font-black text-on-surface-variant/50 tracking-widest mb-0.5">
-          Escrow Protected
+          Held Securely
         </p>
         <p className="text-xs text-on-surface-variant italic leading-relaxed">
-          Funds are held in escrow — released only when proof of purchase is confirmed.
+          Funds are held securely and released in stages as {tradespersonName} hits milestones and uploads proof.
         </p>
       </div>
 
@@ -114,9 +114,9 @@ export function PledgeSuccess({ amount, tradespersonName, needId }: PledgeSucces
             <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
-        <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
-          BuildBridge
-        </p>
+        <Link href="/payment-processing" className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-widest hover:text-primary transition-colors">
+          How payments work →
+        </Link>
       </div>
     </motion.div>
   )

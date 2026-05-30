@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { DeleteAccountDialog } from "@/components/dashboard/DeleteAccountDialog";
 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(" ");
@@ -312,6 +313,7 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [impactUpdates, setImpactUpdates] = useState(true);
   const [marketingEnabled, setMarketingEnabled] = useState(false);
@@ -500,7 +502,7 @@ export default function AccountPage() {
                 <div className="flex-grow">
                   <p className="text-sm font-black text-on-surface">Impact Updates</p>
                   <p className="text-sm font-medium text-on-surface-variant/60">
-                    Get notified when your needs receive backing or reach milestones
+                    Get notified when your needs receive donations or reach milestones
                   </p>
                 </div>
                 <ToggleSwitch
@@ -538,7 +540,10 @@ export default function AccountPage() {
               <h3 className="text-lg font-black text-error">Danger Zone</h3>
               <p className="text-sm text-error/60 font-medium">Permanently delete your account and all associated data.</p>
             </div>
-            <Button className="bg-error text-white hover:bg-error/90 rounded-full h-12 px-8 font-black gap-2">
+            <Button
+              onClick={() => setShowDeleteDialog(true)}
+              className="bg-error text-white hover:bg-error/90 rounded-full h-12 px-8 font-black gap-2"
+            >
               <Trash2 className="w-4 h-4" />
               Delete Account
             </Button>
@@ -548,6 +553,7 @@ export default function AccountPage() {
 
       {/* Dialogs */}
       <PasswordChangeDialog isOpen={showPasswordDialog} onClose={() => setShowPasswordDialog(false)} />
+      <DeleteAccountDialog isOpen={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} />
       <PhoneLinkDialog
         isOpen={showPhoneDialog}
         onClose={() => setShowPhoneDialog(false)}

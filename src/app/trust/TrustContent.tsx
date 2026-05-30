@@ -2,16 +2,20 @@
 
 import React from "react";
 import { PremiumPageLayout } from "@/components/layout/PremiumPageLayout";
-import { 
-  ShieldCheck, 
-  Lock, 
-  UserCheck, 
-  MapPin, 
-  FileText, 
+import {
+  ShieldCheck,
+  Lock,
+  UserCheck,
+  MapPin,
+  FileText,
   AlertTriangle,
   Fingerprint,
-  Verified
+  Verified,
+  Bot,
+  Milestone,
+  ArrowRight
 } from "lucide-react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 export function TrustContent() {
@@ -128,23 +132,83 @@ export function TrustContent() {
           </div>
         </motion.section>
 
-        {/* Fraud Prevention Section */}
-        <motion.section 
+        {/* AI Triage */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="rounded-[2rem] p-8 sm:p-12 border border-primary/10 bg-primary/5"
+        >
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Bot size={32} />
+            </div>
+            <div className="flex flex-col gap-4">
+              <h3 className="text-xl md:text-2xl font-black tracking-tight" style={{ color: 'var(--color-on-surface)' }}>AI-assisted Campaign Triage</h3>
+              <p className="text-base font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>
+                Every new funding need is automatically reviewed by our AI triage system before a human admin sees it. The AI assigns a risk score from 0–100 and flags signals like duplicate descriptions, inflated cost estimates, or suspicious account patterns. Only needs that pass this filter — or that receive a human override with a reason — go to the final admin review. Admin can see the AI score, flag reason, and override it at any time.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                {[
+                  { label: "Duplicate detection", detail: "Matches against existing listings" },
+                  { label: "Cost benchmarking", detail: "Compares goal vs. market rate" },
+                  { label: "Pattern analysis", detail: "Spots account velocity anomalies" },
+                ].map(item => (
+                  <div key={item.label} className="p-4 rounded-2xl bg-white border border-outline-variant/30 flex flex-col gap-1">
+                    <p className="text-xs font-black text-primary uppercase tracking-widest">{item.label}</p>
+                    <p className="text-xs font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Milestone Disbursement */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="rounded-[2rem] p-8 sm:p-12 border border-emerald-500/15 bg-emerald-500/5"
+        >
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0">
+              <Milestone size={32} />
+            </div>
+            <div className="flex flex-col gap-4">
+              <h3 className="text-xl md:text-2xl font-black tracking-tight" style={{ color: 'var(--color-on-surface)' }}>Milestone-based Disbursement</h3>
+              <p className="text-base font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>
+                Funds are never handed over in one lump sum. Donations are held securely and released in stages as artisans reach funding milestones. When a milestone threshold is crossed, the artisan is notified to purchase their equipment and upload proof — a photo of the receipt, the tool in use, or a short video. Our team reviews the proof before any funds move. This staged model ensures your donation creates real, verifiable impact.
+              </p>
+              <Link
+                href="/payment-processing"
+                className="self-start inline-flex items-center gap-2 text-sm font-black text-emerald-700 hover:underline"
+              >
+                See the full money-flow breakdown
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Fraud Prevention */}
+        <motion.section
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="rounded-[2rem] p-8 sm:p-12 border border-error/10 bg-error/5"
         >
-          <div className="flex flex-col md:flex-row gap-8 items-center">
+          <div className="flex flex-col md:flex-row gap-8 items-start">
             <div className="w-16 h-16 rounded-2xl bg-error/10 flex items-center justify-center text-error shrink-0">
                <AlertTriangle size={32} />
             </div>
-            <div>
-              <h3 className="text-xl md:text-2xl font-black tracking-tight mb-3" style={{ color: 'var(--color-on-surface)' }}>Zero Tolerance for Fraud</h3>
-              <p className="text-base font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>
-                We take safety seriously. Any attempt to use the platform for fraudulent activity results in an immediate permanent ban and, 
-                where necessary, reporting to the relevant Nigerian authorities. We protect the integrity of the community at all costs.
-              </p>
+            <div className="flex flex-col gap-4">
+              <h3 className="text-xl md:text-2xl font-black tracking-tight" style={{ color: 'var(--color-on-surface)' }}>What happens if something goes wrong?</h3>
+              <div className="space-y-3 text-base font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>
+                <p><span className="font-black text-on-surface">If an artisan doesn't upload proof:</span> We nudge them at 3, 7, and 14 days. If proof still hasn't arrived within 30 days of reaching a milestone, the campaign is paused and backers are contacted about a partial refund of undisbursed funds.</p>
+                <p><span className="font-black text-on-surface">If we detect fraud:</span> The account is immediately suspended, the campaign is removed from public view, and — where evidence meets the legal threshold — we report the incident to the Nigerian authorities. Any disbursed funds we can recover will be returned.</p>
+                <p><span className="font-black text-on-surface">If you dispute a pledge:</span> Contact <a href="mailto:support@buildbridge.africa" className="text-primary font-black hover:underline">support@buildbridge.africa</a> within 60 days. We investigate every case and prioritise backer protection.</p>
+              </div>
             </div>
           </div>
         </motion.section>

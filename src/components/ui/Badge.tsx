@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Shield, ShieldCheck } from "lucide-react"
+import { ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type BadgeLevelType = 0 | 1;
@@ -11,10 +11,10 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const levelConfig: Record<number, { bg: string; color: string; icon: React.ElementType; label: string }> = {
   0: {
-    bg: 'var(--color-surface-variant)',
-    color: 'var(--color-on-surface-variant)',
-    icon: Shield,
-    label: "Unverified",
+    bg: '#dcfce7',
+    color: '#166534',
+    icon: ShieldCheck,
+    label: "Verified",
   },
   1: {
     bg: '#dcfce7',

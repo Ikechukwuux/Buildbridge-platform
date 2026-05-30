@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: PaymentPageProps): Promise<Me
   const profile = need.profiles as any
   const name = profile?.full_name || "a tradesperson"
   return {
-    title: `Back ${name} — ${need.item_name} | BuildBridge`,
+    title: `Donate to ${name} — ${need.item_name} | BuildBridge`,
     description: `Support ${name}'s need for a ${need.item_name} on BuildBridge.`,
   }
 }
@@ -93,10 +93,10 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
         {/* Page header */}
         <div className="mb-12 max-w-2xl">
           <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary mb-3">
-            Backing a Tradesperson
+            Donating to a Tradesperson
           </p>
           <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tight leading-[1.1] mb-4">
-            Back{" "}
+            Donate to{" "}
             <span className="text-primary italic">{artisanName}</span>
           </h1>
           <p className="text-lg text-on-surface-variant font-medium leading-relaxed">

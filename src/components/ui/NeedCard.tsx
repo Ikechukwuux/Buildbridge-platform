@@ -7,8 +7,9 @@ import { useRouter } from "next/navigation"
 import { Card } from "./Card"
 import { ProgressBar } from "./ProgressBar"
 import { Skeleton } from "./Skeleton"
-import { Badge } from "./Badge"
+import { TrustBadges } from "./TrustBadges"
 import { Button } from "./Button"
+import { deriveTrustBadges } from "@/lib/trust-badges"
 import {
   Calendar,
   Heart,
@@ -36,7 +37,7 @@ interface NeedCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onEdit?: () => void;
-  /** When true, shows owner-specific actions (Verify Now / Share Need) instead of public "Back now" */
+  /** When true, shows owner-specific actions (Verify Now / Share Need) instead of public "Donate now" */
   isDashboard?: boolean;
 }
 
@@ -104,7 +105,7 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
   const isUnverified = !need.profile?.badge_level || need.profile.badge_level === 'level_0_unverified';
 
   // Button text and state
-  let buttonText = "Back now";
+  let buttonText = "Donate now";
   let buttonDisabled = false;
   let buttonClassName = "bg-primary text-white shadow-primary/20";
   let buttonIcon: React.ReactNode = null;
@@ -136,8 +137,6 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
   }
 
   const TradeIcon = (need.profile?.trade_category && TRADE_ICONS_MAP[need.profile.trade_category]) || MoreHorizontal;
-
-  const badgeLevel = need.profile?.badge_level === 'level_1_community_member' ? 1 : 0;
 
   const [imageError, setImageError] = React.useState(false);
 
@@ -231,30 +230,35 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
         )}
 
         {/* Dashboard Owner Actions */}
-        {isDashboard && (
-          <>
-            <button
-              className="absolute bottom-4 left-4 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm border border-outline/30 hover:bg-white flex items-center justify-center text-on-surface transition-colors shadow-lg cursor-pointer z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onEdit) onEdit();
-              }}
-              title="Edit Need"
-            >
-              <PencilLine className="h-5 w-5" />
-            </button>
-            <button
-              className="absolute bottom-4 right-4 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm border border-error/30 hover:bg-error/10 flex items-center justify-center text-error transition-colors shadow-lg cursor-pointer z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onDelete) onDelete();
-              }}
-              title="Delete Need"
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
-          </>
-        )}
+        {isDashboard && (() => {
+          const canDelete = need.status === 'draft' || need.status === 'rejected';
+          return (
+            <>
+              <button
+                className="absolute bottom-4 left-4 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm border border-outline/30 hover:bg-white flex items-center justify-center text-on-surface transition-colors shadow-lg cursor-pointer z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onEdit) onEdit();
+                }}
+                title="Edit Need"
+              >
+                <PencilLine className="h-5 w-5" />
+              </button>
+              {canDelete && (
+                <button
+                  className="absolute bottom-4 right-4 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm border border-error/30 hover:bg-error/10 flex items-center justify-center text-error transition-colors shadow-lg cursor-pointer z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onDelete) onDelete();
+                  }}
+                  title="Delete draft"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       <div className="flex flex-col flex-grow p-6 gap-6">
@@ -344,9 +348,18 @@ export function NeedCard({ need, className, onClick, onDelete, onEdit, isDashboa
         </div>
 
         {/* Divider & Actions */}
-        <div className="pt-6 border-t border-outline-variant/30 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Badge level={badgeLevel as 0 | 1} />
+        <div className="pt-6 border-t border-outline-variant/30 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+            <TrustBadges
+              size="sm"
+              showLabels={false}
+              showLocked={false}
+              badges={deriveTrustBadges({
+                profile: need.profile,
+                needs: [{ status: need.status, proof_submitted_at: need.proof_submitted_at }],
+                verification: { verified: need.profile?.badge_level && need.profile.badge_level !== 'level_0_unverified' },
+              })}
+            />
           </div>
           <Button
             className={cn(

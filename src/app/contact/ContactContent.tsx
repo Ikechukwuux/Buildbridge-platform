@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 const faqs = [
   { question: "Who can join BuildBridge as a tradesperson?", answer: "Any skilled tradesperson or micro-entrepreneur in Nigeria with a verifiable craft—including mechanics, tailors, stylists, and more. You'll need a valid NIN and a community vouch to get started." },
   { question: "How are the funds disbursed?", answer: "Funds are typically sent directly to the verified vendor for your tools or equipment, or released to you upon proof of purchase. This ensures transparency for our backers." },
-  { question: "Is there a fee for using the platform?", answer: "BuildBridge adds a small platform fee to every pledge to cover verification costs, payment processing, and escrow services. Tradespeople receive the exact amount requested for their need." },
+  { question: "Is there a fee for using the platform?", answer: "BuildBridge deducts a small 3% platform fee from each pledge to keep the platform running and improving. The remaining 97% of every Naira pledged goes directly to the tradesperson." },
   { question: "How can I vouch for someone?", answer: "If you are a member of a registered market association or a verified peer on the platform, you can vouch for a tradesperson from their profile page." }
 ];
 

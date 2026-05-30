@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import twilio from "twilio"
+import { RateLimiters, enforceRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(req: NextRequest) {
+  // Rate-limit per IP: 5 OTP sends / 10 minutes
+  const limited = await enforceRateLimit(RateLimiters.otpSend(), getClientIp(req))
+  if (limited) return limited
+
   const accountSid = process.env.TWILIO_ACCOUNT_SID
   const authToken = process.env.TWILIO_AUTH_TOKEN
   const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID

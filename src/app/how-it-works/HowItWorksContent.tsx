@@ -45,8 +45,8 @@ export function HowItWorksContent() {
       number: "03",
       icon: Wallet,
       title: "Get Backed",
-      description: "Backers contribute to your need. Funds are held securely in escrow until you are ready to purchase.",
-      example: "14 backers from around the world contribute to Amina's need until the ₦350,000 goal is met.",
+      description: "Backers contribute to your need. Funds are held securely and released in stages as you hit milestones and upload proof.",
+      example: "14 backers from around the world contribute to Amina's need. She keeps every Naira raised — even before hitting her full goal.",
       color: "text-green-600",
       bgColor: "bg-green-500/10"
     },
@@ -139,7 +139,7 @@ export function HowItWorksContent() {
                 className="text-lg md:text-xl font-medium max-w-3xl leading-relaxed"
                 style={{ color: 'var(--color-on-surface-variant)' }}
               >
-                BuildBridge isn&apos;t just about money—it&apos;s about building a reputation that unlocks growth. Every pledge is held in escrow and only deployed once goals are reached.
+                BuildBridge isn&apos;t just about money—it&apos;s about building a reputation that unlocks growth. Your pledge is held securely and released in stages as the artisan hits milestones and uploads proof.
               </motion.p>
             </div>
           </div>
@@ -298,8 +298,38 @@ export function HowItWorksContent() {
                 </div>
               </section>
 
+              {/* Fee + Payment Flow Strip */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="rounded-[2rem] p-8 sm:p-10 border border-primary/10 bg-primary/5"
+              >
+                <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
+                  <div className="flex flex-col gap-3 flex-1">
+                    <p className="text-[10px] uppercase tracking-widest font-black text-primary">
+                      Where your donation goes
+                    </p>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: 'var(--color-on-surface)' }}>
+                      97% to the artisan. 3% keeps BuildBridge running.
+                    </h3>
+                    <p className="text-base font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>
+                      Funds are held securely in escrow and released only after the artisan uploads proof of purchase. Read the full money-flow walkthrough for every step.
+                    </p>
+                  </div>
+                  <Link
+                    href="/payment-processing"
+                    className="shrink-0 inline-flex items-center gap-2 h-12 px-6 rounded-full bg-on-surface text-surface font-black text-sm uppercase tracking-widest hover:-translate-y-0.5 transition-transform shadow-lg"
+                  >
+                    How payments work
+                    <ArrowRight size={16} />
+                  </Link>
+                </div>
+              </motion.div>
+
               {/* Final CTA Strip */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -312,7 +342,7 @@ export function HowItWorksContent() {
                 
                 <div className="text-center md:text-left relative z-10 max-w-xl">
                   <h4 className="text-2xl md:text-3xl font-black tracking-tight mb-3" style={{ color: 'var(--color-on-surface)' }}>Ready to start?</h4>
-                  <p className="text-base md:text-lg font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>Choose your path and build with us today. Whether you&apos;re seeking funding or looking to back a tradesperson.</p>
+                  <p className="text-base md:text-lg font-medium leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>Choose your path and build with us today. Whether you&apos;re seeking funding or looking to donate to a tradesperson.</p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4 relative z-10 shrink-0">
@@ -326,7 +356,7 @@ export function HowItWorksContent() {
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
                     <Link href="/browse" className="block w-full">
                       <Button size="lg" className="rounded-full flex items-center justify-center gap-2 w-full sm:w-auto text-base px-8 font-black shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 whitespace-nowrap">
-                        Back a Need <ArrowRight size={18} className="ml-1" />
+                        Donate to a Need <ArrowRight size={18} className="ml-1" />
                       </Button>
                     </Link>
                   </motion.div>

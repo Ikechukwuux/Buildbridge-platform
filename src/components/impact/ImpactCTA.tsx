@@ -25,7 +25,7 @@ export function ImpactCTA() {
             </h2>
             
             <p className="text-base md:text-lg text-primary/70 max-w-xl font-medium leading-relaxed">
-              Every pledge creates another success story. Back a tradesperson today and be part of the next transformation on this wall.
+              Every pledge creates another success story. Donate to a tradesperson today and be part of the next transformation on this wall.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
@@ -34,7 +34,7 @@ export function ImpactCTA() {
                   href="/browse" 
                   className="inline-flex items-center justify-center gap-2 bg-primary text-white px-8 py-3.5 rounded-full text-base font-black tracking-wide shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  Back a Tradesperson
+                  Donate to a Tradesperson
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </motion.div>

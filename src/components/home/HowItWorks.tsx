@@ -13,12 +13,12 @@ const steps = [
   {
     icon: HeartHandshake,
     title: "Community Backs You",
-    description: "Family, friends, and strangers pledge what they can. All pledges stay in escrow until met.",
+    description: "Family, friends, and strangers pledge what they can. Pledges are held securely — you keep what you raise.",
   },
   {
     icon: Rocket,
-    title: "Funds Arrive (48hrs)",
-    description: "Once funded, money goes straight to you. Share proof of use to close the loop.",
+    title: "Funds Released in Stages",
+    description: "Funds are released in stages as you hit milestones and upload proof. Share the result to close the loop.",
   },
 ]
 

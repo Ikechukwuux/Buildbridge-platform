@@ -182,7 +182,7 @@ export function StoryDetail({ story }: StoryDetailProps) {
               href="/browse"
               className="inline-flex items-center gap-2 bg-primary text-on-primary px-8 py-3.5 rounded-full text-base font-black tracking-wide shadow-lg hover:shadow-xl transition-all"
             >
-              Back a Tradesperson
+              Donate to a Tradesperson
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
